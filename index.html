@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VKREATE — Where Design Speaks | Commercial Interior Design Studio</title>
+  <meta name="description" content="VKREATE is a premium commercial interior design studio transforming offices, restaurants, retail spaces, hotels, hospitals, and villas. From Concept to Accomplishment." />
+  <meta name="keywords" content="interior design studio, commercial interiors, office design, restaurant design, retail design, hotel design, VKREATE" />
+  <meta property="og:title" content="VKREATE — Where Design Speaks" />
+  <meta property="og:description" content="Premium commercial interior design studio. Vision, Function, Precision." />
+  <meta property="og:type" content="website" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     PRELOADER / LOADING SCREEN
+══════════════════════════════════════════════════════════ -->
+<div id="preloader" class="preloader" aria-label="Loading VKREATE Studio">
+  <div class="preloader__inner">
+    <div class="preloader__video-wrapper">
+      <video class="preloader__video" autoplay muted playsinline id="preloader-video">
+        <source src="LOGO ANIMATION.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <div class="preloader__brand">
+      <span class="preloader__title">VKREATE</span>
+      <span class="preloader__subtitle">Where Design Speaks</span>
+    </div>
+    <div class="preloader__progress-bar">
+      <div class="preloader__progress-fill" id="preloader-progress"></div>
+    </div>
+  </div>
+  <button class="preloader__skip" id="preloader-skip" aria-label="Skip intro">Skip Intro →</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     NAVIGATION
+══════════════════════════════════════════════════════════ -->
+<nav class="nav" id="main-nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a class="nav__logo" href="#hero" aria-label="VKREATE — Home">
+        <span class="nav__logo-name">VKREATE</span>
+        <span class="nav__logo-tagline">Where Design Speaks</span>
+      </a>
+
+      <ul class="nav__links" role="list">
+        <li><a class="nav__link" href="#portfolio" data-section="portfolio">Portfolio</a></li>
+        <li><a class="nav__link" href="#reviews" data-section="reviews">Reviews</a></li>
+        <li><a class="nav__link" href="#about" data-section="about">About</a></li>
+        <li><a class="nav__link" href="#services" data-section="services">Services</a></li>
+        <li><a class="nav__link nav__cta" href="#contact" id="nav-cta">Start a Project</a></li>
+      </ul>
+
+      <button class="nav__hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Nav -->
+<div class="nav__mobile" id="mobile-nav" role="dialog" aria-label="Mobile menu">
+  <a class="nav__link" href="#portfolio">Portfolio</a>
+  <a class="nav__link" href="#reviews">Reviews</a>
+  <a class="nav__link" href="#about">About</a>
+  <a class="nav__link" href="#services">Services</a>
+  <a class="nav__cta" href="#contact">Start a Project</a>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     HERO — SECTION 1
+══════════════════════════════════════════════════════════ -->
+<section id="hero" class="hero" aria-label="Hero section">
+  <div class="hero__video-bg-wrap">
+    <video class="hero__video-bg" autoplay loop muted playsinline poster="assets/images/hero_bg.png">
+      <source src="LOGO ANIMATION.mp4" type="video/mp4" />
+    </video>
+  </div>
+  <div class="hero__overlay"></div>
+  <div class="hero__noise"></div>
+
+  <div class="container">
+    <div class="hero__container">
+      <div class="hero__content">
+        <div class="hero__overline t-overline">
+          <span class="hero__overline-line" aria-hidden="true"></span>
+          Commercial Interior Design Studio
+        </div>
+
+        <h1 class="hero__title">
+          Where<br /><em>Design</em><br />Speaks
+        </h1>
+
+        <p class="hero__subtitle">
+          We architect the experience within spaces — transforming offices, restaurants, hotels, and homes into environments that perform as beautifully as they look.
+        </p>
+
+        <div class="hero__actions">
+          <a href="#portfolio" class="btn btn-primary btn-arrow" id="hero-view-work">View Our Work</a>
+          <a href="#contact" class="btn btn-outline" id="hero-start-project">Start a Project</a>
+        </div>
+      </div>
+
+      <div class="hero__video-card">
+        <video class="hero__video-player" autoplay loop muted playsinline>
+          <source src="LOGO ANIMATION.mp4" type="video/mp4" />
+        </video>
+        <div class="hero__video-badge">
+          <span class="hero__video-badge-dot"></span> Studio Motion Mark
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rotating badge -->
+  <div class="hero__badge" aria-hidden="true">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <path id="circle-text" d="M 50,50 m -37,0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" />
+      </defs>
+      <text font-size="8.5" fill="#C9A96E" font-family="Inter, sans-serif" font-weight="600" letter-spacing="2">
+        <textPath href="#circle-text">VISION · FUNCTION · PRECISION · CRAFT · </textPath>
+      </text>
+      <circle cx="50" cy="50" r="6" fill="#C9A96E" />
+    </svg>
+  </div>
+
+  <div class="hero__scroll" aria-hidden="true">
+    <span>Scroll</span>
+    <div class="hero__scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     STATS STRIP
+══════════════════════════════════════════════════════════ -->
+<div class="stats" role="region" aria-label="Studio statistics">
+  <div class="container">
+    <div class="stats__grid">
+      <div class="stats__item reveal">
+        <span class="stats__value" data-target="85+" aria-label="85 plus projects">85+</span>
+        <span class="stats__label">Projects Completed</span>
+      </div>
+      <div class="stats__item reveal delay-1">
+        <span class="stats__value" data-target="12+" aria-label="12 plus years">12+</span>
+        <span class="stats__label">Years of Excellence</span>
+      </div>
+      <div class="stats__item reveal delay-2">
+        <span class="stats__value" aria-label="4.9 average rating">4.9</span>
+        <span class="stats__label">Average Client Rating</span>
+      </div>
+      <div class="stats__item reveal delay-3">
+        <span class="stats__value" aria-label="100 percent on time delivery">100%</span>
+        <span class="stats__label">On-Time Delivery</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PORTFOLIO GALLERY — SECTION 2
+══════════════════════════════════════════════════════════ -->
+<section id="portfolio" class="portfolio section" aria-label="Portfolio gallery">
+  <div class="container">
+    <div class="section__header reveal">
+      <span class="t-overline section__overline">Our Work</span>
+      <h2 class="t-h1 section__title">Selected Projects</h2>
+      <div class="divider"></div>
+      <p class="section__desc t-body">Completed across offices, restaurants, retail spaces, healthcare facilities, hospitality venues, and private residences across India.</p>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="portfolio__filters reveal delay-1" id="portfolio-filters" role="group" aria-label="Filter projects by industry">
+      <button class="filter-btn active" data-filter="all" id="filter-all">All Projects</button>
+      <button class="filter-btn" data-filter="office" id="filter-office">Offices</button>
+      <button class="filter-btn" data-filter="restaurant" id="filter-restaurant">Restaurants</button>
+      <button class="filter-btn" data-filter="retail" id="filter-retail">Retail</button>
+      <button class="filter-btn" data-filter="healthcare" id="filter-healthcare">Healthcare</button>
+      <button class="filter-btn" data-filter="hospitality" id="filter-hospitality">Hospitality</button>
+      <button class="filter-btn" data-filter="villa" id="filter-villa">Villas</button>
+    </div>
+
+    <!-- Cards rendered by portfolio.js -->
+    <div class="portfolio__grid" id="portfolio-grid" role="list" aria-label="Project cards"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     REVIEWS HUB — SECTION 4
+══════════════════════════════════════════════════════════ -->
+<section id="reviews" class="reviews section" aria-label="Client reviews">
+  <div class="container">
+    <div class="section__header section__header--center reveal">
+      <span class="t-overline section__overline">Client Voices</span>
+      <h2 class="t-h1 section__title">What Our Clients Say</h2>
+      <div class="divider divider--center"></div>
+      <p class="section__desc t-body">Every rating reflects a real project, a real relationship, and a real transformation.</p>
+    </div>
+
+    <!-- Aggregate Score -->
+    <div class="reviews__aggregate reveal">
+      <div>
+        <div class="reviews__big-score" id="agg-score" aria-label="Average rating">5.0</div>
+      </div>
+      <div class="reviews__score-detail">
+        <div class="reviews__score-stars" id="agg-stars" aria-label="5 star rating">
+          <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span>
+        </div>
+        <div class="reviews__score-count" id="agg-count">Based on verified client reviews</div>
+      </div>
+      <div class="reviews__trust-badges">
+        <div class="trust-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          All Reviews Verified
+        </div>
+        <div class="trust-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          100% Genuine Clients
+        </div>
+        <div class="trust-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          On-Time Guarantee
+        </div>
+      </div>
+    </div>
+
+    <!-- Review Filters -->
+    <div class="reviews__filters reveal delay-1" id="reviews-filters" role="group" aria-label="Filter reviews by industry">
+      <button class="filter-btn active" data-filter="all" id="rev-filter-all">All Reviews</button>
+      <button class="filter-btn" data-filter="office" id="rev-filter-office">Offices</button>
+      <button class="filter-btn" data-filter="restaurant" id="rev-filter-restaurant">Restaurants</button>
+      <button class="filter-btn" data-filter="retail" id="rev-filter-retail">Retail</button>
+      <button class="filter-btn" data-filter="healthcare" id="rev-filter-healthcare">Healthcare</button>
+      <button class="filter-btn" data-filter="hospitality" id="rev-filter-hospitality">Hospitality</button>
+      <button class="filter-btn" data-filter="villa" id="rev-filter-villa">Villas</button>
+    </div>
+
+    <!-- Review Cards rendered by reviews.js -->
+    <div class="reviews__grid" id="reviews-grid" role="list" aria-label="Client review cards"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     ABOUT — SECTION 5
+══════════════════════════════════════════════════════════ -->
+<section id="about" class="about section" aria-label="About VKREATE">
+  <div class="container">
+    <div class="about__grid">
+      <div class="about__body">
+        <div class="reveal">
+          <span class="t-overline section__overline">Our Story</span>
+          <h2 class="t-h1" style="margin-top:12px">From Concept<br />to <em style="font-style:italic;color:var(--green-mid)">Accomplishment</em></h2>
+          <div class="divider" style="margin-top:16px;margin-bottom:24px"></div>
+        </div>
+        <p class="about__text reveal delay-1">
+          VKREATE was founded on a single belief: that designed spaces change how people think, feel, and perform. We are not decorators. We are spatial strategists — bringing vision, function, and precision to every brief we accept.
+        </p>
+        <p class="about__text reveal delay-2">
+          Over 12 years and 85+ completed projects, we have designed for some of India's most discerning clients — from tech campuses and fine-dining restaurants to luxury hotels and private residences. Our process is rigorous. Our results are measurable. Our design speaks.
+        </p>
+        <div class="about__values reveal delay-3">
+          <div class="about__value"><span class="about__value-dot"></span>Vision-Led</div>
+          <div class="about__value"><span class="about__value-dot"></span>Functionally Precise</div>
+          <div class="about__value"><span class="about__value-dot"></span>Collaborative</div>
+          <div class="about__value"><span class="about__value-dot"></span>Trend-Forward</div>
+          <div class="about__value"><span class="about__value-dot"></span>Delivery-Committed</div>
+          <div class="about__value"><span class="about__value-dot"></span>Detail-Obsessed</div>
+        </div>
+        <div class="reveal delay-4" style="margin-top:var(--space-lg)">
+          <a href="#contact" class="btn btn-green btn-arrow" id="about-cta">Start a Conversation</a>
+        </div>
+      </div>
+
+      <div class="about__image-wrap reveal-right">
+        <img src="assets/images/project_villa.png" alt="VKREATE interior design showcase — Casa Verde Villa living room" loading="lazy" />
+        <div class="about__image-tag">
+          <div class="about__image-tag-number">85+</div>
+          <div class="about__image-tag-label">Projects Delivered</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     PROCESS — SECTION 5B
+══════════════════════════════════════════════════════════ -->
+<section class="process section--dark" aria-label="Our design process">
+  <div class="container">
+    <div class="section__header section__header--center reveal">
+      <span class="t-overline section__overline">Our Process</span>
+      <h2 class="t-h1" style="color:var(--white)">How We Work</h2>
+      <div class="divider divider--center"></div>
+      <p class="t-body" style="color:rgba(255,255,255,0.55);max-width:480px">Five phases. Zero ambiguity. Every project, every time.</p>
+    </div>
+
+    <div class="process__track" role="list" aria-label="Design process phases">
+      <div class="process__step reveal delay-1" role="listitem">
+        <div class="process__num" aria-hidden="true">01</div>
+        <div>
+          <div class="process__step-title">Discovery</div>
+          <div class="process__step-desc">Understanding your brief, culture, brand, and constraints</div>
+        </div>
+      </div>
+      <div class="process__step reveal delay-2" role="listitem">
+        <div class="process__num" aria-hidden="true">02</div>
+        <div>
+          <div class="process__step-title">Concept</div>
+          <div class="process__step-desc">Spatial strategy, mood, and 3D visualisation</div>
+        </div>
+      </div>
+      <div class="process__step reveal delay-3" role="listitem">
+        <div class="process__num" aria-hidden="true">03</div>
+        <div>
+          <div class="process__step-title">Detailing</div>
+          <div class="process__step-desc">Full drawings, material specs, FF&E selection</div>
+        </div>
+      </div>
+      <div class="process__step reveal delay-4" role="listitem">
+        <div class="process__num" aria-hidden="true">04</div>
+        <div>
+          <div class="process__step-title">Execution</div>
+          <div class="process__step-desc">On-site management and vendor coordination</div>
+        </div>
+      </div>
+      <div class="process__step reveal delay-5" role="listitem">
+        <div class="process__num" aria-hidden="true">05</div>
+        <div>
+          <div class="process__step-title">Handover</div>
+          <div class="process__step-desc">Snagging, styling, photography, and sign-off</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     TEAM — SECTION 5C
+══════════════════════════════════════════════════════════ -->
+<section class="team section" aria-label="Our team">
+  <div class="container">
+    <div class="section__header section__header--center reveal">
+      <span class="t-overline section__overline">The Studio</span>
+      <h2 class="t-h1 section__title">Meet the Team</h2>
+      <div class="divider divider--center"></div>
+    </div>
+    <div class="team__grid" id="team-grid" role="list" aria-label="Team members"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     SERVICES — SECTION 6
+══════════════════════════════════════════════════════════ -->
+<section id="services" class="services section" aria-label="Our services">
+  <div class="container">
+    <div class="section__header section__header--center reveal">
+      <span class="t-overline section__overline">What We Do</span>
+      <h2 class="t-h1 section__title">Our Services</h2>
+      <div class="divider divider--center"></div>
+      <p class="section__desc t-body">Six disciplines. One studio. Consistent excellence.</p>
+    </div>
+    <div class="services__grid" id="services-grid" role="list" aria-label="Service offerings"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     CONTACT & INQUIRY — SECTION 7
+══════════════════════════════════════════════════════════ -->
+<section id="contact" class="contact section" aria-label="Contact VKREATE">
+  <div class="container">
+    <div class="section__header reveal">
+      <span class="t-overline section__overline">Get in Touch</span>
+      <h2 class="t-h1 section__title">Start Your Project</h2>
+      <div class="divider"></div>
+    </div>
+    <div class="contact__grid">
+      <!-- Form -->
+      <div class="reveal">
+        <div class="contact__form-wrap">
+          <h3 class="t-h3" style="margin-bottom:var(--space-xl);color:var(--charcoal)">Tell Us About Your Brief</h3>
+
+          <div id="form-success" class="form-success" role="alert" aria-live="polite">
+            ✓&nbsp; Thank you. We'll be in touch within 24 hours.
+          </div>
+
+          <form id="inquiry-form" novalidate autocomplete="on" aria-label="Project inquiry form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="f-name">Full Name *</label>
+                <input type="text" id="f-name" name="name" placeholder="Your name" required autocomplete="name" />
+              </div>
+              <div class="form-group">
+                <label for="f-email">Email Address *</label>
+                <input type="email" id="f-email" name="email" placeholder="your@email.com" required autocomplete="email" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="f-phone">Phone Number</label>
+                <input type="tel" id="f-phone" name="phone" placeholder="+91 ___________" autocomplete="tel" />
+              </div>
+              <div class="form-group">
+                <label for="f-type">Project Type *</label>
+                <select id="f-type" name="projectType" required>
+                  <option value="" disabled selected>Select type</option>
+                  <option value="office">Office / Commercial</option>
+                  <option value="restaurant">Restaurant / F&B</option>
+                  <option value="retail">Retail / Boutique</option>
+                  <option value="healthcare">Healthcare / Clinic</option>
+                  <option value="hospitality">Hotel / Hospitality</option>
+                  <option value="villa">Residential / Villa</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="f-budget">Approximate Budget</label>
+                <select id="f-budget" name="budget">
+                  <option value="" disabled selected>Select range</option>
+                  <option value="sub25">Under ₹25L</option>
+                  <option value="25-50">₹25L – ₹50L</option>
+                  <option value="50-100">₹50L – ₹1Cr</option>
+                  <option value="1cr+">₹1Cr+</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="f-timeline">Target Timeline</label>
+                <select id="f-timeline" name="timeline">
+                  <option value="" disabled selected>When to start?</option>
+                  <option value="immediate">Immediately</option>
+                  <option value="1-3">1–3 months</option>
+                  <option value="3-6">3–6 months</option>
+                  <option value="flexible">Flexible</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="f-message">Project Brief</label>
+              <textarea id="f-message" name="message" placeholder="Tell us about the space, your vision, and anything that matters to you…" rows="4"></textarea>
+            </div>
+            <button type="submit" class="form-submit" id="form-submit-btn">Send Inquiry →</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Contact Info -->
+      <div class="contact__info reveal-right">
+        <div>
+          <h3 class="contact__info-title">Let's Build<br />Something<br /><em style="font-style:italic;color:var(--green-mid)">Extraordinary</em></h3>
+          <p class="contact__info-body" style="margin-top:var(--space-lg)">
+            Every great space starts with a conversation. Share your brief and we'll respond within 24 hours with initial thoughts and next steps.
+          </p>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:var(--space-md)">
+          <div class="contact__detail">
+            <div class="contact__detail-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.5 10.67 19.79 19.79 0 01.46 2a2 2 0 012-2.18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.62 6.62l1.21-1.21a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="contact__detail-label">Call Us</div>
+              <div>+91 98765 43210</div>
+            </div>
+          </div>
+
+          <div class="contact__detail">
+            <div class="contact__detail-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </div>
+            <div>
+              <div class="contact__detail-label">Email</div>
+              <div>studio@vkreate.in</div>
+            </div>
+          </div>
+
+          <div class="contact__detail">
+            <div class="contact__detail-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+            </div>
+            <div>
+              <div class="contact__detail-label">Studio</div>
+              <div>42 Design District, HSR Layout<br/>Bengaluru, India 560 102</div>
+            </div>
+          </div>
+
+          <div class="contact__detail">
+            <div class="contact__detail-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <div>
+              <div class="contact__detail-label">Studio Hours</div>
+              <div>Mon – Sat, 9:00 AM – 7:00 PM IST</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="contact__detail-label" style="margin-bottom:var(--space-sm)">Follow Our Work</div>
+          <div class="contact__social">
+            <a class="contact__social-link" href="#" aria-label="Instagram" id="social-instagram">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+              </svg>
+            </a>
+            <a class="contact__social-link" href="#" aria-label="LinkedIn" id="social-linkedin">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>
+              </svg>
+            </a>
+            <a class="contact__social-link" href="#" aria-label="Houzz" id="social-houzz">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </a>
+            <a class="contact__social-link" href="#" aria-label="Pinterest" id="social-pinterest">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 01.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     FAQ — SECTION 7B
+══════════════════════════════════════════════════════════ -->
+<section class="faq section" aria-label="Frequently asked questions">
+  <div class="container">
+    <div class="section__header section__header--center reveal">
+      <span class="t-overline section__overline">Common Questions</span>
+      <h2 class="t-h1 section__title">FAQ</h2>
+      <div class="divider divider--center"></div>
+    </div>
+    <div class="faq__list" id="faq-list" role="list" aria-label="FAQ items"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════════════════ -->
+<footer class="footer" role="contentinfo" aria-label="Site footer">
+  <div class="container">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <div class="footer__logo">VKREATE</div>
+        <div class="footer__tagline">Where Design Speaks</div>
+        <p class="footer__brand-desc">
+          A premium commercial interior design studio transforming spaces across India. From concept to accomplishment — we design environments that perform.
+        </p>
+      </div>
+      <div>
+        <div class="footer__col-title">Navigate</div>
+        <ul class="footer__links" role="list">
+          <li><a class="footer__link" href="#portfolio">Portfolio</a></li>
+          <li><a class="footer__link" href="#reviews">Reviews</a></li>
+          <li><a class="footer__link" href="#about">About</a></li>
+          <li><a class="footer__link" href="#services">Services</a></li>
+          <li><a class="footer__link" href="#contact">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer__col-title">Industries</div>
+        <ul class="footer__links" role="list">
+          <li><span class="footer__link">Corporate Offices</span></li>
+          <li><span class="footer__link">Restaurants & Bars</span></li>
+          <li><span class="footer__link">Retail & Jewellery</span></li>
+          <li><span class="footer__link">Hotels & Resorts</span></li>
+          <li><span class="footer__link">Healthcare Clinics</span></li>
+          <li><span class="footer__link">Luxury Villas</span></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer__col-title">Contact</div>
+        <ul class="footer__links" role="list">
+          <li><span class="footer__link">studio@vkreate.in</span></li>
+          <li><span class="footer__link">+91 98765 43210</span></li>
+          <li><span class="footer__link">HSR Layout, Bengaluru</span></li>
+          <li style="margin-top:var(--space-md)">
+            <a href="#contact" class="btn btn-green" style="font-size:0.8125rem;padding:10px 20px" id="footer-cta">Start a Project</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span class="footer__copy">© 2025 VKREATE Design Studio. All rights reserved.</span>
+      <div class="footer__legal">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Use</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Scroll to top -->
+<button class="scroll-top" id="scroll-top" aria-label="Scroll to top">↑</button>
+
+<!-- ── Scripts ───────────────────────────────────────────── -->
+<script src="js/data.js"></script>
+<script src="js/portfolio.js"></script>
+<script src="js/reviews.js"></script>
+<script src="js/main.js"></script>
+<script>
+// Render Team
+(function () {
+  const grid = document.getElementById('team-grid');
+  if (!grid) return;
+  VKREATE_DATA.team.forEach((member, i) => {
+    const card = document.createElement('article');
+    card.className = 'team__card reveal';
+    card.style.transitionDelay = `${i * 0.1}s`;
+    card.setAttribute('role', 'listitem');
+    card.innerHTML = `
+      <div class="team__avatar" aria-hidden="true">${member.initial}</div>
+      <div class="team__name">${member.name}</div>
+      <div class="team__role">${member.role}</div>
+      <p class="team__bio">${member.bio}</p>
+    `;
+    grid.appendChild(card);
+  });
+})();
+
+// Render Services
+(function () {
+  const grid = document.getElementById('services-grid');
+  if (!grid) return;
+  VKREATE_DATA.services.forEach((svc, i) => {
+    const card = document.createElement('div');
+    card.className = 'service-card reveal';
+    card.style.transitionDelay = `${(i % 3) * 0.1}s`;
+    card.setAttribute('role', 'listitem');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('aria-expanded', 'false');
+    card.innerHTML = `
+      <div class="service-card__icon" aria-hidden="true">${svc.icon}</div>
+      <div class="service-card__title">${svc.title}</div>
+      <div class="service-card__subtitle">${svc.subtitle}</div>
+      <p class="service-card__desc">${svc.description}</p>
+      <div class="service-card__toggle">
+        <a href="project.html?id=${svc.projectLink}" class="service-card__link" onclick="event.stopPropagation()">
+          See this in action →
+        </a>
+        <div class="service-card__toggle-icon" aria-hidden="true">+</div>
+      </div>
+      <div class="service-card__details" aria-hidden="true">
+        <ul class="service-card__features">
+          ${svc.features.map(f => `<li class="service-card__feature">${f}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') card.click();
+    });
+    card.addEventListener('click', () => {
+      const isExp = card.classList.contains('expanded');
+      card.setAttribute('aria-expanded', !isExp);
+      const det = card.querySelector('.service-card__details');
+      det.setAttribute('aria-hidden', isExp);
+    });
+    grid.appendChild(card);
+  });
+})();
+
+// Render FAQs
+(function () {
+  const list = document.getElementById('faq-list');
+  if (!list) return;
+  VKREATE_DATA.faqs.forEach((faq, i) => {
+    const item = document.createElement('div');
+    item.className = 'faq__item';
+    item.setAttribute('role', 'listitem');
+    const id = `faq-answer-${i}`;
+    item.innerHTML = `
+      <button class="faq__question" aria-expanded="false" aria-controls="${id}" id="faq-btn-${i}">
+        <span class="faq__question-text">${faq.q}</span>
+        <span class="faq__icon" aria-hidden="true">+</span>
+      </button>
+      <div class="faq__answer" id="${id}" role="region" aria-labelledby="faq-btn-${i}">
+        <div class="faq__answer-inner">${faq.a}</div>
+      </div>
+    `;
+    list.appendChild(item);
+  });
+})();
+</script>
+</body>
+</html>

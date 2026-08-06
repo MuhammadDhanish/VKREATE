@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project — VKREATE Design Studio</title>
+  <meta name="description" content="VKREATE project case study — interior design transformation." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/main.css" />
+
+  <style>
+    /* ── Project Page Specific ─────────────────────────────── */
+    .proj-hero {
+      position: relative;
+      height: 70vh;
+      min-height: 480px;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+      background: var(--charcoal);
+    }
+    .proj-hero__bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      transform: scale(1.04);
+      animation: heroBgZoom 10s ease-out forwards;
+    }
+    .proj-hero__overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(26,36,32,0.92) 0%, rgba(26,36,32,0.35) 60%, transparent 100%);
+    }
+    .proj-hero__content {
+      position: relative;
+      z-index: 2;
+      padding-bottom: var(--space-3xl);
+      width: 100%;
+    }
+    .proj-hero__meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-lg);
+      margin-bottom: var(--space-md);
+      flex-wrap: wrap;
+    }
+    .proj-hero__badge {
+      background: var(--gold);
+      color: var(--charcoal);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: var(--radius-full);
+    }
+    .proj-hero__meta-item {
+      font-size: 0.875rem;
+      color: rgba(255,255,255,0.6);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .proj-hero__title {
+      font-family: var(--font-serif);
+      font-size: clamp(2.5rem, 5vw, 5rem);
+      font-weight: 300;
+      line-height: 1.05;
+      color: var(--white);
+      margin-bottom: var(--space-md);
+    }
+    .proj-hero__tagline {
+      font-size: 1.0625rem;
+      color: rgba(255,255,255,0.65);
+      font-style: italic;
+      font-family: var(--font-serif);
+    }
+
+    /* ── Breadcrumb ─────────────────────────────────────── */
+    .breadcrumb {
+      position: absolute;
+      top: calc(var(--nav-height) + 20px);
+      left: 0; right: 0;
+      z-index: 10;
+    }
+    .breadcrumb__inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8125rem;
+      color: rgba(255,255,255,0.55);
+    }
+    .breadcrumb__link {
+      color: rgba(255,255,255,0.55);
+      transition: color var(--dur-fast);
+    }
+    .breadcrumb__link:hover { color: var(--gold); }
+    .breadcrumb__sep { opacity: 0.4; }
+    .breadcrumb__current { color: rgba(255,255,255,0.85); }
+
+    /* ── Metrics Bar ────────────────────────────────────── */
+    .proj-metrics {
+      background: var(--green-deep);
+      padding: var(--space-xl) 0;
+    }
+    .proj-metrics__row {
+      display: flex;
+      gap: 1px;
+      background: rgba(255,255,255,0.08);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .proj-metrics__item {
+      flex: 1;
+      background: var(--green-deep);
+      padding: var(--space-lg) var(--space-xl);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .proj-metrics__value {
+      font-family: var(--font-serif);
+      font-size: 1.75rem;
+      font-weight: 300;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .proj-metrics__label {
+      font-size: 0.6875rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+    }
+    @media (max-width: 700px) {
+      .proj-metrics__row { flex-direction: column; }
+    }
+
+    /* ── Narrative Blocks ───────────────────────────────── */
+    .proj-body {
+      padding: var(--space-4xl) 0;
+      background: var(--warm-white);
+    }
+    .proj-body__inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--space-2xl);
+    }
+    @media (max-width: 900px) {
+      .proj-body__inner { grid-template-columns: 1fr; gap: var(--space-xl); }
+    }
+    .proj-narrative {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+    .proj-narrative__label {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--gold);
+    }
+    .proj-narrative__label-num {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--gold-faint);
+      border: 1px solid var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+    .proj-narrative__title {
+      font-family: var(--font-serif);
+      font-size: 1.375rem;
+      color: var(--charcoal);
+    }
+    .proj-narrative__text {
+      font-size: 0.9375rem;
+      line-height: 1.8;
+      color: var(--text-muted);
+    }
+
+    /* ── Before/After Slider ────────────────────────────── */
+    .ba-section {
+      background: var(--cream);
+      padding: var(--space-4xl) 0;
+    }
+    .ba-slider {
+      position: relative;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      user-select: none;
+      cursor: col-resize;
+      aspect-ratio: 16/7;
+      max-height: 520px;
+    }
+    .ba-before,
+    .ba-after {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    .ba-after {
+      width: 50%;
+      right: auto;
+    }
+    .ba-before img,
+    .ba-after img {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+    }
+    .ba-label {
+      position: absolute;
+      top: var(--space-md);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+    }
+    .ba-before .ba-label {
+      right: var(--space-md);
+      background: rgba(26,36,32,0.7);
+      color: rgba(255,255,255,0.7);
+    }
+    .ba-after .ba-label {
+      left: var(--space-md);
+      background: var(--gold);
+      color: var(--charcoal);
+    }
+    .ba-handle {
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 50%;
+      width: 3px;
+      background: var(--white);
+      transform: translateX(-50%);
+      z-index: 10;
+      cursor: col-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ba-handle__grip {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--white);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--charcoal);
+      font-size: 1rem;
+      font-weight: 700;
+      user-select: none;
+      gap: 2px;
+    }
+
+    /* ── Testimonial Card ───────────────────────────────── */
+    .proj-testimonial {
+      background: var(--charcoal);
+      padding: var(--space-4xl) 0;
+    }
+    .proj-testimonial__card {
+      max-width: 820px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xl);
+      align-items: center;
+      text-align: center;
+    }
+    .proj-testimonial__quote {
+      font-family: var(--font-serif);
+      font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+      font-weight: 300;
+      line-height: 1.65;
+      color: rgba(255,255,255,0.88);
+      font-style: italic;
+    }
+    .proj-testimonial__quote::before {
+      content: '\201C';
+      color: var(--gold);
+      font-size: 4rem;
+      line-height: 0.5;
+      vertical-align: -1.2rem;
+      margin-right: 4px;
+    }
+    .proj-testimonial__author-name {
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--white);
+    }
+    .proj-testimonial__author-role {
+      font-size: 0.875rem;
+      color: rgba(255,255,255,0.5);
+    }
+    .proj-testimonial__stars {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+    }
+    .proj-testimonial__stars .star { font-size: 1.125rem; }
+
+    /* ── Process Timeline ───────────────────────────────── */
+    .proj-process {
+      padding: var(--space-3xl) 0;
+      background: var(--warm-white);
+    }
+    .proj-process__steps {
+      display: flex;
+      gap: 0;
+      flex-wrap: wrap;
+    }
+    .proj-process__step {
+      flex: 1;
+      min-width: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-lg);
+      text-align: center;
+      position: relative;
+    }
+    .proj-process__step::after {
+      content: '→';
+      position: absolute;
+      right: -8px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+      font-size: 0.875rem;
+    }
+    .proj-process__step:last-child::after { display: none; }
+    .proj-process__dot {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--green-faint);
+      border: 2px solid var(--green-mid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--green-mid);
+    }
+    .proj-process__step.done .proj-process__dot {
+      background: var(--green-mid);
+      color: var(--white);
+    }
+    .proj-process__step-label {
+      font-size: 0.8125rem;
+      color: var(--text-body);
+      font-weight: 500;
+    }
+
+    /* ── Related Projects ───────────────────────────────── */
+    .proj-related {
+      background: var(--cream);
+      padding: var(--space-4xl) 0;
+    }
+    .proj-related__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-lg);
+    }
+    @media (max-width: 700px) {
+      .proj-related__grid { grid-template-columns: 1fr; }
+    }
+    .proj-related__card {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: transform var(--dur-mid), box-shadow var(--dur-mid);
+    }
+    .proj-related__card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-lg);
+    }
+    .proj-related__img {
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      width: 100%;
+    }
+    .proj-related__info {
+      padding: var(--space-md) var(--space-lg);
+      background: var(--white);
+    }
+    .proj-related__title {
+      font-family: var(--font-serif);
+      font-size: 1.125rem;
+      color: var(--charcoal);
+    }
+    .proj-related__label {
+      font-size: 0.8125rem;
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    /* Back button */
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255,255,255,0.65);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color var(--dur-fast);
+      margin-bottom: var(--space-xl);
+    }
+    .back-btn:hover { color: var(--gold); }
+    .back-btn::before { content: '←'; }
+  </style>
+</head>
+<body>
+
+<!-- Preloader -->
+<div id="preloader" class="preloader" aria-label="Loading VKREATE Studio">
+  <div class="preloader__inner">
+    <div class="preloader__video-wrapper">
+      <video class="preloader__video" autoplay muted playsinline id="preloader-video">
+        <source src="LOGO ANIMATION.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <div class="preloader__brand">
+      <span class="preloader__title">VKREATE</span>
+      <span class="preloader__subtitle">Where Design Speaks</span>
+    </div>
+    <div class="preloader__progress-bar">
+      <div class="preloader__progress-fill" id="preloader-progress"></div>
+    </div>
+  </div>
+  <button class="preloader__skip" id="preloader-skip" aria-label="Skip intro">Skip Intro →</button>
+</div>
+
+<!-- Nav (reused) -->
+<nav class="nav scrolled" id="main-nav" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav__inner">
+      <a class="nav__logo" href="index.html" aria-label="VKREATE — Home">
+        <span class="nav__logo-name">VKREATE</span>
+        <span class="nav__logo-tagline">Where Design Speaks</span>
+      </a>
+      <ul class="nav__links" role="list">
+        <li><a class="nav__link" href="index.html#portfolio">Portfolio</a></li>
+        <li><a class="nav__link" href="index.html#reviews">Reviews</a></li>
+        <li><a class="nav__link" href="index.html#about">About</a></li>
+        <li><a class="nav__link" href="index.html#services">Services</a></li>
+        <li><a class="nav__link nav__cta" href="index.html#contact">Start a Project</a></li>
+      </ul>
+      <button class="nav__hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="nav__mobile" id="mobile-nav" role="dialog" aria-label="Mobile menu">
+  <a class="nav__link" href="index.html#portfolio">Portfolio</a>
+  <a class="nav__link" href="index.html#reviews">Reviews</a>
+  <a class="nav__link" href="index.html#about">About</a>
+  <a class="nav__link" href="index.html#services">Services</a>
+  <a class="nav__cta" href="index.html#contact">Start a Project</a>
+</div>
+
+<!-- ── Page content injected by JS ─────────────────────── -->
+<div id="project-root"></div>
+
+<!-- Scroll to top -->
+<button class="scroll-top" id="scroll-top" aria-label="Scroll to top">↑</button>
+
+<!-- Scripts -->
+<script src="js/data.js"></script>
+<script src="js/slider.js"></script>
+<script src="js/main.js"></script>
+<script>
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  const project = VKREATE_DATA.projects.find(p => p.id === id);
+  const root = document.getElementById('project-root');
+
+  if (!project) {
+    root.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;gap:var(--space-lg);text-align:center;">
+        <h1 class="t-h1" style="color:var(--charcoal)">Project Not Found</h1>
+        <p style="color:var(--text-muted)">The project you're looking for doesn't exist.</p>
+        <a href="index.html" class="btn btn-green">← Back to Portfolio</a>
+      </div>`;
+    return;
+  }
+
+  // Update page title and meta
+  document.title = `${project.name} — VKREATE Design Studio`;
+  document.querySelector('meta[name="description"]').setAttribute('content',
+    `${project.name}: ${project.tagline}. A VKREATE interior design project.`
+  );
+
+  // Render star rating
+  function stars(rating) {
+    let h = '';
+    for (let i = 1; i <= 5; i++) {
+      h += `<span class="star" style="${i > rating ? 'opacity:.2' : ''}">★</span>`;
+    }
+    return h;
+  }
+
+  // Build metrics display
+  const metricsMap = {
+    'sqft': ['sq ft', 'Area'],
+    'duration': ['', 'Duration'],
+    'budgetRange': ['', 'Investment'],
+    'rooms': ['', 'Rooms / Zones'],
+    'seatingCapacity': [' seats', 'Seating'],
+    'conversionLift': ['', 'Conversion Lift'],
+    'adrIncrease': ['', 'ADR Increase'],
+    'tripadvisor': ['/5', 'TripAdvisor'],
+    'anxietyReduction': ['', 'Anxiety Reduction'],
+    'bedrooms': [' BR', 'Bedrooms'],
+    'zones': ['', 'Design Zones'],
+    'avgTransactionLift': ['', 'Avg Transaction'],
+    'satisfaction': ['', 'Satisfaction'],
+    'timeline': ['', 'Timeline']
+  };
+  const metricEntries = Object.entries(project.metrics || {}).slice(0, 4);
+  const metricsHTML = metricEntries.map(([k, v]) => {
+    const [suffix, label] = metricsMap[k] || ['', k];
+    return `
+      <div class="proj-metrics__item">
+        <div class="proj-metrics__value">${v}${suffix}</div>
+        <div class="proj-metrics__label">${label}</div>
+      </div>`;
+  }).join('');
+
+  // Related projects (up to 3, excluding current)
+  const related = VKREATE_DATA.projects.filter(p => p.id !== project.id).slice(0, 3);
+  const relatedHTML = related.map(p => `
+    <div class="proj-related__card reveal" onclick="location.href='project.html?id=${p.id}'" role="button" tabindex="0" aria-label="View ${p.name}">
+      <img class="proj-related__img" src="${p.thumbnail}" alt="${p.name}" loading="lazy"/>
+      <div class="proj-related__info">
+        <div class="proj-related__label">${p.industryLabel}</div>
+        <div class="proj-related__title">${p.name}</div>
+      </div>
+    </div>`).join('');
+
+  // Process phases
+  const phasesHTML = (project.processPhases || []).map((ph, i) => `
+    <div class="proj-process__step done reveal" style="transition-delay:${i*0.1}s">
+      <div class="proj-process__dot" aria-hidden="true">${i+1}</div>
+      <div class="proj-process__step-label">${ph}</div>
+    </div>`).join('');
+
+  root.innerHTML = `
+    <!-- Hero -->
+    <section class="proj-hero" aria-label="${project.name} project hero">
+      <div class="breadcrumb">
+        <div class="container">
+          <nav class="breadcrumb__inner" aria-label="Breadcrumb">
+            <a class="breadcrumb__link" href="index.html">Home</a>
+            <span class="breadcrumb__sep" aria-hidden="true">›</span>
+            <a class="breadcrumb__link" href="index.html#portfolio">Portfolio</a>
+            <span class="breadcrumb__sep" aria-hidden="true">›</span>
+            <span class="breadcrumb__current">${project.name}</span>
+          </nav>
+        </div>
+      </div>
+      <div class="proj-hero__bg" style="background-image:url('${project.thumbnail}')" role="img" aria-label="${project.name} interior design"></div>
+      <div class="proj-hero__overlay"></div>
+      <div class="container">
+        <div class="proj-hero__content">
+          <div class="proj-hero__meta">
+            <span class="proj-hero__badge">${project.industryLabel}</span>
+            <span class="proj-hero__meta-item">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              ${project.location}
+            </span>
+            <span class="proj-hero__meta-item">${project.area} · ${project.duration}</span>
+            <span class="proj-hero__meta-item">${project.completionDate}</span>
+          </div>
+          <h1 class="proj-hero__title">${project.name}</h1>
+          <p class="proj-hero__tagline">"${project.tagline}"</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Metrics bar -->
+    <div class="proj-metrics" role="region" aria-label="Project metrics">
+      <div class="container">
+        <div class="proj-metrics__row">${metricsHTML}</div>
+      </div>
+    </div>
+
+    <!-- Challenge → Solution → Result -->
+    <section class="proj-body" aria-label="Project case study">
+      <div class="container">
+        <div class="proj-body__inner">
+          <div class="proj-narrative reveal">
+            <div class="proj-narrative__label">
+              <span class="proj-narrative__label-num" aria-hidden="true">1</span>
+              <span class="t-overline gold-text">The Challenge</span>
+            </div>
+            <h2 class="proj-narrative__title t-h3">The Problem</h2>
+            <p class="proj-narrative__text">${project.challenge}</p>
+          </div>
+          <div class="proj-narrative reveal delay-2">
+            <div class="proj-narrative__label">
+              <span class="proj-narrative__label-num" aria-hidden="true">2</span>
+              <span class="t-overline gold-text">Our Solution</span>
+            </div>
+            <h2 class="proj-narrative__title t-h3">The Design</h2>
+            <p class="proj-narrative__text">${project.solution}</p>
+          </div>
+          <div class="proj-narrative reveal delay-4">
+            <div class="proj-narrative__label">
+              <span class="proj-narrative__label-num" aria-hidden="true">3</span>
+              <span class="t-overline gold-text">The Outcome</span>
+            </div>
+            <h2 class="proj-narrative__title t-h3">The Result</h2>
+            <p class="proj-narrative__text">${project.result}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Before / After Slider -->
+    <section class="ba-section" aria-label="Before and after comparison">
+      <div class="container">
+        <div class="section__header section__header--center reveal" style="margin-bottom:var(--space-2xl)">
+          <span class="t-overline section__overline">Visual Journey</span>
+          <h2 class="t-h2 section__title">Before &amp; After</h2>
+          <div class="divider divider--center"></div>
+          <p class="t-body-sm muted-text">Drag the handle to compare the transformation</p>
+        </div>
+        <div class="ba-slider reveal" role="img" aria-label="Before and after comparison of ${project.name}">
+          <div class="ba-before">
+            <img src="${project.beforeImage}" alt="Before: ${project.name}" loading="lazy" />
+            <span class="ba-label" aria-hidden="true">Before</span>
+          </div>
+          <div class="ba-after">
+            <img src="${project.afterImage}" alt="After: ${project.name}" loading="lazy" />
+            <span class="ba-label" aria-hidden="true">After</span>
+          </div>
+          <div class="ba-handle" role="slider" aria-label="Compare before and after" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+            <div class="ba-handle__grip" aria-hidden="true">‹ ›</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Process Timeline -->
+    <section class="proj-process" aria-label="Project process phases">
+      <div class="container">
+        <div class="section__header section__header--center reveal">
+          <span class="t-overline section__overline">How We Did It</span>
+          <h2 class="t-h2 section__title">Project Phases</h2>
+          <div class="divider divider--center"></div>
+        </div>
+        <div class="proj-process__steps" role="list" aria-label="Completed project phases">
+          ${phasesHTML}
+        </div>
+      </div>
+    </section>
+
+    <!-- Client Testimonial -->
+    <section class="proj-testimonial" aria-label="Client testimonial">
+      <div class="container">
+        <div class="proj-testimonial__card reveal">
+          <div class="proj-testimonial__stars" aria-label="${project.rating} star review">
+            ${stars(project.rating)}
+          </div>
+          <blockquote class="proj-testimonial__quote">${project.testimonial.text}</blockquote>
+          <div>
+            <div class="proj-testimonial__author-name">${project.testimonial.author}</div>
+            <div class="proj-testimonial__author-role">${project.testimonial.role}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Related Projects -->
+    <section class="proj-related" aria-label="Related projects">
+      <div class="container">
+        <div class="section__header reveal">
+          <span class="t-overline section__overline">More Work</span>
+          <h2 class="t-h2 section__title">Related Projects</h2>
+          <div class="divider"></div>
+        </div>
+        <div class="proj-related__grid">${relatedHTML}</div>
+        <div style="text-align:center;margin-top:var(--space-2xl)">
+          <a href="index.html#portfolio" class="btn btn-green btn-arrow" id="back-to-portfolio">View All Projects</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Strip -->
+    <div style="background:var(--charcoal);padding:var(--space-3xl) 0;text-align:center">
+      <div class="container">
+        <p class="t-overline section__overline reveal" style="margin-bottom:var(--space-md)">Ready to Transform Your Space?</p>
+        <h2 class="t-h2 reveal delay-1" style="color:var(--white);margin-bottom:var(--space-xl)">Let's Build Something<br /><em style="font-style:italic;color:var(--gold)">Extraordinary</em></h2>
+        <div class="reveal delay-2">
+          <a href="index.html#contact" class="btn btn-primary" id="proj-cta">Start Your Project</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer" role="contentinfo">
+      <div class="container">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-md);padding-top:var(--space-xl);border-top:1px solid rgba(255,255,255,0.06)">
+          <div>
+            <div class="footer__logo" style="font-size:1.25rem">VKREATE</div>
+            <div class="footer__tagline" style="font-size:0.6875rem">Where Design Speaks</div>
+          </div>
+          <span class="footer__copy">© 2025 VKREATE Design Studio.</span>
+        </div>
+      </div>
+    </footer>
+  `;
+
+  // Trigger scroll reveals for dynamically rendered content
+  setTimeout(() => {
+    const revealEls = root.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+    revealEls.forEach(el => observer.observe(el));
+
+    // Immediately reveal hero-level elements
+    root.querySelectorAll('.proj-hero .reveal, .proj-metrics .reveal').forEach(el => el.classList.add('visible'));
+
+    // Init slider after render
+    if (typeof initSliders === 'function') initSliders();
+    else {
+      // inline slider init
+      const sliders = document.querySelectorAll('.ba-slider');
+      sliders.forEach(slider => {
+        const handle = slider.querySelector('.ba-handle');
+        const afterPane = slider.querySelector('.ba-after');
+        let dragging = false;
+        function setPos(x) {
+          const rect = slider.getBoundingClientRect();
+          let pct = ((x - rect.left) / rect.width) * 100;
+          pct = Math.max(2, Math.min(98, pct));
+          afterPane.style.width = pct + '%';
+          handle.style.left = pct + '%';
+          handle.setAttribute('aria-valuenow', Math.round(pct));
+        }
+        handle.addEventListener('mousedown', e => { dragging = true; e.preventDefault(); });
+        window.addEventListener('mousemove', e => { if (dragging) setPos(e.clientX); });
+        window.addEventListener('mouseup', () => { dragging = false; });
+        handle.addEventListener('touchstart', () => { dragging = true; }, { passive: true });
+        window.addEventListener('touchmove', e => { if (dragging) setPos(e.touches[0].clientX); }, { passive: true });
+        window.addEventListener('touchend', () => { dragging = false; });
+        slider.addEventListener('click', e => { if (e.target !== handle && !handle.contains(e.target)) setPos(e.clientX); });
+        handle.addEventListener('keydown', e => {
+          const rect = slider.getBoundingClientRect();
+          const cur = parseFloat(afterPane.style.width) || 50;
+          if (e.key === 'ArrowLeft') setPos(rect.left + rect.width * ((cur - 5) / 100));
+          if (e.key === 'ArrowRight') setPos(rect.left + rect.width * ((cur + 5) / 100));
+        });
+        setPos(slider.getBoundingClientRect().left + slider.getBoundingClientRect().width * 0.5);
+      });
+    }
+  }, 60);
+})();
+</script>
+</body>
+</html>
