@@ -87,9 +87,8 @@
 
     /* ── Breadcrumb ─────────────────────────────────────── */
     .breadcrumb {
-      position: absolute;
-      top: calc(var(--nav-height) + 20px);
-      left: 0; right: 0;
+      margin-bottom: var(--space-md);
+      position: relative;
       z-index: 10;
     }
     .breadcrumb__inner {
@@ -97,15 +96,16 @@
       align-items: center;
       gap: 8px;
       font-size: 0.8125rem;
-      color: rgba(255,255,255,0.55);
+      color: rgba(255,255,255,0.7);
+      flex-wrap: wrap;
     }
     .breadcrumb__link {
-      color: rgba(255,255,255,0.55);
+      color: rgba(255,255,255,0.7);
       transition: color var(--dur-fast);
     }
     .breadcrumb__link:hover { color: var(--gold); }
     .breadcrumb__sep { opacity: 0.4; }
-    .breadcrumb__current { color: rgba(255,255,255,0.85); }
+    .breadcrumb__current { color: rgba(255,255,255,0.95); font-weight: 500; }
 
     /* ── Metrics Bar ────────────────────────────────────── */
     .proj-metrics {
@@ -428,6 +428,67 @@
     }
     .back-btn:hover { color: var(--gold); }
     .back-btn::before { content: '←'; }
+
+    @media (max-width: 768px) {
+      .proj-hero {
+        min-height: 420px;
+        height: auto;
+        padding-top: calc(var(--nav-height) + 16px);
+        padding-bottom: var(--space-xl);
+      }
+      .breadcrumb {
+        position: relative;
+        top: auto; left: auto; right: auto;
+        margin-bottom: var(--space-md);
+        z-index: 10;
+      }
+      .proj-hero__content {
+        padding-bottom: 0;
+      }
+      .proj-hero__meta {
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .proj-hero__badge {
+        font-size: 0.625rem;
+        padding: 4px 10px;
+      }
+      .proj-hero__meta-item {
+        font-size: 0.75rem;
+      }
+      .proj-hero__title {
+        font-size: clamp(1.75rem, 6vw, 2.75rem);
+        margin-bottom: var(--space-sm);
+      }
+      .proj-hero__tagline {
+        font-size: 0.9375rem;
+      }
+      .proj-metrics__row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .proj-process__steps {
+        flex-direction: column;
+        gap: var(--space-md);
+      }
+      .proj-process__step::after {
+        display: none;
+      }
+      .proj-process__step {
+        flex-direction: row;
+        text-align: left;
+        min-width: auto;
+        padding: var(--space-md);
+      }
+      .ba-slider {
+        aspect-ratio: 4/3;
+      }
+    }
+    @media (max-width: 480px) {
+      .proj-metrics__row {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -570,8 +631,10 @@
   root.innerHTML = `
     <!-- Hero -->
     <section class="proj-hero" aria-label="${project.name} project hero">
-      <div class="breadcrumb">
-        <div class="container">
+      <div class="proj-hero__bg" style="background-image:url('${project.thumbnail}')" role="img" aria-label="${project.name} interior design"></div>
+      <div class="proj-hero__overlay"></div>
+      <div class="container" style="position:relative;z-index:3;width:100%;">
+        <div class="breadcrumb">
           <nav class="breadcrumb__inner" aria-label="Breadcrumb">
             <a class="breadcrumb__link" href="index.html">Home</a>
             <span class="breadcrumb__sep" aria-hidden="true">›</span>
@@ -580,10 +643,6 @@
             <span class="breadcrumb__current">${project.name}</span>
           </nav>
         </div>
-      </div>
-      <div class="proj-hero__bg" style="background-image:url('${project.thumbnail}')" role="img" aria-label="${project.name} interior design"></div>
-      <div class="proj-hero__overlay"></div>
-      <div class="container">
         <div class="proj-hero__content">
           <div class="proj-hero__meta">
             <span class="proj-hero__badge">${project.industryLabel}</span>
@@ -637,6 +696,25 @@
             <h2 class="proj-narrative__title t-h3">The Result</h2>
             <p class="proj-narrative__text">${project.result}</p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Project Full Photo Gallery -->
+    <section class="proj-gallery" aria-label="${project.name} full render gallery" style="padding:var(--space-3xl) 0;background:var(--charcoal,#1a2420)">
+      <div class="container">
+        <div class="section__header section__header--center reveal" style="margin-bottom:var(--space-2xl)">
+          <span class="t-overline section__overline" style="color:var(--gold)">Full Interior Gallery</span>
+          <h2 class="t-h2 section__title" style="color:var(--white)">Design Renders &amp; Spatial Details</h2>
+          <div class="divider divider--center"></div>
+          <p class="t-body-sm muted-text" style="color:rgba(255,255,255,0.7)">Click any image to view high-resolution render</p>
+        </div>
+        <div class="proj-gallery__grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-lg)">
+          ${(project.images || []).map((imgUrl, i) => `
+            <div class="proj-gallery__item reveal" style="border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-lg);aspect-ratio:4/3;background:#0d1310;cursor:pointer;" onclick="window.open('${imgUrl}', '_blank')">
+              <img src="${imgUrl}" alt="${project.name} interior render ${i+1}" style="width:100%;height:100%;object-fit:cover;transition:transform 0.5s ease;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'" loading="lazy"/>
+            </div>
+          `).join('')}
         </div>
       </div>
     </section>
