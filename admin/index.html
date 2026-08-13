@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VKREATE — Admin Panel</title>
+  <meta name="description" content="VKREATE Design Studio admin dashboard — manage projects, reviews, inquiries and analytics.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="css/admin.css">
+  <!-- Chart.js for analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div id="admin-app">
+  <!-- Filled by JS -->
+</div>
+
+<div id="toast-container"></div>
+
+<!-- ── Utilities ──────────────────────────────────────────── -->
+<script>
+const UI = {
+
+  // ── Toast notifications ───────────────────────────────────
+  toast(message, type = 'info') {
+    const tc = document.getElementById('toast-container');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+    el.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ'}</span><span>${message}</span>`;
+    tc.appendChild(el);
+    setTimeout(() => {
+      el.classList.add('out');
+      setTimeout(() => el.remove(), 300);
+    }, 3500);
+  },
+
+  // ── Confirmation modal ────────────────────────────────────
+  confirm(title, message, icon = '❓', onConfirm, danger = false) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal" style="max-width:420px">
+        <div class="modal__body" style="padding:32px 24px;text-align:center">
+          <div class="confirm-icon">${icon}</div>
+          <div class="confirm-title">${title}</div>
+          <p class="confirm-text mt-8">${message}</p>
+        </div>
+        <div class="modal__footer" style="justify-content:center;gap:12px">
+          <button class="btn btn-outline" id="conf-cancel">Cancel</button>
+          <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" id="conf-ok">
+            ${danger ? '🗑️ Delete' : 'Confirm'}
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#conf-cancel').onclick = () => overlay.remove();
+    overlay.querySelector('#conf-ok').onclick = () => { overlay.remove(); onConfirm(); };
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  },
+
+  // ── Modal ─────────────────────────────────────────────────
+  modal(title, body, footer = '', sizeClass = '') {
+    this.closeModal();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'active-modal';
+    overlay.innerHTML = `
+      <div class="modal ${sizeClass}">
+        <div class="modal__header">
+          <h2 class="modal__title">${title}</h2>
+          <button class="modal__close" onclick="UI.closeModal()" aria-label="Close">✕</button>
+        </div>
+        <div class="modal__body">${body}</div>
+        ${footer ? `<div class="modal__footer" style="display:flex;gap:10px">${footer}</div>` : ''}
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) this.closeModal(); });
+    document.addEventListener('keydown', UI._escClose);
+  },
+
+  _escClose(e) { if (e.key === 'Escape') UI.closeModal(); },
+
+  closeModal() {
+    const m = document.getElementById('active-modal');
+    if (m) { m.remove(); document.removeEventListener('keydown', UI._escClose); }
+  },
+
+  // ── Badge ─────────────────────────────────────────────────
+  badge(status) {
+    const map = {
+      published: ['badge-success', 'Published'],
+      draft:     ['badge-gray',    'Draft'],
+      pending:   ['badge-warning', 'Pending'],
+      approved:  ['badge-success', 'Approved'],
+      rejected:  ['badge-danger',  'Rejected'],
+      new:       ['badge-info',    'New'],
+      contacted: ['badge-gold',    'Contacted'],
+      quoted:    ['badge-warning', 'Quoted'],
+      won:       ['badge-success', 'Won'],
+      lost:      ['badge-danger',  'Lost'],
+    };
+    const [cls, label] = map[status] || ['badge-gray', status];
+    return `<span class="badge ${cls}">${label}</span>`;
+  },
+
+  // ── Icons (inline SVG) ────────────────────────────────────
+  icon(name, cls = '') {
+    const icons = {
+      plus:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>`,
+      check:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>`,
+      search:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>`,
+      download: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+      chart:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+      menu:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`,
+    };
+    const svg = icons[name] || '';
+    return `<svg class="${cls}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${svg.replace(/<svg[^>]*>/,'').replace('</svg>','')}</svg>`;
+  },
+
+  // ── Time helpers ──────────────────────────────────────────
+  timeAgo(dateStr) {
+    if (!dateStr) return '—';
+    const diff = Date.now() - new Date(dateStr);
+    const mins  = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days  = Math.floor(diff / 86400000);
+    if (mins < 2)    return 'just now';
+    if (mins < 60)   return `${mins}m ago`;
+    if (hours < 24)  return `${hours}h ago`;
+    if (days < 30)   return `${days}d ago`;
+    return this.dateShort(dateStr);
+  },
+
+  dateShort(dateStr) {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+  },
+
+  // ── CSV Download ──────────────────────────────────────────
+  downloadCSV(rows, filename) {
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    UI.toast('CSV downloaded!', 'success');
+  },
+};
+</script>
+
+<!-- ── Image Storage (IndexedDB) ──────────────────────────── -->
+<script src="js/imagedb.js"></script>
+<!-- ── Data layer ──────────────────────────────────────────── -->
+<script src="js/data.js"></script>
+<!-- ── Feature modules ────────────────────────────────────── -->
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/projects.js"></script>
+<script src="js/reviews.js"></script>
+<script src="js/inquiries.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/settings.js"></script>
+
+<!-- ── App Shell & Router ──────────────────────────────────── -->
+<script>
+const PAGES = {
+  dashboard:    { label: 'Dashboard',  module: Dashboard,  icon: '🏠' },
+  projects:     { label: 'Projects',   module: Projects,   icon: '🏗️' },
+  'projects-add': { label: 'Add Project', module: null,    icon: '' },
+  reviews:      { label: 'Reviews',    module: Reviews,    icon: '⭐' },
+  inquiries:    { label: 'Inquiries',  module: Inquiries,  icon: '📬' },
+  analytics:    { label: 'Analytics',  module: Analytics,  icon: '📊' },
+  settings:     { label: 'Settings',   module: Settings,   icon: '⚙️' },
+};
+
+const NAV_ITEMS = [
+  { group: 'Main' },
+  { page: 'dashboard',  label: 'Dashboard',  icon: dashboardIcon() },
+  { group: 'Content' },
+  { page: 'projects',   label: 'Projects',   icon: projectsIcon() },
+  { page: 'reviews',    label: 'Reviews',    icon: reviewsIcon(),   badge: () => DB.reviews.stats().pending },
+  { page: 'inquiries',  label: 'Inquiries',  icon: inquiriesIcon(), badge: () => DB.inquiries.stats().new },
+  { group: 'Insights' },
+  { page: 'analytics',  label: 'Analytics',  icon: analyticsIcon() },
+  { group: 'System' },
+  { page: 'settings',   label: 'Settings',   icon: settingsIcon() },
+];
+
+function dashboardIcon()  { return `<svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>`; }
+function projectsIcon()   { return `<svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 6l10-4 10 4v2L12 12 2 8V6z"/><path d="M2 12l10 4 10-4"/><path d="M2 18l10 4 10-4"/></svg>`; }
+function reviewsIcon()    { return `<svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`; }
+function inquiriesIcon()  { return `<svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`; }
+function analyticsIcon()  { return `<svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6"  y1="20" x2="6"  y2="14"/></svg>`; }
+function settingsIcon()   { return `<svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>`; }
+
+const App = {
+  _current: 'dashboard',
+
+  init() {
+    DB.seed();
+    if (!DB.auth.session.isValid()) {
+      Auth.renderLogin();
+      return;
+    }
+    this._renderShell();
+    const hash = location.hash.slice(1) || 'dashboard';
+    this.navigate(hash);
+    window.addEventListener('hashchange', () => this.navigate(location.hash.slice(1)));
+  },
+
+  _renderShell() {
+    const session = DB.auth.session.get();
+    const initials = (session?.email || 'Admin').split('@')[0].slice(0,2).toUpperCase();
+
+    document.getElementById('admin-app').innerHTML = `
+      <!-- Mobile overlay -->
+      <div class="sidebar-overlay" id="sb-overlay" onclick="App.closeSidebar()"></div>
+
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar" role="navigation" aria-label="Admin navigation">
+        <div class="sidebar__brand">
+          <div class="sidebar__logo">VKREATE</div>
+          <div class="sidebar__tagline">Design Studio</div>
+          <span class="sidebar__badge">Admin Panel</span>
+        </div>
+
+        <nav class="sidebar__nav">
+          ${NAV_ITEMS.map(item => {
+            if (item.group) return `<div class="sidebar__section-label">${item.group}</div>`;
+            const badge = item.badge ? item.badge() : 0;
+            return `
+              <div class="nav-item" data-page="${item.page}" onclick="App.navigate('${item.page}');App.closeSidebar()">
+                ${item.icon}
+                <span>${item.label}</span>
+                ${badge ? `<span class="nav-item__badge">${badge}</span>` : ''}
+              </div>`;
+          }).join('')}
+        </nav>
+
+        <div class="sidebar__footer">
+          <div class="sidebar__user" onclick="Auth.logout()">
+            <div class="sidebar__avatar">${initials}</div>
+            <div>
+              <div class="sidebar__user-name">${session?.email?.split('@')[0] || 'Admin'}</div>
+              <div class="sidebar__user-role">Studio Admin</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2" style="margin-left:auto;flex-shrink:0"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <div class="main-wrap">
+        <!-- Header -->
+        <header class="header">
+          <div class="header__left">
+            <button class="sidebar-toggle" onclick="App.openSidebar()" aria-label="Open menu">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <nav class="header__breadcrumb" id="header-breadcrumb" aria-label="Breadcrumb">
+              <span>VKREATE</span>
+              <span class="header__breadcrumb-sep">›</span>
+              <span class="header__page" id="header-page">Dashboard</span>
+            </nav>
+          </div>
+          <div class="header__right">
+            <span class="header__time" id="header-time"></span>
+            <button class="header__btn" onclick="App.navigate('reviews')" title="Pending reviews">
+              ⭐
+              ${DB.reviews.stats().pending ? `<span class="header__notif-dot"></span>` : ''}
+            </button>
+            <a class="btn btn-outline btn-sm" href="../index.html" target="_blank" style="text-decoration:none">
+              🌐 Live Site
+            </a>
+          </div>
+        </header>
+
+        <!-- Page content -->
+        <main id="main-content" role="main"></main>
+      </div>
+    `;
+
+    // Live clock
+    const updateTime = () => {
+      const el = document.getElementById('header-time');
+      if (el) el.textContent = new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+    };
+    updateTime();
+    setInterval(updateTime, 30000);
+  },
+
+  navigate(page) {
+    // Normalize
+    if (!page || !PAGES[page]) page = 'dashboard';
+
+    // Special: projects-add opens modal instead of own page
+    if (page === 'projects-add') {
+      this.navigate('projects');
+      setTimeout(() => Projects.openForm(), 100);
+      return;
+    }
+
+    this._current = page;
+    location.hash = page;
+
+    // Update nav active state
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.page === page);
+    });
+
+    // Update breadcrumb
+    const bp = document.getElementById('header-page');
+    if (bp) bp.textContent = PAGES[page]?.label || page;
+
+    // Re-render content
+    const content = document.getElementById('main-content');
+    if (content) content.style.animation = 'none';
+
+    const mod = PAGES[page]?.module;
+    if (mod && typeof mod.render === 'function') {
+      if (content) {
+        content.style.animation = '';
+        void content.offsetWidth; // reflow to restart animation
+      }
+      mod.render();
+    }
+  },
+
+  updateSidebar() {
+    // Refresh badges
+    document.querySelectorAll('.nav-item').forEach(el => {
+      const page = el.dataset.page;
+      const item = NAV_ITEMS.find(n => n.page === page);
+      if (item?.badge) {
+        const cnt = item.badge();
+        let badge = el.querySelector('.nav-item__badge');
+        if (cnt) {
+          if (!badge) { badge = document.createElement('span'); badge.className = 'nav-item__badge'; el.appendChild(badge); }
+          badge.textContent = cnt;
+        } else if (badge) {
+          badge.remove();
+        }
+      }
+    });
+
+    // Refresh notification dot in header
+    const btn = document.querySelector('.header__notif-dot');
+    if (btn) btn.style.display = DB.reviews.stats().pending ? '' : 'none';
+  },
+
+  openSidebar() {
+    document.getElementById('sidebar')?.classList.add('open');
+    document.getElementById('sb-overlay')?.classList.add('show');
+  },
+  closeSidebar() {
+    document.getElementById('sidebar')?.classList.remove('open');
+    document.getElementById('sb-overlay')?.classList.remove('show');
+  },
+};
+
+// ── Boot ────────────────────────────────────────────────────
+App.init();
+</script>
+</body>
+</html>

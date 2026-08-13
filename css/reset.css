@@ -44,7 +44,7 @@
   --shadow-card: 0 4px 20px rgba(30,50,40,0.08);
 
   /* Typography */
-  --font-serif:  'Cormorant Garamond', Georgia, serif;
+  --font-serif:  Arial, Helvetica, sans-serif;
   --font-sans:   'Inter', system-ui, -apple-system, sans-serif;
 
   /* Spacing */

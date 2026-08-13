@@ -90,6 +90,11 @@
   // Initial render
   renderCards(VKREATE_DATA.projects);
 
+  // Re-render when IndexedDB images have been resolved (for admin-uploaded photos)
+  window.addEventListener('vkreate:idb-resolved', () => {
+    renderCards(VKREATE_DATA.projects);
+  });
+
   // Filter behaviour
   filterBtns.forEach(btn => {
     btn.addEventListener('click', () => {

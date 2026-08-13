@@ -123,13 +123,13 @@ const VKREATE_DATA = {
       duration: "2.5 months",
       completionDate: "01/2025",
       rating: 5,
-      thumbnail: "assets/images/project_lilaa_5.png",
+      thumbnail: "assets/images/project_lounge.png",
       images: [
-        "assets/images/project_lilaa_5.png",
-        "assets/images/project_lilaa_4.jpg"
+        "assets/images/project_lounge.png",
+        "assets/images/project_lilaa_5.png"
       ],
-      beforeImage: "assets/images/project_lilaa_4.jpg",
-      afterImage: "assets/images/project_lilaa_5.png",
+      beforeImage: "assets/images/project_lilaa_5.png",
+      afterImage: "assets/images/project_lounge.png",
       tagline: "First impressions crafted with sculptural elegance",
       challenge: "Design an executive reception and waiting lounge that conveys prestige, hospitality, and privacy for high-net-worth corporate visitors.",
       solution: "Sculptural cream armchairs, warm indirect LED ceiling troffers, organic cloud pendant chandeliers, vertical ribbed acoustic timber panels, and a terrazzo pathway guiding visitors to private consultation suites.",
@@ -193,40 +193,64 @@ const VKREATE_DATA = {
 
   services: [
     {
-      id: "commercial",
-      icon: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="14" width="36" height="28" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 14V10a2 2 0 012-2h12a2 2 0 012 2v4" stroke="currentColor" stroke-width="2"/><path d="M24 22v14M17 29h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
-      title: "Commercial & Workspaces",
-      subtitle: "Corporate Suites · Reception Lounges · Offices",
-      description: "We design executive work environments that project prestige and optimize productivity. From VIP waiting lounges to open-plan office transformations.",
-      features: ["Executive lounge design", "Ergonomic space planning", "Acoustic timber walling", "Brand identity integration"],
-      projectLink: "corporate-lounge"
-    },
-    {
-      id: "restaurant",
-      icon: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 6v12c0 3.314 3.134 6 7 6h2c3.866 0 7-2.686 7-6V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M24 24v18M16 42h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M10 6v36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
-      title: "Restaurants & Dining",
-      subtitle: "Malayali Cuisine · Fine Dining · Cafés",
-      description: "Crafting mood-driven dining spaces with illuminated arched niches, warm acoustics, and custom booth seating that maximize guest experience and table turns.",
-      features: ["Multi-zone dining planning", "Acoustic comfort design", "Custom millwork & seating", "Social-media ready ambiance"],
+      id: "interior-design",
+      num: "01",
+      icon: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="8" width="36" height="32" rx="3" stroke="currentColor" stroke-width="2"/><path d="M6 18h36M18 18v22M30 18v22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+      title: "Interior Design",
+      subtitle: "Concept · Spatial Layout · Palette",
+      description: "Conceptual phase defining spatial layout, aesthetic vision, material palette, and functional requirements. Transforms briefs into detailed plans optimized for flow and well-being.",
+      features: ["Spatial Layout", "Aesthetic Vision", "Material Palette", "Ergonomics"],
       projectLink: "lilaa-restaurant"
     },
     {
-      id: "beauty",
-      icon: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="16" stroke="currentColor" stroke-width="2"/><path d="M24 14v10l7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
-      title: "Beauty & Wellness Salons",
-      subtitle: "Luxury Salons · Pedicure Suites · Spas",
-      description: "Designing Instagram-ready self-care sanctuaries with individual vanity pods, oversized LED circular mirrors, botanical murals, and serene drapery.",
-      features: ["Individual vanity pod layout", "Acoustic drapery suites", "Botanical wall curation", "Shadow-free LED mirror lighting"],
+      id: "fitout-contracting",
+      num: "02",
+      icon: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 38V18l14-10 14 10v20a2 2 0 01-2 2H12a2 2 0 01-2-2z" stroke="currentColor" stroke-width="2"/><path d="M18 40V24h12v16" stroke="currentColor" stroke-width="2"/></svg>`,
+      title: "Fit-Out & Contracting",
+      subtitle: "Tendering · On-Site Management · Partitioning",
+      description: "Execution phase where design plans are physically realized. Involves competitive tendering, project scheduling, on-site construction management, and built-in components.",
+      features: ["On-Site Management", "Project Scheduling", "Finishes & Partitioning", "Tendering"],
       projectLink: "luxury-salon"
     },
     {
-      id: "retail",
-      icon: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 12l4-6h24l4 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="6" y="12" width="36" height="30" rx="2" stroke="currentColor" stroke-width="2"/><path d="M30 22a6 6 0 01-12 0" stroke="currentColor" stroke-width="2"/></svg>`,
-      title: "Jewellery & Retail Showrooms",
-      subtitle: "Mall Kiosks · Boutiques · Showrooms",
-      description: "High-impact storefront facades with maroon arched window grids, backlit diamond mirror walls, and precision lighting that elevates merchandise.",
-      features: ["Grand facade architecture", "Diamond mirror feature walls", "Micro-spotlight merchandise illumination", "High footfall conversion design"],
+      id: "design-build",
+      num: "03",
+      icon: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="12" width="32" height="24" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 8l8-4 8 4M24 20v12M16 26h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+      title: "Design + Build",
+      subtitle: "Single Entity · Streamlined · Fast Delivery",
+      description: "Integrated project delivery model where a single entity manages both design and construction. Streamlines communication and ensures faster completion.",
+      features: ["Single-Entity Delivery", "Risk Reduction", "Overlapped Timelines", "Seamless Comms"],
       projectLink: "retail-jewellery"
+    },
+    {
+      id: "brand-integration",
+      num: "04",
+      icon: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="16" stroke="currentColor" stroke-width="2"/><path d="M24 14l3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7z" fill="currentColor"/></svg>`,
+      title: "Brand Integration",
+      subtitle: "Identity · Experiential · Narrative",
+      description: "Strategic step ensuring the physical space acts as a tangible extension of your organization's identity, values, and culture through bespoke touchpoints.",
+      features: ["Brand Identity", "Bespoke Elements", "Experiential Touchpoints", "Culture"],
+      projectLink: "corporate-lounge"
+    },
+    {
+      id: "3d-visualisation",
+      num: "05",
+      icon: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 4L6 14v20l18 10 18-10V14L24 4z" stroke="currentColor" stroke-width="2"/><path d="M24 24L6 14M24 24l18-10M24 24v20" stroke="currentColor" stroke-width="2"/></svg>`,
+      title: "3D Visualisation",
+      subtitle: "Photorealistic · VR Walkthroughs · Renders",
+      description: "Powerful tool generating photorealistic imagery, virtual reality (VR) walkthroughs, and rendered videos allowing stakeholders to approve finishes before construction.",
+      features: ["Photorealistic Renders", "VR Walkthroughs", "Rendered Videos", "Finish Approval"],
+      projectLink: "lilaa-restaurant"
+    },
+    {
+      id: "material-detailing",
+      num: "06",
+      icon: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 8h32v32H8V8z" stroke="currentColor" stroke-width="2"/><path d="M16 8v32M32 8v32M8 16h32M8 32h32" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3"/></svg>`,
+      title: "Material Detailing",
+      subtitle: "Construction Drawings · Joinery · Specs",
+      description: "Technical process of creating precise, highly-detailed construction drawings specifying how materials meet, join, and integrate for longevity and quality.",
+      features: ["Construction Drawings", "Material Joinery", "Technical Compliance", "Bespoke Specs"],
+      projectLink: "luxury-salon"
     }
   ],
 
@@ -252,7 +276,7 @@ const VKREATE_DATA = {
   ],
 
   stats: [
-    { value: "85+", label: "Projects Completed" },
+    { value: "4", label: "Projects Completed" },
     { value: "12+", label: "Years of Excellence" },
     { value: "4.9", label: "Average Rating" },
     { value: "100%", label: "On-Time Delivery" }
@@ -270,3 +294,265 @@ const VKREATE_DATA = {
   ]
 
 };
+
+// ============================================================
+// ImageDB Reader — resolves idb: image references from IndexedDB
+// (same DB used by the admin dashboard)
+// ============================================================
+const ImageDBReader = {
+  _db: null,
+  open() {
+    return new Promise((resolve, reject) => {
+      if (this._db) return resolve(this._db);
+      const req = indexedDB.open('vkreate_images', 1);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('images')) {
+          db.createObjectStore('images', { keyPath: 'id' });
+        }
+      };
+      req.onsuccess  = (e) => { this._db = e.target.result; resolve(this._db); };
+      req.onerror    = (e) => reject(e.target.error);
+    });
+  },
+  async get(key) {
+    try {
+      const db = await this.open();
+      return new Promise((resolve) => {
+        const tx = db.transaction('images', 'readonly');
+        const req = tx.objectStore('images').get(key);
+        req.onsuccess = (e) => resolve(e.target.result?.dataUrl || null);
+        req.onerror   = () => resolve(null);
+      });
+    } catch { return null; }
+  },
+  async resolve(ref) {
+    if (!ref || typeof ref !== 'string') return ref;
+    if (ref.startsWith('idb:')) return (await this.get(ref.slice(4))) || 'assets/images/project_lilaa_1.jpg';
+    return ref;
+  },
+  async resolveProject(proj) {
+    // Replace all idb: refs in a project with real dataURLs
+    const has = (v) => v && typeof v === 'string' && v.startsWith('idb:');
+    if (has(proj.thumbnail))   proj.thumbnail   = await this.resolve(proj.thumbnail);
+    if (has(proj.afterImage))  proj.afterImage   = await this.resolve(proj.afterImage);
+    if (has(proj.beforeImage)) proj.beforeImage  = await this.resolve(proj.beforeImage);
+    if (proj.images) {
+      proj.images = await Promise.all(proj.images.map(img => this.resolve(img)));
+    }
+    return proj;
+  },
+};
+
+// ============================================================
+// Sync Engine — Full-Duplex Admin Dashboard & Website Sync
+// ============================================================
+(function syncEngine() {
+  try {
+    // ── 1. Projects Sync ─────────────────────────────────────
+    const rawProjects = localStorage.getItem('vk_admin_projects');
+    if (rawProjects) {
+      const adminProjects = JSON.parse(rawProjects);
+      let adminProjMap = new Map(adminProjects.map(p => [p.id, p]));
+      let updatedAdminProjects = [...adminProjects];
+      let needsSave = false;
+
+      // Auto-heal any new static projects or stale image paths into localStorage
+      updatedAdminProjects.forEach(ap => {
+        if (ap.id === 'corporate-lounge' && (ap.thumbnail.includes('project_lilaa_5.png') || ap.thumbnail.includes('project_lilaa_4.jpg'))) {
+          ap.thumbnail = '../assets/images/project_lounge.png';
+          ap.images = ['../assets/images/project_lounge.png', '../assets/images/project_office.png'];
+          needsSave = true;
+        }
+      });
+
+      VKREATE_DATA.projects.forEach(sp => {
+        if (!adminProjMap.has(sp.id)) {
+          const newAdminP = {
+            id: sp.id,
+            name: sp.name,
+            industry: sp.industry,
+            industryLabel: sp.industryLabel,
+            location: sp.location,
+            area: sp.area,
+            duration: sp.duration,
+            completionDate: sp.completionDate || '',
+            budgetRange: sp.budgetRange || '',
+            status: 'published',
+            thumbnail: '../' + sp.thumbnail,
+            images: sp.images.map(img => '../' + img),
+            challenge: sp.challenge,
+            solution: sp.solution,
+            result: sp.result,
+            processPhases: sp.processPhases,
+            testimonial: sp.testimonial,
+            metrics: sp.metrics,
+            tags: [sp.industry],
+            views: 500, clicks: 150, leads: 5,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          updatedAdminProjects.push(newAdminP);
+          adminProjMap.set(sp.id, newAdminP);
+          needsSave = true;
+        }
+      });
+
+      if (needsSave) {
+        localStorage.setItem('vk_admin_projects', JSON.stringify(updatedAdminProjects));
+      }
+
+      const finalProjects = [];
+
+      // A. Process built-in static projects
+      VKREATE_DATA.projects.forEach(staticP => {
+        if (adminProjMap.has(staticP.id)) {
+          const adminP = adminProjMap.get(staticP.id);
+          const fixPath = (p) => (p && typeof p === 'string') ? (p.startsWith('data:') || p.startsWith('http') ? p : p.replace(/^\.\.\//, '')) : '';
+          if (adminP.status === 'published') {
+            const adminImgs = (adminP.images && adminP.images.length) ? adminP.images.map(fixPath) : null;
+            const adminThumb = fixPath(adminP.thumbnail) || (adminImgs && adminImgs[0]) || null;
+
+            finalProjects.push({
+              ...staticP,
+              name: adminP.name || staticP.name,
+              industry: adminP.industry || staticP.industry,
+              industryLabel: adminP.industryLabel || staticP.industryLabel,
+              location: adminP.location || staticP.location,
+              area: adminP.area || staticP.area,
+              duration: adminP.duration || staticP.duration,
+              budgetRange: adminP.budgetRange || staticP.budgetRange,
+              thumbnail: adminThumb || staticP.thumbnail,
+              images: adminImgs || staticP.images,
+              beforeImage: (adminImgs && adminImgs[0]) || staticP.beforeImage,
+              afterImage: adminThumb || staticP.afterImage,
+              challenge: adminP.challenge || staticP.challenge,
+              solution: adminP.solution || staticP.solution,
+              result: adminP.result || staticP.result,
+              testimonial: adminP.testimonial?.text ? {
+                author: adminP.testimonial.author || staticP.testimonial.author,
+                role: adminP.testimonial.role || staticP.testimonial.role,
+                text: adminP.testimonial.text || staticP.testimonial.text,
+                rating: adminP.testimonial.rating || 5
+              } : staticP.testimonial
+            });
+          }
+          // If status is 'draft', skip it (unpublishes it from main site!)
+        } else {
+          // If admin hasn't managed it yet, keep static project
+          finalProjects.push(staticP);
+        }
+      });
+
+      // B. Process custom admin-created projects
+      const fixPath = (p) => {
+        if (!p || typeof p !== 'string') return '';
+        if (p.startsWith('data:') || p.startsWith('http://') || p.startsWith('https://')) return p;
+        // Strip leading ../ so paths are relative to main website root
+        return p.replace(/^(\.\.\/)+/, '');
+      };
+      adminProjects.forEach(adminP => {
+        if (adminP.status === 'published' && !VKREATE_DATA.projects.some(sp => sp.id === adminP.id)) {
+          // Find a valid thumbnail — fall back gracefully
+          const rawThumb = adminP.thumbnail || (adminP.images && adminP.images[0]) || '';
+          const thumb = fixPath(rawThumb) || 'assets/images/project_lilaa_1.jpg';
+          const imgs = (adminP.images && adminP.images.length) ? adminP.images.map(fixPath) : [thumb];
+
+          finalProjects.push({
+            id: adminP.id,
+            name: adminP.name || 'Untitled Project',
+            client: adminP.client || adminP.testimonial?.author || 'Client',
+            industry: adminP.industry || 'restaurant',
+            industryLabel: adminP.industryLabel || adminP.industry || 'Commercial',
+            location: adminP.location || 'Kerala, India',
+            area: adminP.area || '2,000 sq ft',
+            budgetRange: adminP.budgetRange || '',
+            duration: adminP.duration || '3 months',
+            completionDate: adminP.completionDate || '',
+            rating: adminP.testimonial?.rating || 5,
+            thumbnail: thumb,
+            images: imgs,
+            beforeImage: fixPath(adminP.beforeImage) || imgs[0],
+            afterImage: fixPath(adminP.afterImage) || thumb,
+            tagline: adminP.tagline || (adminP.solution ? adminP.solution.slice(0, 70) + '...' : 'Designed by VKREATE Studio'),
+            challenge: adminP.challenge || 'Design a high-impact interior tailored to client vision.',
+            solution: adminP.solution || 'Integrated spatial strategy combining ambient lighting, bespoke materials, and ergonomic layouts.',
+            result: adminP.result || 'Delivered on time with 100% client satisfaction.',
+            processPhases: (adminP.processPhases && adminP.processPhases.length) ? adminP.processPhases : ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
+            testimonial: adminP.testimonial?.text ? adminP.testimonial : { author: 'Client', role: 'Owner', text: 'VKREATE delivered a stunning interior transformation.' },
+            metrics: adminP.metrics || { sqft: adminP.area || '2,000', satisfaction: '100%' }
+          });
+        }
+      });
+
+      VKREATE_DATA.projects = finalProjects;
+      if (VKREATE_DATA.stats && VKREATE_DATA.stats[0]) {
+        VKREATE_DATA.stats[0].value = finalProjects.length.toString();
+      }
+    }
+
+    // ── 2. Reviews Sync ──────────────────────────────────────
+    const rawReviews = localStorage.getItem('vk_admin_reviews');
+    if (rawReviews !== null) {
+      const adminReviews = JSON.parse(rawReviews) || [];
+      const approved = adminReviews.filter(r => r.status === 'approved');
+
+      VKREATE_DATA.reviews = approved.map(r => {
+        let industry = 'restaurant';
+        if (r.projectId && VKREATE_DATA.projects) {
+          const proj = VKREATE_DATA.projects.find(p => p.id === r.projectId);
+          if (proj) industry = proj.industry;
+        }
+        const dateFormatted = r.createdAt
+          ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+          : 'Recent';
+
+        return {
+          id: r.id,
+          projectId: r.projectId || 'general',
+          author: r.clientName || r.author || 'Client',
+          role: r.clientRole || r.role || 'Client',
+          industry: industry,
+          rating: r.rating || 5,
+          date: dateFormatted,
+          text: r.reviewText || r.text || '',
+          verified: true
+        };
+      });
+    }
+
+    // ── 3. Studio Settings Sync ──────────────────────────────
+    const rawSettings = localStorage.getItem('vk_admin_settings');
+    if (rawSettings) {
+      const settings = JSON.parse(rawSettings);
+      if (settings.studio) {
+        VKREATE_DATA.studio = settings.studio;
+      }
+    }
+
+  } catch (e) {
+    console.warn('Error in syncEngine:', e);
+  }
+})();
+
+// ============================================================
+// Async IDB Resolution — resolve idb: image refs after page load
+// ============================================================
+(async function resolveIdbImages() {
+  try {
+    const hasIdb = VKREATE_DATA.projects.some(p =>
+      (p.thumbnail || '').startsWith('idb:') ||
+      (p.images || []).some(img => (img || '').startsWith('idb:'))
+    );
+    if (!hasIdb) return; // nothing to resolve
+
+    // Resolve all idb: refs in parallel
+    await Promise.all(VKREATE_DATA.projects.map(p => ImageDBReader.resolveProject(p)));
+
+    // Notify page scripts that images are now resolved
+    window.dispatchEvent(new CustomEvent('vkreate:idb-resolved'));
+  } catch (e) {
+    console.warn('IDB image resolution error:', e);
+  }
+})();
+

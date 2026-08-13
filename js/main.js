@@ -4,35 +4,77 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ── Preloader Handling ────────────────────────────────────
-  const preloader = document.getElementById('preloader');
-  const preloaderVideo = document.getElementById('preloader-video');
-  const preloaderProgress = document.getElementById('preloader-progress');
-  const preloaderSkip = document.getElementById('preloader-skip');
+  // ── Preloader — Logo Animation video (index.html only, once per session) ──
+  const preloader    = document.getElementById('preloader');
+  const progressFill = document.getElementById('preloader-progress');
+  const skipBtn      = document.getElementById('preloader-skip');
+  const video        = document.getElementById('preloader-video');
 
   if (preloader) {
-    let hidden = false;
-    const hidePreloader = () => {
-      if (hidden) return;
-      hidden = true;
-      if (preloaderProgress) preloaderProgress.style.width = '100%';
-      preloader.classList.add('fade-out');
+    // If already seen this session, skip immediately and remove
+    if (sessionStorage.getItem('vkreate_intro_seen')) {
+      preloader.remove();
       document.body.style.overflow = '';
-      setTimeout(() => {
-        if (preloader.parentNode) preloader.parentNode.removeChild(preloader);
-      }, 300);
-    };
+    } else {
+      document.body.style.overflow = 'hidden';
 
-    // Auto dismiss quickly so hero content displays without delay
-    setTimeout(hidePreloader, 100);
+      let dismissed = false;
+      let rafId;
 
-    if (preloaderVideo) {
-      preloaderVideo.addEventListener('ended', hidePreloader);
-      preloaderVideo.addEventListener('error', hidePreloader);
+      const dismiss = () => {
+        if (dismissed) return;
+        dismissed = true;
+        // Mark as seen so it won't show again this session
+        sessionStorage.setItem('vkreate_intro_seen', '1');
+        cancelAnimationFrame(rafId);
+        if (progressFill) progressFill.style.width = '100%';
+        setTimeout(() => {
+          preloader.classList.add('fade-out');
+          document.body.style.overflow = '';
+          setTimeout(() => preloader?.remove(), 900);
+        }, 150);
+      };
+
+      // Sync progress bar to video playback position
+      const tickVideo = () => {
+        if (!video || video.ended || video.paused) return;
+        if (video.duration && video.duration > 0) {
+          const pct = (video.currentTime / video.duration) * 100;
+          if (progressFill) progressFill.style.width = pct + '%';
+        }
+        rafId = requestAnimationFrame(tickVideo);
+      };
+
+      if (video) {
+        video.addEventListener('loadedmetadata', () => {
+          rafId = requestAnimationFrame(tickVideo);
+        });
+        video.addEventListener('ended', dismiss);
+
+        const fallback = setTimeout(dismiss, 8000);
+        video.addEventListener('ended', () => clearTimeout(fallback));
+        skipBtn?.addEventListener('click', () => { clearTimeout(fallback); dismiss(); });
+      } else {
+        // No video — fallback timer
+        const startTime = performance.now();
+        const TOTAL_MS  = 3200;
+        const tick = (now) => {
+          const elapsed = now - startTime;
+          const pct = Math.min((elapsed / TOTAL_MS) * 100, 100);
+          if (progressFill) progressFill.style.width = pct + '%';
+          if (elapsed >= TOTAL_MS) { dismiss(); return; }
+          rafId = requestAnimationFrame(tick);
+        };
+        rafId = requestAnimationFrame(tick);
+        skipBtn?.addEventListener('click', dismiss);
+      }
     }
-
-    preloaderSkip?.addEventListener('click', hidePreloader);
   }
+
+
+
+
+
 
   // ── Scroll Reveal (IntersectionObserver) ──────────────────
   const revealEls = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
@@ -120,14 +162,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ── Services Accordion ────────────────────────────────────
-  document.querySelectorAll('.service-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const isExpanded = card.classList.contains('expanded');
-      document.querySelectorAll('.service-card.expanded').forEach(c => c.classList.remove('expanded'));
-      if (!isExpanded) card.classList.add('expanded');
-    });
-  });
+  // ── Render Services Grid (6 Disciplines 3x2) ──────────────
+  const servicesGrid = document.getElementById('services-grid');
+  if (servicesGrid && window.VKREATE_DATA && VKREATE_DATA.services) {
+    servicesGrid.innerHTML = VKREATE_DATA.services.map((s, idx) => `
+      <article class="service-card reveal card-hover" style="animation-delay:${idx * 70}ms">
+        <div class="service-card__top">
+          <div class="service-card__icon">${s.icon}</div>
+          <span class="service-card__num">${s.num || '0' + (idx + 1)}</span>
+        </div>
+        <h3 class="service-card__title">${s.title}</h3>
+        <div class="service-card__subtitle">${s.subtitle}</div>
+        <p class="service-card__desc">${s.description}</p>
+        <div class="service-card__features">
+          ${(s.features || []).map(f => `<span class="service-chip">${f}</span>`).join('')}
+        </div>
+        <div class="service-card__footer">
+          <a href="#contact" class="service-card__link">
+            <span>See this in action →</span>
+          </a>
+        </div>
+      </article>
+    `).join('');
+  }
 
   // ── Contact Form — WhatsApp Integration ─────────────────────
   const WHATSAPP_NUMBER = '919037161861'; // +91 9037161861
@@ -251,6 +308,35 @@ Looking forward to connecting! 🙏`;
 
       if (!validateForm(fields)) return;
 
+      // Save inquiry to Admin localStorage
+      try {
+        const typeLabel   = PROJECT_TYPE_LABELS[fields.type.value] || fields.type.value;
+        const budgetLabel = BUDGET_LABELS[fields.budget.value]     || 'Not specified';
+        const timeLabel   = TIMELINE_LABELS[fields.timeline.value]   || 'Not specified';
+
+        const newInquiry = {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+          name: fields.name.value.trim(),
+          email: fields.email.value.trim(),
+          phone: fields.phone.value.trim() || '',
+          industry: typeLabel,
+          projectBudget: budgetLabel,
+          timeline: timeLabel,
+          brief: fields.message.value.trim(),
+          status: 'new',
+          notes: '',
+          createdAt: new Date().toISOString(),
+          respondedAt: null
+        };
+
+        const existingRaw = localStorage.getItem('vk_admin_inquiries');
+        let inquiries = existingRaw ? JSON.parse(existingRaw) : [];
+        inquiries.unshift(newInquiry);
+        localStorage.setItem('vk_admin_inquiries', JSON.stringify(inquiries));
+      } catch (err) {
+        console.warn('Could not save inquiry to localStorage:', err);
+      }
+
       // Build URL-encoded WhatsApp message
       const message    = buildWhatsAppMessage(fields);
       const encoded    = encodeURIComponent(message);
@@ -310,6 +396,30 @@ Looking forward to connecting! 🙏`;
   scrollTopBtn?.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
+
+  // ── Live Visitor & Analytics Sync ─────────────────────────
+  (function trackLiveAnalytics() {
+    try {
+      const raw = localStorage.getItem('vk_admin_analytics');
+      let analytics = raw ? JSON.parse(raw) : { days: [] };
+      if (!analytics.days) analytics.days = [];
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      let today = analytics.days.find(d => d.date === todayStr);
+
+      if (!today) {
+        today = { date: todayStr, visitors: 1, pageViews: 1, inquiries: 0 };
+        analytics.days.push(today);
+      } else {
+        today.pageViews = (today.pageViews || 0) + 1;
+        if (!sessionStorage.getItem('vk_visited_today')) {
+          today.visitors = (today.visitors || 0) + 1;
+          sessionStorage.setItem('vk_visited_today', '1');
+        }
+      }
+      localStorage.setItem('vk_admin_analytics', JSON.stringify(analytics));
+    } catch (e) {}
+  })();
 
   // ── Animated stat counters ────────────────────────────────
   const statEls = document.querySelectorAll('.stats__value[data-target]');

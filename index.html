@@ -23,25 +23,30 @@
 <body>
 
 <!-- ══════════════════════════════════════════════════════════
-     PRELOADER / LOADING SCREEN
+     PRELOADER / LOGO ANIMATION  (index.html only)
 ══════════════════════════════════════════════════════════ -->
 <div id="preloader" class="preloader" aria-label="Loading VKREATE Studio">
+
+
   <div class="preloader__inner">
-    <div class="preloader__video-wrapper">
-      <video class="preloader__video" autoplay muted playsinline id="preloader-video">
+    <!-- Logo animation video -->
+    <div class="preloader__video-wrap">
+      <video class="preloader__video" id="preloader-video"
+             autoplay muted playsinline preload="auto">
         <source src="LOGO ANIMATION.mp4" type="video/mp4" />
       </video>
     </div>
-    <div class="preloader__brand">
-      <span class="preloader__title">VKREATE</span>
-      <span class="preloader__subtitle">Where Design Speaks</span>
-    </div>
-    <div class="preloader__progress-bar">
-      <div class="preloader__progress-fill" id="preloader-progress"></div>
-    </div>
   </div>
-  <button class="preloader__skip" id="preloader-skip" aria-label="Skip intro">Skip Intro →</button>
+
+  <!-- Progress bar at bottom -->
+  <div class="preloader__progress-bar">
+    <div class="preloader__progress-fill" id="preloader-progress"></div>
+  </div>
+
+  <button class="preloader__skip" id="preloader-skip" aria-label="Skip intro">Skip →</button>
 </div>
+
+
 
 <!-- ══════════════════════════════════════════════════════════
      NAVIGATION
@@ -82,60 +87,70 @@
      HERO — SECTION 1
 ══════════════════════════════════════════════════════════ -->
 <section id="hero" class="hero" aria-label="Hero section">
-  <div class="hero__video-bg-wrap">
-    <video class="hero__video-bg" autoplay loop muted playsinline poster="assets/images/hero_bg.png">
-      <source src="LOGO ANIMATION.mp4" type="video/mp4" />
-    </video>
+
+  <!-- Static layered background -->
+  <div class="hero__bg-layer"></div>
+  <div class="hero__geo" aria-hidden="true">
+    <!-- Large decorative VK monogram -->
+    <svg class="hero__geo-vk" viewBox="0 0 420 420" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M60 60 L210 340 L360 60" stroke="rgba(201,169,110,0.08)" stroke-width="1.5" fill="none"/>
+      <path d="M210 60 L360 200 M210 200 L360 360" stroke="rgba(201,169,110,0.06)" stroke-width="1" fill="none"/>
+    </svg>
+    <!-- Subtle corner lines -->
+    <span class="hero__geo-line hero__geo-line--tl"></span>
+    <span class="hero__geo-line hero__geo-line--br"></span>
   </div>
-  <div class="hero__overlay"></div>
   <div class="hero__noise"></div>
 
-  <div class="container">
-    <div class="hero__container">
-      <div class="hero__content">
-        <div class="hero__overline t-overline">
-          <span class="hero__overline-line" aria-hidden="true"></span>
-          Commercial Interior Design Studio
-        </div>
+  <div class="container hero__center-wrap">
+    <!-- Overline -->
+    <div class="hero__overline t-overline">
+      <span class="hero__overline-line" aria-hidden="true"></span>
+      Commercial Interior Design Studio
+      <span class="hero__overline-line" aria-hidden="true"></span>
+    </div>
 
-        <h1 class="hero__title">
-          Where<br /><em>Design</em><br />Speaks
-        </h1>
+    <!-- Main Title -->
+    <h1 class="hero__title">
+      Where <em>Design</em> Speaks
+    </h1>
 
-        <p class="hero__subtitle">
-          We architect the experience within spaces — transforming offices, restaurants, hotels, and homes into environments that perform as beautifully as they look.
-        </p>
+    <!-- Gold divider -->
+    <div class="hero__divider" aria-hidden="true"></div>
 
-        <div class="hero__actions">
-          <a href="#portfolio" class="btn btn-primary btn-arrow" id="hero-view-work">View Our Work</a>
-          <a href="#contact" class="btn btn-outline" id="hero-start-project">Start a Project</a>
-        </div>
+    <!-- Subtitle -->
+    <p class="hero__subtitle">
+      We architect the experience within spaces — transforming offices,<br class="hero__br"/>
+      restaurants, hotels, and homes into environments that perform<br class="hero__br"/>
+      as beautifully as they look.
+    </p>
+
+    <!-- CTA Buttons -->
+    <div class="hero__actions">
+      <a href="#portfolio" class="btn btn-primary btn-arrow" id="hero-view-work">View Our Work</a>
+      <a href="#contact" class="btn btn-outline" id="hero-start-project">Start a Project</a>
+    </div>
+
+    <!-- Stats strip inline -->
+    <div class="hero__stats" aria-label="Studio highlights">
+      <div class="hero__stat reveal delay-3">
+        <span class="hero__stat-value">4</span>
+        <span class="hero__stat-label">Projects</span>
       </div>
-
-      <div class="hero__video-card">
-        <video class="hero__video-player" autoplay loop muted playsinline>
-          <source src="LOGO ANIMATION.mp4" type="video/mp4" />
-        </video>
-        <div class="hero__video-badge">
-          <span class="hero__video-badge-dot"></span> Studio Motion Mark
-        </div>
+      <span class="hero__stat-sep" aria-hidden="true"></span>
+      <div class="hero__stat">
+        <span class="hero__stat-value">12+</span>
+        <span class="hero__stat-label">Years</span>
+      </div>
+      <span class="hero__stat-sep" aria-hidden="true"></span>
+      <div class="hero__stat">
+        <span class="hero__stat-value">4.9★</span>
+        <span class="hero__stat-label">Rating</span>
       </div>
     </div>
   </div>
 
-  <!-- Rotating badge -->
-  <div class="hero__badge" aria-hidden="true">
-    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <path id="circle-text" d="M 50,50 m -37,0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" />
-      </defs>
-      <text font-size="8.5" fill="#C9A96E" font-family="Inter, sans-serif" font-weight="600" letter-spacing="2">
-        <textPath href="#circle-text">VISION · FUNCTION · PRECISION · CRAFT · </textPath>
-      </text>
-      <circle cx="50" cy="50" r="6" fill="#C9A96E" />
-    </svg>
-  </div>
-
+  <!-- Scroll cue -->
   <div class="hero__scroll" aria-hidden="true">
     <span>Scroll</span>
     <div class="hero__scroll-arrow"></div>
@@ -149,7 +164,7 @@
   <div class="container">
     <div class="stats__grid">
       <div class="stats__item reveal">
-        <span class="stats__value" data-target="85+" aria-label="85 plus projects">85+</span>
+        <span class="stats__value" data-target="4" aria-label="4 completed projects">4</span>
         <span class="stats__label">Projects Completed</span>
       </div>
       <div class="stats__item reveal delay-1">
@@ -187,6 +202,9 @@
       <button class="filter-btn" data-filter="beauty" id="filter-beauty">Beauty &amp; Wellness</button>
       <button class="filter-btn" data-filter="retail" id="filter-retail">Retail &amp; Jewellery</button>
       <button class="filter-btn" data-filter="office" id="filter-office">Offices &amp; Lounges</button>
+      <button class="filter-btn" data-filter="villa" id="filter-villa">Villas &amp; Residential</button>
+      <button class="filter-btn" data-filter="healthcare" id="filter-healthcare">Healthcare &amp; Clinics</button>
+      <button class="filter-btn" data-filter="hospitality" id="filter-hospitality">Hotels &amp; Resorts</button>
     </div>
 
     <!-- Cards rendered by portfolio.js -->
@@ -237,6 +255,11 @@
           On-Time Guarantee
         </div>
       </div>
+      <div style="margin-left:auto;display:flex;align-items:center;">
+        <button type="button" class="btn btn-green" id="open-review-modal-btn" style="font-size:0.875rem;padding:12px 22px;white-space:nowrap;">
+          ✍️ Write a Review
+        </button>
+      </div>
     </div>
 
     <!-- Review Filters -->
@@ -269,7 +292,7 @@
           VKREATE was founded on a single belief: that designed spaces change how people think, feel, and perform. We are not decorators. We are spatial strategists — bringing vision, function, and precision to every brief we accept.
         </p>
         <p class="about__text reveal delay-2">
-          Over 12 years and 85+ completed projects, we have designed for some of India's most discerning clients — from tech campuses and fine-dining restaurants to luxury hotels and private residences. Our process is rigorous. Our results are measurable. Our design speaks.
+          Over 12 years of architectural expertise and 4 flagship completed projects, we have designed for some of Kerala's most discerning clients — from high-traffic commercial dining and luxury wellness sanctuaries to flagship retail showrooms and executive corporate lounges. Our process is rigorous. Our results are measurable. Our design speaks.
         </p>
         <div class="about__values reveal delay-3">
           <div class="about__value"><span class="about__value-dot"></span>Vision-Led</div>
@@ -285,9 +308,9 @@
       </div>
 
       <div class="about__image-wrap reveal-right">
-        <img src="assets/images/project_villa.png" alt="VKREATE interior design showcase — Casa Verde Villa living room" loading="lazy" />
+        <img src="assets/images/project_lilaa_1.jpg" alt="VKREATE interior design showcase — Lilaa Malayali Dining Interior" loading="lazy" />
         <div class="about__image-tag">
-          <div class="about__image-tag-number">85+</div>
+          <div class="about__image-tag-number">4</div>
           <div class="about__image-tag-label">Projects Delivered</div>
         </div>
       </div>
@@ -348,16 +371,40 @@
 </section>
 
 <!-- ══════════════════════════════════════════════════════════
-     TEAM — SECTION 5C
+     OUR TEAM — SECTION 5C
 ══════════════════════════════════════════════════════════ -->
-<section class="team section" aria-label="Our team">
+<section class="our-team-banner section" id="team" aria-label="Our team">
   <div class="container">
-    <div class="section__header section__header--center reveal">
-      <span class="t-overline section__overline">The Studio</span>
-      <h2 class="t-h1 section__title">Meet the Team</h2>
-      <div class="divider divider--center"></div>
+    <div class="our-team-card reveal">
+      <div class="our-team-card__badge">
+        <span class="our-team-card__badge-dot"></span>
+        The Studio
+      </div>
+      <h2 class="our-team-card__title">OUR TEAM</h2>
+      <h3 class="our-team-card__subtitle">Together, we turn ideas into impactful spaces.</h3>
+      <div class="our-team-card__divider"></div>
+      <p class="our-team-card__text">
+        Our team is a blend of creative thinkers, skilled professionals, and passionate innovators who work together to bring ideas to life. With diverse expertise across architecture, design, and strategy, we collaborate closely to deliver meaningful and impactful results. Every member contributes unique strengths, ensuring every project reflects precision, creativity, and purpose. Together, we turn visions into lasting realities.
+      </p>
+      <div class="our-team-card__pillars">
+        <div class="team-pillar">
+          <span class="team-pillar__icon">✦</span>
+          <span>Architecture & Detailing</span>
+        </div>
+        <div class="team-pillar">
+          <span class="team-pillar__icon">✦</span>
+          <span>Spatial Strategy</span>
+        </div>
+        <div class="team-pillar">
+          <span class="team-pillar__icon">✦</span>
+          <span>Turnkey Execution</span>
+        </div>
+        <div class="team-pillar">
+          <span class="team-pillar__icon">✦</span>
+          <span>Material Innovation</span>
+        </div>
+      </div>
     </div>
-    <div class="team__grid" id="team-grid" role="list" aria-label="Team members"></div>
   </div>
 </section>
 
@@ -370,7 +417,7 @@
       <span class="t-overline section__overline">What We Do</span>
       <h2 class="t-h1 section__title">Our Services</h2>
       <div class="divider divider--center"></div>
-      <p class="section__desc t-body">Six disciplines. One studio. Consistent excellence.</p>
+      <p class="section__desc t-body">Design. Create. Handover — Complete Interior Design & Activity Management solutions from concept to completion.</p>
     </div>
     <div class="services__grid" id="services-grid" role="list" aria-label="Service offerings"></div>
   </div>
@@ -624,6 +671,7 @@
           <li><a class="footer__link" href="#about">About</a></li>
           <li><a class="footer__link" href="#services">Services</a></li>
           <li><a class="footer__link" href="#contact">Contact</a></li>
+          <li><a class="footer__link" href="admin/index.html" target="_blank" style="color:var(--gold)">🔒 Admin Portal</a></li>
         </ul>
       </div>
       <div>
@@ -654,13 +702,97 @@
       <div class="footer__legal">
         <a href="#">Privacy Policy</a>
         <a href="#">Terms of Use</a>
+        <a href="admin/index.html" target="_blank" style="color:var(--gold);margin-left:12px;font-weight:500;">🔒 Admin Panel</a>
       </div>
     </div>
   </div>
 </footer>
 
-<!-- Scroll to top -->
-<button class="scroll-top" id="scroll-top" aria-label="Scroll to top">↑</button>
+<!-- ══════════════════════════════════════════════════════════
+     CLIENT REVIEW SUBMISSION MODAL
+══════════════════════════════════════════════════════════ -->
+<div class="review-modal-overlay" id="pub-review-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-review-title">
+  <div class="review-modal">
+    <div class="review-modal__header">
+      <div>
+        <h3 class="review-modal__title" id="modal-review-title">Share Your Experience</h3>
+        <div class="review-modal__subtitle">Tell us about working with VKREATE Design Studio</div>
+      </div>
+      <button type="button" class="review-modal__close" id="close-pub-review-btn" aria-label="Close modal">✕</button>
+    </div>
+    
+    <div class="review-modal__body" id="pub-review-modal-body">
+      <form id="pub-review-form">
+        <!-- Interactive Star Selector -->
+        <div class="star-rating-wrap">
+          <div class="star-rating-stars" id="pub-star-selector">
+            <span class="star-rating-star" data-rating="1">★</span>
+            <span class="star-rating-star" data-rating="2">★</span>
+            <span class="star-rating-star" data-rating="3">★</span>
+            <span class="star-rating-star" data-rating="4">★</span>
+            <span class="star-rating-star" data-rating="5">★</span>
+          </div>
+          <div class="star-rating-label" id="pub-star-label">Click stars to rate (1–5)</div>
+          <input type="hidden" id="pub-rating-val" name="rating" value="0" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pub-client-name">Your Name *</label>
+            <input type="text" id="pub-client-name" name="clientName" placeholder="e.g. Unnikrishnan Nair" required />
+          </div>
+          <div class="form-group">
+            <label for="pub-client-role">Role / Title *</label>
+            <input type="text" id="pub-client-role" name="clientRole" placeholder="e.g. Founder, Lilaa Hospitality" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pub-client-email">Email Address *</label>
+            <input type="email" id="pub-client-email" name="clientEmail" placeholder="your@company.com" required />
+          </div>
+          <div class="form-group">
+            <label for="pub-project-sel">Select Project (Optional)</label>
+            <select id="pub-project-sel" name="projectId">
+              <option value="general">General Studio Review</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:12px;">
+          <label for="pub-review-text">Your Review *</label>
+          <textarea id="pub-review-text" name="reviewText" rows="4" placeholder="Tell us about the design quality, spatial flow, timeline, and overall experience..." required minlength="50" maxlength="500"></textarea>
+          <div class="char-count-wrap" id="pub-char-count">
+            <span>Minimum 50 characters required</span>
+            <span id="pub-char-num">0 / 500</span>
+          </div>
+        </div>
+
+        <!-- Optional Photo Upload -->
+        <div class="form-group" style="margin-top:16px;">
+          <label>Optional Photo (Profile or Project)</label>
+          <div class="photo-drop-zone" id="pub-photo-zone">
+            <div class="photo-drop-zone__text">📸 Click to upload a photo (JPG, PNG)</div>
+            <input type="file" id="pub-photo-input" accept="image/*" style="display:none" />
+          </div>
+          <div id="pub-photo-preview" style="margin-top:8px;display:none;"></div>
+        </div>
+
+        <div class="form-group" style="margin-top:16px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:0.8125rem;cursor:pointer;">
+            <input type="checkbox" id="pub-subscribe" name="subscribe" checked />
+            Keep me updated on VKREATE project showcases
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-green w-full" id="pub-review-submit-btn" style="margin-top:20px;width:100%;justify-content:center;">
+          Submit Review for Approval
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
 
 <!-- ── Scripts ───────────────────────────────────────────── -->
 <script src="js/data.js"></script>
@@ -750,5 +882,7 @@
   });
 })();
 </script>
+
 </body>
 </html>
+
