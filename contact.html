@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start Your Project — VKREATE Design Studio</title>
+  <meta name="description" content="Submit your interior design project brief to VKREATE Design Studio. Quick 3-step inquiry." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/main.css" />
+
+  <style>
+    body {
+      background: var(--cream);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .inquiry-nav {
+      background: var(--charcoal);
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .inquiry-nav__inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .inquiry-nav__back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--gold);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .inquiry-nav__back:hover {
+      color: #fff;
+    }
+    .inquiry-hero {
+      text-align: center;
+      padding: 40px 0 20px 0;
+    }
+    .inquiry-hero__title {
+      font-family: var(--font-serif);
+      font-size: 2.25rem;
+      color: var(--charcoal);
+      font-weight: 500;
+    }
+    .inquiry-hero__sub {
+      font-size: 0.9375rem;
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 8px auto 0 auto;
+      line-height: 1.6;
+    }
+    .inquiry-card {
+      background: var(--white);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+      padding: 32px;
+      max-width: 680px;
+      margin: 0 auto 50px auto;
+    }
+    @media (max-width: 640px) {
+      .inquiry-hero__title { font-size: 1.75rem; }
+      .inquiry-card {
+        padding: 20px 16px;
+        border-radius: var(--radius-lg);
+        margin-bottom: 30px;
+      }
+    }
+    .step-progress {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      position: relative;
+    }
+    .step-progress::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 30px;
+      right: 30px;
+      height: 2px;
+      background: var(--border);
+      z-index: 1;
+    }
+    .step-progress__bar {
+      position: absolute;
+      top: 14px;
+      left: 30px;
+      height: 2px;
+      background: var(--green-mid);
+      z-index: 2;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+    .step-item {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      background: var(--white);
+      padding: 0 6px;
+    }
+    .step-circle {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--warm-white);
+      border: 2px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    .step-item.active .step-circle {
+      background: var(--green-mid);
+      border-color: var(--green-mid);
+      color: #fff;
+    }
+    .step-item.completed .step-circle {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: var(--charcoal);
+    }
+    .step-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .step-item.active .step-label {
+      color: var(--green-mid);
+    }
+    .form-pane {
+      display: none;
+    }
+    .form-pane.active {
+      display: block;
+      animation: fadeIn 0.3s ease forwards;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .pane-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 24px;
+      gap: 12px;
+    }
+    .btn-pane-next {
+      background: var(--green-mid);
+      color: #fff;
+      border: none;
+      padding: 14px 24px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 0.9375rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+    .btn-pane-next:hover { background: var(--green-deep); }
+    .btn-pane-prev {
+      background: transparent;
+      border: 1px solid var(--border-strong);
+      color: var(--text-body);
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .direct-actions-box {
+      background: var(--warm-white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 12px;
+    }
+    @media (max-width: 500px) {
+      .direct-actions-box { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="inquiry-nav">
+    <div class="container">
+      <div class="inquiry-nav__inner">
+        <a href="index.html" class="inquiry-nav__back">
+          ← Back to Website
+        </a>
+        <a href="index.html#hero" class="nav__logo" style="text-decoration:none;">
+          <img src="assets/images/logo.png" alt="VKREATE Logo" style="height:36px;width:auto;filter:brightness(0) invert(1);" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
+          <span style="display:none;color:#fff;font-family:var(--font-serif);font-size:1.25rem;">VKREATE</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Header -->
+  <header class="inquiry-hero container">
+    <span class="t-overline section__overline">Interactive Brief</span>
+    <h1 class="inquiry-hero__title">Start Your Project</h1>
+    <p class="inquiry-hero__sub">Complete our 3-step brief to receive an expert spatial assessment and estimate within 24 hours.</p>
+  </header>
+
+  <!-- Main Inquiry Form Card -->
+  <main class="container">
+    <div class="inquiry-card">
+
+      <!-- Direct Call / WhatsApp Quick Buttons -->
+      <div class="direct-actions-box">
+        <a href="tel:+919876543210" class="quick-contact-btn" style="margin:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.5 10.67 19.79 19.79 0 01.46 2a2 2 0 012-2.18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.62 6.62l1.21-1.21a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          <span>Call Studio</span>
+        </a>
+        <a href="https://wa.me/919876543210" target="_blank" rel="noopener" class="quick-contact-btn whatsapp" style="margin:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.848L0 24l6.335-1.521A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.819 9.819 0 01-5.003-1.371l-.359-.214-3.72.894.938-3.617-.234-.374A9.818 9.818 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182c5.43 0 9.818 4.388 9.818 9.818 0 5.431-4.388 9.818-9.818 9.818z"/></svg>
+          <span>Chat on WhatsApp</span>
+        </a>
+      </div>
+
+      <!-- Step Progress Header -->
+      <div class="step-progress">
+        <div class="step-progress__bar" id="progress-bar"></div>
+        <div class="step-item active" id="step-node-1">
+          <div class="step-circle">1</div>
+          <div class="step-label">Contact</div>
+        </div>
+        <div class="step-item" id="step-node-2">
+          <div class="step-circle">2</div>
+          <div class="step-label">Scope</div>
+        </div>
+        <div class="step-item" id="step-node-3">
+          <div class="step-circle">3</div>
+          <div class="step-label">Vision</div>
+        </div>
+      </div>
+
+      <!-- Multi-Pane Form -->
+      <form id="project-brief-form" onsubmit="handleBriefSubmit(event)">
+
+        <!-- PANE 1 -->
+        <div class="form-pane active" id="pane-1">
+          <h3 class="t-h3 mb-16" style="color:var(--charcoal)">Step 1: Your Info</h3>
+          <div class="form-group">
+            <label for="p1-name">Full Name *</label>
+            <input type="text" id="p1-name" required placeholder="e.g. Rahul Nair" autocomplete="name" />
+          </div>
+          <div class="form-group">
+            <label for="p1-email">Email Address *</label>
+            <input type="email" id="p1-email" required placeholder="rahul@example.com" autocomplete="email" />
+          </div>
+          <div class="form-group mb-0">
+            <label for="p1-phone">Phone / WhatsApp Number *</label>
+            <input type="tel" id="p1-phone" required placeholder="+91 98765 00000" autocomplete="tel" />
+          </div>
+          <div class="pane-nav">
+            <button type="button" class="btn-pane-next" onclick="goToPane(2)">Next: Space Details →</button>
+          </div>
+        </div>
+
+        <!-- PANE 2 -->
+        <div class="form-pane" id="pane-2">
+          <h3 class="t-h3 mb-16" style="color:var(--charcoal)">Step 2: Project Scope</h3>
+          <div class="form-group">
+            <label for="p2-type">Project Type *</label>
+            <select id="p2-type" required>
+              <option value="" disabled selected>Select category...</option>
+              <option value="Office / Commercial">Office / Commercial Space</option>
+              <option value="Restaurant / Café">Restaurant / Café / F&B</option>
+              <option value="Retail Showroom">Retail / Showroom / Boutique</option>
+              <option value="Healthcare / Clinic">Healthcare / Clinic / Spa</option>
+              <option value="Hotel / Hospitality">Hotel / Resort / Lounge</option>
+              <option value="Residential Villa">Residential / Luxury Villa</option>
+              <option value="Other">Other Unique Space</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="p2-budget">Budget Range</label>
+            <select id="p2-budget">
+              <option value="" disabled selected>Select budget...</option>
+              <option value="Under ₹25 Lakhs">Under ₹25 Lakhs</option>
+              <option value="₹25L – ₹50 Lakhs">₹25L – ₹50 Lakhs</option>
+              <option value="₹50L – ₹1 Crore">₹50L – ₹1 Crore</option>
+              <option value="₹1 Crore +">₹1 Crore +</option>
+            </select>
+          </div>
+          <div class="form-group mb-0">
+            <label for="p2-timeline">Target Timeline</label>
+            <select id="p2-timeline">
+              <option value="" disabled selected>When do you plan to start?</option>
+              <option value="Immediately">Immediately (Within 2 weeks)</option>
+              <option value="1 – 3 months">1 – 3 months</option>
+              <option value="3 – 6 months">3 – 6 months</option>
+              <option value="Flexible">Just planning / Flexible</option>
+            </select>
+          </div>
+          <div class="pane-nav">
+            <button type="button" class="btn-pane-prev" onclick="goToPane(1)">← Back</button>
+            <button type="button" class="btn-pane-next" onclick="goToPane(3)">Next: Project Vision →</button>
+          </div>
+        </div>
+
+        <!-- PANE 3 -->
+        <div class="form-pane" id="pane-3">
+          <h3 class="t-h3 mb-16" style="color:var(--charcoal)">Step 3: Tell Us Your Vision</h3>
+          <div class="form-group">
+            <label for="p3-location">City / Location</label>
+            <input type="text" id="p3-location" placeholder="e.g. Calicut, Kochi, Bengaluru" />
+          </div>
+          <div class="form-group mb-0">
+            <label for="p3-brief">Project Brief & Details *</label>
+            <textarea id="p3-brief" rows="4" required placeholder="Describe your space size (sq ft), desired ambiance, timeline requirements, or specific design goals..."></textarea>
+          </div>
+          <div class="pane-nav">
+            <button type="button" class="btn-pane-prev" onclick="goToPane(2)">← Back</button>
+            <button type="submit" class="form-submit" style="margin:0;width:auto;flex:1;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.848L0 24l6.335-1.521A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.819 9.819 0 01-5.003-1.371l-.359-.214-3.72.894.938-3.617-.234-.374A9.818 9.818 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182c5.43 0 9.818 4.388 9.818 9.818 0 5.431-4.388 9.818-9.818 9.818z"/></svg>
+              Submit via WhatsApp
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </main>
+
+  <script>
+    let currentPane = 1;
+
+    function goToPane(paneNum) {
+      // Validate current pane inputs before proceeding
+      if (paneNum > currentPane) {
+        if (currentPane === 1) {
+          const name = document.getElementById('p1-name').value.trim();
+          const email = document.getElementById('p1-email').value.trim();
+          const phone = document.getElementById('p1-phone').value.trim();
+          if (!name || !email || !phone) {
+            alert('Please complete your name, email, and phone number.');
+            return;
+          }
+        } else if (currentPane === 2) {
+          const type = document.getElementById('p2-type').value;
+          if (!type) {
+            alert('Please select a project type.');
+            return;
+          }
+        }
+      }
+
+      currentPane = paneNum;
+
+      // Update panes visibility
+      document.querySelectorAll('.form-pane').forEach((p, idx) => {
+        p.classList.toggle('active', idx + 1 === paneNum);
+      });
+
+      // Update progress bar & nodes
+      const bar = document.getElementById('progress-bar');
+      if (paneNum === 1) bar.style.width = '0%';
+      if (paneNum === 2) bar.style.width = '50%';
+      if (paneNum === 3) bar.style.width = '100%';
+
+      for (let i = 1; i <= 3; i++) {
+        const node = document.getElementById(`step-node-${i}`);
+        if (node) {
+          node.classList.toggle('active', i === paneNum);
+          node.classList.toggle('completed', i < paneNum);
+        }
+      }
+    }
+
+    function handleBriefSubmit(e) {
+      e.preventDefault();
+      const name     = document.getElementById('p1-name').value.trim();
+      const email    = document.getElementById('p1-email').value.trim();
+      const phone    = document.getElementById('p1-phone').value.trim();
+      const type     = document.getElementById('p2-type').value || 'Not specified';
+      const budget   = document.getElementById('p2-budget').value || 'Flexible';
+      const timeline = document.getElementById('p2-timeline').value || 'Flexible';
+      const location = document.getElementById('p3-location').value.trim() || 'Not specified';
+      const brief    = document.getElementById('p3-brief').value.trim();
+
+      const text = `*New Project Brief — VKREATE Studio*%0A%0A` +
+        `*Name:* ${encodeURIComponent(name)}%0A` +
+        `*Email:* ${encodeURIComponent(email)}%0A` +
+        `*Phone:* ${encodeURIComponent(phone)}%0A` +
+        `*Type:* ${encodeURIComponent(type)}%0A` +
+        `*Budget:* ${encodeURIComponent(budget)}%0A` +
+        `*Timeline:* ${encodeURIComponent(timeline)}%0A` +
+        `*Location:* ${encodeURIComponent(location)}%0A` +
+        `*Brief:* ${encodeURIComponent(brief)}`;
+
+      // Open WhatsApp with formatted brief
+      window.open(`https://wa.me/919876543210?text=${text}`, '_blank');
+    }
+  </script>
+</body>
+</html>
