@@ -46,8 +46,34 @@ const GithubSync = {
         sha = fileData.sha;
       }
 
-      // 2. Build project data — all admin projects (published + draft metadata)
-      const allProjects = DB.projects.all();
+      // 2. Build project data — resolve all idb: keys to real base64 image URLs
+      const allProjects = JSON.parse(JSON.stringify(DB.projects.all()));
+      if (typeof ImageDB !== 'undefined') {
+        for (const p of allProjects) {
+          if (p.thumbnail && p.thumbnail.startsWith('idb:')) {
+            const realUrl = await ImageDB.get(p.thumbnail.slice(4));
+            if (realUrl) p.thumbnail = realUrl;
+          }
+          if (p.beforeImage && p.beforeImage.startsWith('idb:')) {
+            const realUrl = await ImageDB.get(p.beforeImage.slice(4));
+            if (realUrl) p.beforeImage = realUrl;
+          }
+          if (p.afterImage && p.afterImage.startsWith('idb:')) {
+            const realUrl = await ImageDB.get(p.afterImage.slice(4));
+            if (realUrl) p.afterImage = realUrl;
+          }
+          if (p.images && Array.isArray(p.images)) {
+            p.images = await Promise.all(p.images.map(async (img) => {
+              if (img && typeof img === 'string' && img.startsWith('idb:')) {
+                const realUrl = await ImageDB.get(img.slice(4));
+                return realUrl || img;
+              }
+              return img;
+            }));
+          }
+        }
+      }
+
       const jsonContent = JSON.stringify(allProjects, null, 2);
 
       // 3. Base64 encode (GitHub API requires it)
