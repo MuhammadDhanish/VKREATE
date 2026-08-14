@@ -1,5 +1,20 @@
 [
   {
+    "id": "inq-mstfu8bg",
+    "name": "Muhammad Nadhish kk",
+    "email": "dhanish@gmail.com",
+    "phone": "62382745577",
+    "industry": "Other",
+    "projectType": "Other",
+    "projectBudget": "Under ₹25 Lakhs",
+    "timeline": "Flexible",
+    "location": "Kozhikode",
+    "brief": "I need build a cafe",
+    "status": "new",
+    "notes": "",
+    "createdAt": "2026-08-14T21:07:19.324Z"
+  },
+  {
     "id": "inq-salon-1",
     "name": "Priya Nair",
     "email": "priya@wingswellness.com",
