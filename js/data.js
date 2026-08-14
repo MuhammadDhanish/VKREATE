@@ -633,8 +633,36 @@ function applyAdminProjects(adminProjects) {
   }
 })();
 
+function applyAdminReviews(adminReviews) {
+  if (!Array.isArray(adminReviews)) return;
+  const approved = adminReviews.filter(r => r.status === 'approved');
+
+  VKREATE_DATA.reviews = approved.map(r => {
+    let industry = 'restaurant';
+    if (r.projectId && VKREATE_DATA.projects) {
+      const proj = VKREATE_DATA.projects.find(p => p.id === r.projectId);
+      if (proj) industry = proj.industry;
+    }
+    const dateFormatted = r.createdAt
+      ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      : 'Recent';
+
+    return {
+      id: r.id,
+      projectId: r.projectId || 'general',
+      author: r.clientName || r.author || 'Client',
+      role: r.clientRole || r.role || 'Client',
+      industry: industry,
+      rating: r.rating || 5,
+      date: dateFormatted,
+      text: r.reviewText || r.text || '',
+      verified: true
+    };
+  });
+}
+
 // ============================================================
-// Remote Admin-Projects Sync (from GitHub JSON file)
+// Remote Admin-Projects & Reviews Sync (from GitHub JSON files)
 // ============================================================
 (async function loadRemoteAdminProjects() {
   try {
@@ -644,6 +672,20 @@ function applyAdminProjects(adminProjects) {
     if (Array.isArray(remoteProjects) && remoteProjects.length > 0) {
       applyAdminProjects(remoteProjects);
       window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
+    }
+  } catch (e) {
+    // optional fail silently
+  }
+})();
+
+(async function loadRemoteAdminReviews() {
+  try {
+    const res = await fetch('js/admin-reviews.json?t=' + Date.now());
+    if (!res.ok) return;
+    const remoteReviews = await res.json();
+    if (Array.isArray(remoteReviews) && remoteReviews.length > 0) {
+      applyAdminReviews(remoteReviews);
+      window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
     }
   } catch (e) {
     // optional fail silently

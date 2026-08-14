@@ -75,6 +75,18 @@
       renderReviews(VKREATE_DATA.reviews);
     }
 
+    // Dynamic re-render listeners for approved reviews
+    window.addEventListener('vkreate:reviews-updated', () => {
+      if (window.VKREATE_DATA && VKREATE_DATA.reviews) {
+        renderReviews(VKREATE_DATA.reviews);
+      }
+    });
+    window.addEventListener('storage', () => {
+      if (window.VKREATE_DATA && VKREATE_DATA.reviews) {
+        renderReviews(VKREATE_DATA.reviews);
+      }
+    });
+
     // Filter
     filterBtns.forEach(btn => {
       btn.addEventListener('click', () => {

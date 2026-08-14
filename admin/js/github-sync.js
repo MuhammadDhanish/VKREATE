@@ -17,11 +17,11 @@ const GithubSync = {
   setToken(token)  { localStorage.setItem(this.TOKEN_KEY, token.trim()); },
   hasToken()       { return !!this.getToken(); },
 
-  // ── Push published projects to GitHub ─────────────────────
+  // ── Push published projects & reviews to GitHub ─────────────────────
   async push() {
     const token = this.getToken();
     if (!token) {
-      UI.toast('⚠️ No GitHub token set. Go to Settings → Deploy Settings to add your token.', 'warning');
+      UI.toast('⚠️ No GitHub token set.', 'warning');
       return false;
     }
 
@@ -34,22 +34,35 @@ const GithubSync = {
         'Content-Type': 'application/json',
       };
 
-      // 1. Get current file SHA (needed for update)
-      const getRes = await fetch(
-        `https://api.github.com/repos/${this.REPO}/contents/${this.FILE_PATH}`,
-        { headers }
-      );
+      // 1. Push projects
+      await this._pushFile('js/admin-projects.json', DB.projects.all(), headers);
 
+      // 2. Push reviews
+      await this._pushFile('js/admin-reviews.json', DB.reviews.all(), headers);
+
+      UI.toast('✅ Live site deploying… changes visible in ~60s', 'success');
+      return true;
+    } catch (e) {
+      console.error('GithubSync.push error:', e);
+      UI.toast('❌ Deploy failed — check internet connection.', 'error');
+      return false;
+    }
+  },
+
+  async _pushFile(filePath, rawData, headers) {
+    try {
       let sha = null;
+      const getRes = await fetch(`https://api.github.com/repos/${this.REPO}/contents/${filePath}`, { headers });
       if (getRes.ok) {
         const fileData = await getRes.json();
         sha = fileData.sha;
       }
 
-      // 2. Build project data — resolve all idb: keys to real base64 image URLs
-      const allProjects = JSON.parse(JSON.stringify(DB.projects.all()));
-      if (typeof ImageDB !== 'undefined') {
-        for (const p of allProjects) {
+      let processedData = JSON.parse(JSON.stringify(rawData));
+
+      // Resolve idb: image keys for projects
+      if (filePath.includes('projects') && typeof ImageDB !== 'undefined') {
+        for (const p of processedData) {
           if (p.thumbnail && p.thumbnail.startsWith('idb:')) {
             const realUrl = await ImageDB.get(p.thumbnail.slice(4));
             if (realUrl) p.thumbnail = realUrl;
@@ -74,41 +87,21 @@ const GithubSync = {
         }
       }
 
-      const jsonContent = JSON.stringify(allProjects, null, 2);
-
-      // 3. Base64 encode (GitHub API requires it)
+      const jsonContent = JSON.stringify(processedData, null, 2);
       const encoded = btoa(unescape(encodeURIComponent(jsonContent)));
-
-      // 4. Commit the file
       const body = {
-        message: `Admin: update projects [${new Date().toISOString()}]`,
+        message: `Admin sync: ${filePath} [${new Date().toISOString()}]`,
         content: encoded,
         ...(sha ? { sha } : {}),
       };
 
-      const putRes = await fetch(
-        `https://api.github.com/repos/${this.REPO}/contents/${this.FILE_PATH}`,
-        { method: 'PUT', headers, body: JSON.stringify(body) }
-      );
-
-      if (putRes.ok) {
-        UI.toast('✅ Live site deploying… changes visible in ~60s', 'success');
-        return true;
-      } else {
-        const err = await putRes.json();
-        console.error('GitHub sync error:', err);
-        if (putRes.status === 401) {
-          UI.toast('❌ GitHub token invalid or expired. Go to Settings → Deploy Settings.', 'error');
-        } else {
-          UI.toast(`❌ Deploy failed: ${err.message || putRes.status}`, 'error');
-        }
-        return false;
-      }
-
+      await fetch(`https://api.github.com/repos/${this.REPO}/contents/${filePath}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(body)
+      });
     } catch (e) {
-      console.error('GithubSync.push error:', e);
-      UI.toast('❌ Deploy failed — check internet connection.', 'error');
-      return false;
+      console.warn(`Error pushing ${filePath}:`, e);
     }
   },
 };

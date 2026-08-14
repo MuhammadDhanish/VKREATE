@@ -1,0 +1,18 @@
+[
+  {
+    "id": "r-salon-1",
+    "projectId": "luxury-salon",
+    "projectName": "Wings Luxury Beauty & Wellness",
+    "clientName": "Priya Nair",
+    "clientRole": "Client, Wings Wellness",
+    "rating": 5,
+    "reviewText": "Walking into Wings feels like entering a world-class spa. The design is immaculate.",
+    "shortTestimonial": "Immaculate design — every detail creates a premium experience.",
+    "status": "approved",
+    "studioResponse": "Thank you Priya!",
+    "tags": ["quality"],
+    "visibility": "public",
+    "createdAt": "2025-07-10T16:00:00Z",
+    "approvedAt": "2025-07-11T09:00:00Z"
+  }
+]

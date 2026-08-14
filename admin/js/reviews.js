@@ -144,6 +144,7 @@ const Reviews = {
     UI.toast('Review approved and published!', 'success');
     this._refresh();
     App.updateSidebar();
+    if (window.GithubSync) GithubSync.push();
   },
 
   reject(id) {
@@ -151,6 +152,7 @@ const Reviews = {
     UI.toast('Review rejected.', 'info');
     this._refresh();
     App.updateSidebar();
+    if (window.GithubSync) GithubSync.push();
   },
 
   delete(id) {
@@ -160,6 +162,7 @@ const Reviews = {
       UI.toast('Review deleted.', 'success');
       this._refresh();
       App.updateSidebar();
+      if (window.GithubSync) GithubSync.push();
     }, true);
   },
 
@@ -189,6 +192,7 @@ const Reviews = {
     UI.toast('Response saved!', 'success');
     UI.closeModal();
     this._refresh();
+    if (window.GithubSync) GithubSync.push();
   },
 
   openEdit(id) {
