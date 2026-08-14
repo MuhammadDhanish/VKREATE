@@ -425,3 +425,23 @@ const DB = {
     },
   },
 };
+
+(async function loadRemoteAdminInquiries() {
+  try {
+    const res = await fetch('../js/admin-inquiries.json?t=' + Date.now());
+    if (!res.ok) return;
+    const remoteInquiries = await res.json();
+    if (Array.isArray(remoteInquiries) && remoteInquiries.length > 0) {
+      const local = DB.inquiries.all();
+      const mergedMap = new Map();
+      remoteInquiries.forEach(i => mergedMap.set(i.id, i));
+      local.forEach(i => {
+        if (!mergedMap.has(i.id)) mergedMap.set(i.id, i);
+      });
+      const merged = Array.from(mergedMap.values());
+      DB._set(DB.KEYS.inquiries, merged);
+    }
+  } catch (e) {
+    // fail silently
+  }
+})();

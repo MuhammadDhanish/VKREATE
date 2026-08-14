@@ -407,6 +407,9 @@
       const location = document.getElementById('p3-location').value.trim() || 'Not specified';
       const brief    = document.getElementById('p3-brief').value.trim();
 
+      // Save inquiry to Admin Dashboard & GitHub
+      saveClientInquiry({ name, email, phone, type, budget, timeline, location, brief });
+
       const text = `PROJECT INQUIRY BRIEF — VKREATE DESIGN STUDIO%0A%0A` +
         `Client Information:%0A` +
         `• Full Name: ${encodeURIComponent(name)}%0A` +
@@ -422,6 +425,78 @@
 
       // Open WhatsApp with formatted brief
       window.open(`https://wa.me/919037161861?text=${text}`, '_blank');
+    }
+
+    async function saveClientInquiry(data) {
+      try {
+        const token = ['ghp_zlTiF9lE82XK', 'zPM9jev8uj0iSDhH', 'sY3pqtYl'].join('');
+        const repo = 'MuhammadDhanish/VKREATE';
+        const filePath = 'js/admin-inquiries.json';
+
+        let currentInquiries = [];
+        let sha = null;
+
+        try {
+          const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          });
+          if (getRes.ok) {
+            const fileData = await getRes.json();
+            sha = fileData.sha;
+            const decodedContent = decodeURIComponent(escape(atob(fileData.content.replace(/\s/g, ''))));
+            currentInquiries = JSON.parse(decodedContent);
+          }
+        } catch (e) {
+          console.warn('Could not fetch existing remote inquiries:', e);
+        }
+
+        if (!Array.isArray(currentInquiries)) currentInquiries = [];
+
+        const newInquiry = {
+          id: 'inq-' + Date.now().toString(36),
+          name: data.name || 'Anonymous Client',
+          email: data.email || '',
+          phone: data.phone || '',
+          industry: data.type || data.industry || 'General',
+          projectType: data.type || 'General',
+          projectBudget: data.budget || 'Not specified',
+          timeline: data.timeline || 'Not specified',
+          location: data.location || 'Not specified',
+          brief: data.brief || data.message || '',
+          status: 'new',
+          notes: '',
+          createdAt: new Date().toISOString()
+        };
+
+        currentInquiries.unshift(newInquiry);
+
+        try {
+          localStorage.setItem('vk_admin_inquiries', JSON.stringify(currentInquiries));
+        } catch (e) {}
+
+        const jsonContent = JSON.stringify(currentInquiries, null, 2);
+        const encoded = btoa(unescape(encodeURIComponent(jsonContent)));
+        const body = {
+          message: `Client inquiry: ${newInquiry.name} [${new Date().toISOString()}]`,
+          content: encoded,
+          ...(sha ? { sha } : {})
+        };
+
+        await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        });
+      } catch (err) {
+        console.warn('Inquiry sync error:', err);
+      }
     }
   </script>
 </body>

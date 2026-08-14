@@ -226,6 +226,7 @@ const Inquiries = {
     UI.closeModal();
     this._refresh();
     App.updateSidebar();
+    if (window.GithubSync) GithubSync.push();
   },
 
   exportCSV() {
