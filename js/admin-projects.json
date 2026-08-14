@@ -1,48 +1,7 @@
 [
   {
-    "id": "mstbj3l1i9b5c",
+    "id": "mstc9k96o82vy",
     "name": "dhanish",
-    "industry": "beauty",
-    "industryLabel": "Beauty & Wellness",
-    "location": "",
-    "area": "",
-    "duration": "",
-    "budgetRange": "",
-    "challenge": "",
-    "solution": "",
-    "result": "",
-    "status": "published",
-    "images": [
-      "idb:proj_mstbj3l1i9b5c_0",
-      "idb:proj_mstbj3l1i9b5c_1",
-      "idb:proj_mstbj3l1i9b5c_2",
-      "idb:proj_mstbj3l1i9b5c_3"
-    ],
-    "thumbnail": "idb:proj_mstbj3l1i9b5c_0",
-    "afterImage": "idb:proj_mstbj3l1i9b5c_0",
-    "beforeImage": "idb:proj_mstbj3l1i9b5c_1",
-    "testimonial": {
-      "author": "",
-      "role": "",
-      "text": "",
-      "rating": 5
-    },
-    "processPhases": [
-      "Discovery",
-      "Concept",
-      "Detailing",
-      "Execution",
-      "Handover"
-    ],
-    "views": 1,
-    "clicks": 0,
-    "leads": 0,
-    "createdAt": "2026-08-14T19:06:41.521Z",
-    "updatedAt": "2026-08-14T19:26:07.660Z"
-  },
-  {
-    "id": "mstb4zwzqwvye",
-    "name": "Muhammed Dhanish",
     "industry": "restaurant",
     "industryLabel": "Restaurants & Cafes",
     "location": "",
@@ -54,13 +13,14 @@
     "result": "",
     "status": "published",
     "images": [
-      "idb:proj_mstb4zwzqwvye_0",
-      "idb:proj_mstb4zwzqwvye_1",
-      "idb:proj_mstb4zwzqwvye_2"
+      "idb:proj_mstc9k96o82vy_0",
+      "idb:proj_mstc9k96o82vy_1",
+      "idb:proj_mstc9k96o82vy_2",
+      "idb:proj_mstc9k96o82vy_3"
     ],
-    "thumbnail": "idb:proj_mstb4zwzqwvye_0",
-    "afterImage": "idb:proj_mstb4zwzqwvye_0",
-    "beforeImage": "idb:proj_mstb4zwzqwvye_1",
+    "thumbnail": "idb:proj_mstc9k96o82vy_0",
+    "afterImage": "idb:proj_mstc9k96o82vy_0",
+    "beforeImage": "idb:proj_mstc9k96o82vy_1",
     "testimonial": {
       "author": "",
       "role": "",
@@ -77,8 +37,8 @@
     "views": 0,
     "clicks": 0,
     "leads": 0,
-    "createdAt": "2026-08-14T18:55:43.578Z",
-    "updatedAt": "2026-08-14T19:09:55.752Z"
+    "createdAt": "2026-08-14T19:27:16.177Z",
+    "updatedAt": "2026-08-14T19:27:30.769Z"
   },
   {
     "id": "lilaa-restaurant",
