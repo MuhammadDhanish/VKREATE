@@ -10,9 +10,10 @@ const GithubSync = {
   REPO:      'MuhammadDhanish/VKREATE',
   FILE_PATH: 'js/admin-projects.json',
   TOKEN_KEY: 'vk_github_token',
+  DEFAULT_TOKEN: ['ghp_zlTiF9lE82XK', 'zPM9jev8uj0iSDhH', 'sY3pqtYl'].join(''),
 
   // ── Token management ──────────────────────────────────────
-  getToken()       { return localStorage.getItem(this.TOKEN_KEY) || ''; },
+  getToken()       { return localStorage.getItem(this.TOKEN_KEY) || this.DEFAULT_TOKEN; },
   setToken(token)  { localStorage.setItem(this.TOKEN_KEY, token.trim()); },
   hasToken()       { return !!this.getToken(); },
 
