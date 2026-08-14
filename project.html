@@ -644,6 +644,9 @@
     render(project);
   }
 
+  window.addEventListener('vkreate:projects-updated', loadAndRender);
+  window.addEventListener('storage', loadAndRender);
+
   function render(project) {
     // Increment view count in admin data
   try {

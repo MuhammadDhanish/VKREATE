@@ -95,6 +95,12 @@
   window.addEventListener('vkreate:idb-resolved', () => {
     renderCards(VKREATE_DATA.projects);
   });
+  window.addEventListener('vkreate:projects-updated', () => {
+    renderCards(VKREATE_DATA.projects);
+  });
+  window.addEventListener('storage', () => {
+    renderCards(VKREATE_DATA.projects);
+  });
 
   // Filter behaviour
   filterBtns.forEach(btn => {
