@@ -244,7 +244,7 @@ const DB = {
         email: 'hello@vkreate.com',
         phone: '+91 98765 00000',
         address: 'Calicut, Kerala, India',
-        instagram: 'https://instagram.com/vkreate',
+        instagram: 'https://www.instagram.com/vkreate_interior_architecture',
         facebook: '',
         website: 'https://vkreate.com',
       },

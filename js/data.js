@@ -408,7 +408,7 @@ const ImageDBReader = {
       VKREATE_DATA.projects.forEach(staticP => {
         if (adminProjMap.has(staticP.id)) {
           const adminP = adminProjMap.get(staticP.id);
-          const fixPath = (p) => (p && typeof p === 'string') ? (p.startsWith('data:') || p.startsWith('http') ? p : p.replace(/^\.\.\//, '')) : '';
+          const fixPath = (p) => (p && typeof p === 'string') ? (p.startsWith('data:') || p.startsWith('http') || p.startsWith('idb:') ? p : p.replace(/^\.\.\//, '')) : '';
           if (adminP.status === 'published') {
             const adminImgs = (adminP.images && adminP.images.length) ? adminP.images.map(fixPath) : null;
             const adminThumb = fixPath(adminP.thumbnail) || (adminImgs && adminImgs[0]) || null;
@@ -447,7 +447,7 @@ const ImageDBReader = {
       // B. Process custom admin-created projects
       const fixPath = (p) => {
         if (!p || typeof p !== 'string') return '';
-        if (p.startsWith('data:') || p.startsWith('http://') || p.startsWith('https://')) return p;
+        if (p.startsWith('data:') || p.startsWith('http://') || p.startsWith('https://') || p.startsWith('idb:')) return p;
         // Strip leading ../ so paths are relative to main website root
         return p.replace(/^(\.\.\/)+/, '');
       };

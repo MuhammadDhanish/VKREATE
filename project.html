@@ -620,8 +620,10 @@
 (function () {
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id');
-  const project = VKREATE_DATA.projects.find(p => p.id === id);
   const root = document.getElementById('project-root');
+
+  async function loadAndRender() {
+    let project = VKREATE_DATA.projects.find(p => p.id === id);
 
   if (!project) {
     root.innerHTML = `
@@ -631,9 +633,19 @@
         <a href="index.html" class="btn btn-green">â† Back to Portfolio</a>
       </div>`;
     return;
+    }
+
+    if (typeof ImageDBReader !== 'undefined') {
+      await ImageDBReader.resolveProject(project);
+      const relatedProjects = VKREATE_DATA.projects.filter(p => p.id !== project.id);
+      await Promise.all(relatedProjects.map(p => ImageDBReader.resolveProject(p)));
+    }
+
+    render(project);
   }
 
-  // Increment view count in admin data
+  function render(project) {
+    // Increment view count in admin data
   try {
     const rawP = localStorage.getItem('vk_admin_projects');
     if (rawP) {
@@ -692,7 +704,7 @@
   const related = VKREATE_DATA.projects.filter(p => p.id !== project.id).slice(0, 3);
   const relatedHTML = related.map(p => `
     <div class="proj-related__card reveal" onclick="location.href='project.html?id=${p.id}'" role="button" tabindex="0" aria-label="View ${p.name}">
-      <img class="proj-related__img" src="${p.thumbnail}" alt="${p.name}" loading="lazy"/>
+      <img class="proj-related__img" src="${p.thumbnail}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='assets/images/project_lilaa_1.jpg'"/>
       <div class="proj-related__info">
         <div class="proj-related__label">${p.industryLabel}</div>
         <div class="proj-related__title">${p.name}</div>
@@ -799,7 +811,7 @@
       <div class="cflow-stage" id="cflow-stage" tabindex="0" aria-label="Image carousel">
         ${(project.images || []).map((imgUrl, i) => `
           <div class="cflow-card" data-idx="${i}" role="img" aria-label="${project.name} render ${i+1}">
-            <img src="${imgUrl}" alt="${project.name} render ${i+1}" loading="${i<3?'eager':'lazy'}" />
+            <img src="${imgUrl}" alt="${project.name} render ${i+1}" loading="${i<3?'eager':'lazy'}" onerror="this.onerror=null;this.src='assets/images/project_lilaa_1.jpg'" />
             <div class="cflow-caption">Render ${i+1} of ${(project.images||[]).length}</div>
           </div>
         `).join('')}
@@ -1082,6 +1094,13 @@
 
 
   }, 60);
+  }
+
+  window.addEventListener('vkreate:idb-resolved', () => {
+    loadAndRender();
+  });
+
+  loadAndRender();
 })();
 </script>
 

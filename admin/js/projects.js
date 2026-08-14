@@ -11,7 +11,7 @@ const Projects = {
 
   _fixAdminPath(src) {
     if (!src) return '';
-    if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) return src;
+    if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://') || src.startsWith('idb:')) return src;
     return src.startsWith('../') ? src : '../' + src;
   },
 
@@ -133,12 +133,14 @@ const Projects = {
       </tr></thead>
       <tbody>
         ${projects.map(p => {
-          const thumbSrc = this._fixAdminPath(p.thumbnail || (p.images && p.images[0]) || '');
+          const rawSrc = p.thumbnail || (p.images && p.images[0]) || '';
+          const isIdb = rawSrc.startsWith('idb:');
+          const thumbSrc = this._fixAdminPath(rawSrc);
           return `
           <tr>
             <td>
               ${thumbSrc
-                ? `<img src="${thumbSrc}" class="td-thumb" alt="" onerror="this.src='../assets/images/project_lilaa_1.jpg'">`
+                ? `<img src="${isIdb ? '../assets/images/project_lilaa_1.jpg' : thumbSrc}" data-idb-key="${isIdb ? rawSrc.slice(4) : ''}" class="td-thumb" alt="" onerror="this.src='../assets/images/project_lilaa_1.jpg'">`
                 : `<div class="td-thumb-placeholder">No img</div>`}
             </td>
             <td class="td-name">${p.name || 'Untitled'}</td>
@@ -163,6 +165,17 @@ const Projects = {
         }).join('')}
       </tbody>
     </table>`;
+
+    // Resolve idb: thumbnails in table asynchronously
+    setTimeout(() => {
+      document.querySelectorAll('.td-thumb[data-idb-key]').forEach(async img => {
+        const key = img.dataset.idbKey;
+        if (key && typeof ImageDB !== 'undefined') {
+          const url = await ImageDB.get(key);
+          if (url) img.src = url;
+        }
+      });
+    }, 30);
   },
 
   toggleStatus(id, published) {
