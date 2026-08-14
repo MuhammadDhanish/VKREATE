@@ -434,13 +434,26 @@
     <div class="section__header reveal">
       <span class="t-overline section__overline">Get in Touch</span>
       <h2 class="t-h1 section__title">Start Your Project</h2>
+      <p class="section__desc t-body" style="margin-top:8px">Share your brief below or reach us directly. We respond within 24 hours.</p>
       <div class="divider"></div>
     </div>
+
+    <!-- Quick Direct Actions (Mobile First) -->
+    <div class="quick-contact-bar reveal mb-24">
+      <a href="tel:+919876543210" class="quick-contact-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.5 10.67 19.79 19.79 0 01.46 2a2 2 0 012-2.18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.62 6.62l1.21-1.21a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        <span>Call Us Directly</span>
+      </a>
+      <a href="https://wa.me/919876543210" target="_blank" rel="noopener" class="quick-contact-btn whatsapp">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.848L0 24l6.335-1.521A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.819 9.819 0 01-5.003-1.371l-.359-.214-3.72.894.938-3.617-.234-.374A9.818 9.818 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182c5.43 0 9.818 4.388 9.818 9.818 0 5.431-4.388 9.818-9.818 9.818z"/></svg>
+        <span>Instant WhatsApp</span>
+      </a>
+    </div>
+
     <div class="contact__grid">
       <!-- Form -->
       <div class="reveal">
         <div class="contact__form-wrap">
-          <h3 class="t-h3" style="margin-bottom:var(--space-xl);color:var(--charcoal)">Tell Us About Your Brief</h3>
 
           <div id="form-success" class="form-success" role="alert" aria-live="polite">
             <span style="font-size:1.25rem">✓</span>&nbsp;
@@ -448,64 +461,96 @@
           </div>
 
           <form id="inquiry-form" novalidate autocomplete="on" aria-label="Project inquiry form">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="f-name">Full Name *</label>
-                <input type="text" id="f-name" name="name" placeholder="Your name" required autocomplete="name" />
+
+            <!-- Step 1 -->
+            <div class="form-step-card">
+              <div class="form-step-header">
+                <span class="form-step-badge">1</span>
+                <div>
+                  <h4 class="form-step-title">Your Contact Info</h4>
+                  <p class="form-step-desc">How can we get back to you?</p>
+                </div>
               </div>
-              <div class="form-group">
-                <label for="f-email">Email Address *</label>
-                <input type="email" id="f-email" name="email" placeholder="your@email.com" required autocomplete="email" />
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="f-name">Full Name *</label>
+                  <input type="text" id="f-name" name="name" placeholder="e.g. Rahul Nair" required autocomplete="name" />
+                </div>
+                <div class="form-group">
+                  <label for="f-email">Email Address *</label>
+                  <input type="email" id="f-email" name="email" placeholder="rahul@example.com" required autocomplete="email" />
+                </div>
               </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="f-phone">Phone Number</label>
-                <input type="tel" id="f-phone" name="phone" placeholder="+91 ___________" autocomplete="tel" />
-              </div>
-              <div class="form-group">
-                <label for="f-type">Project Type *</label>
-                <select id="f-type" name="projectType" required>
-                  <option value="" disabled selected>Select type</option>
-                  <option value="office">Office / Commercial</option>
-                  <option value="restaurant">Restaurant / F&B</option>
-                  <option value="retail">Retail / Boutique</option>
-                  <option value="healthcare">Healthcare / Clinic</option>
-                  <option value="hospitality">Hotel / Hospitality</option>
-                  <option value="villa">Residential / Villa</option>
-                  <option value="other">Other</option>
-                </select>
+              <div class="form-group mb-0">
+                <label for="f-phone">Phone / WhatsApp Number</label>
+                <input type="tel" id="f-phone" name="phone" placeholder="+91 98765 00000" autocomplete="tel" />
               </div>
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="f-budget">Approximate Budget</label>
-                <select id="f-budget" name="budget">
-                  <option value="" disabled selected>Select range</option>
-                  <option value="sub25">Under ₹25L</option>
-                  <option value="25-50">₹25L – ₹50L</option>
-                  <option value="50-100">₹50L – ₹1Cr</option>
-                  <option value="1cr+">₹1Cr+</option>
-                </select>
+
+            <!-- Step 2 -->
+            <div class="form-step-card">
+              <div class="form-step-header">
+                <span class="form-step-badge">2</span>
+                <div>
+                  <h4 class="form-step-title">Project Details</h4>
+                  <p class="form-step-desc">Tell us about your space</p>
+                </div>
               </div>
-              <div class="form-group">
-                <label for="f-timeline">Target Timeline</label>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="f-type">Project Type *</label>
+                  <select id="f-type" name="projectType" required>
+                    <option value="" disabled selected>Select category...</option>
+                    <option value="office">Office / Commercial Space</option>
+                    <option value="restaurant">Restaurant / Café / F&B</option>
+                    <option value="retail">Retail / Showroom / Boutique</option>
+                    <option value="healthcare">Healthcare / Clinic / Spa</option>
+                    <option value="hospitality">Hotel / Resort / Lounge</option>
+                    <option value="villa">Residential / Luxury Villa</option>
+                    <option value="other">Other Unique Project</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="f-budget">Approx. Budget Range</label>
+                  <select id="f-budget" name="budget">
+                    <option value="" disabled selected>Select budget...</option>
+                    <option value="sub25">Under ₹25 Lakhs</option>
+                    <option value="25-50">₹25L – ₹50 Lakhs</option>
+                    <option value="50-100">₹50L – ₹1 Crore</option>
+                    <option value="1cr+">₹1 Crore +</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group mb-0">
+                <label for="f-timeline">Target Start Timeline</label>
                 <select id="f-timeline" name="timeline">
-                  <option value="" disabled selected>When to start?</option>
-                  <option value="immediate">Immediately</option>
-                  <option value="1-3">1–3 months</option>
-                  <option value="3-6">3–6 months</option>
-                  <option value="flexible">Flexible</option>
+                  <option value="" disabled selected>When do you want to start?</option>
+                  <option value="immediate">Immediately (Within 2 weeks)</option>
+                  <option value="1-3">1 – 3 months</option>
+                  <option value="3-6">3 – 6 months</option>
+                  <option value="flexible">Just planning / Flexible</option>
                 </select>
               </div>
             </div>
-            <div class="form-group">
-              <label for="f-message">Project Brief *</label>
-              <textarea id="f-message" name="message" placeholder="Tell us about the space, your vision, and anything that matters to you…" rows="4" required></textarea>
+
+            <!-- Step 3 -->
+            <div class="form-step-card mb-20">
+              <div class="form-step-header">
+                <span class="form-step-badge">3</span>
+                <div>
+                  <h4 class="form-step-title">Your Design Brief</h4>
+                  <p class="form-step-desc">Share any ideas, location, or sq ft details</p>
+                </div>
+              </div>
+              <div class="form-group mb-0">
+                <label for="f-message">Project Brief *</label>
+                <textarea id="f-message" name="message" placeholder="Describe your location, square footage, design style, or vision..." rows="3" required></textarea>
+              </div>
             </div>
+
             <button type="submit" class="form-submit" id="form-submit-btn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:middle;margin-right:8px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.848L0 24l6.335-1.521A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.819 9.819 0 01-5.003-1.371l-.359-.214-3.72.894.938-3.617-.234-.374A9.818 9.818 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182c5.43 0 9.818 4.388 9.818 9.818 0 5.431-4.388 9.818-9.818 9.818z"/></svg>
-              Send via WhatsApp
+              Submit Brief via WhatsApp
             </button>
           </form>
         </div>
