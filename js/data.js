@@ -347,148 +347,246 @@ const ImageDBReader = {
 // ============================================================
 // Sync Engine — Full-Duplex Admin Dashboard & Website Sync
 // ============================================================
+function applyAdminProjects(adminProjects) {
+  if (!Array.isArray(adminProjects) || !adminProjects.length) return;
+  let adminProjMap = new Map(adminProjects.map(p => [p.id, p]));
+  const finalProjects = [];
+
+  const fixPath = (p) => {
+    if (!p || typeof p !== 'string') return '';
+    if (p.startsWith('data:') || p.startsWith('http://') || p.startsWith('https://') || p.startsWith('idb:')) return p;
+    return p.replace(/^(\.\.\/)+/, '');
+  };
+
+  // A. Process built-in static projects
+  const staticOriginals = [
+    {
+      id: "lilaa-restaurant",
+      name: "Lilaa — Malayali Cuisine",
+      client: "Lilaa Hospitality & Dining Co.",
+      industry: "restaurant",
+      industryLabel: "Restaurants & Cafes",
+      location: "Calicut, Kerala",
+      area: "2,500 sq ft",
+      budgetRange: "₹25L – ₹35L",
+      duration: "4 months",
+      completionDate: "Q2 2025",
+      rating: 5,
+      thumbnail: "assets/images/project_lilaa_1.jpg",
+      images: [
+        "assets/images/project_lilaa_1.jpg",
+        "assets/images/project_lilaa_2.png",
+        "assets/images/project_lilaa_3.png",
+        "assets/images/project_lilaa_4.jpg",
+        "assets/images/project_lilaa_5.png",
+        "assets/images/project_lilaa_6.jpg",
+        "assets/images/project_lilaa_7.png",
+        "assets/images/project_lilaa_8.jpg",
+        "assets/images/project_lilaa_9.png"
+      ],
+      beforeImage: "assets/images/project_lilaa_8.jpg",
+      afterImage: "assets/images/project_lilaa_1.jpg",
+      tagline: "Capturing warmth & sophistication in every detail",
+      challenge: "Transform an underutilized mall space into a premium dining destination with a brand-driven, authentic yet modern ambiance.",
+      solution: "Multi-zone dining experience combining intimate booth seating, communal long-table areas, and a lounge with arched niches, vertical ribbed wood panels, custom pendant chandeliers, and a warm cream/beige palette.",
+      result: "Functional elegance delivering a 30% increase in table turns, 100% weekend reservation capacity, and a distinctive brand experience.",
+      processPhases: ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
+      testimonial: {
+        author: "Unnikrishnan Nair",
+        role: "Founder & Owner, Lilaa Hospitality",
+        text: "VKREATE captured our brand's warmth and sophistication in every detail. The arched niches, warm lighting, and seating layout elevated our entire dining experience. The space speaks for itself."
+      },
+      metrics: { sqft: "2,500", seatingCapacity: 85, reservationWait: "100% full", timeline: "4 months" }
+    },
+    {
+      id: "luxury-salon",
+      name: "Wings Luxury Beauty & Wellness",
+      client: "Wings Wellness Group",
+      industry: "beauty",
+      industryLabel: "Beauty & Wellness",
+      location: "Kochi, Kerala",
+      area: "2,200 sq ft",
+      budgetRange: "₹18L – ₹25L",
+      duration: "3 months",
+      completionDate: "04/2025",
+      rating: 5,
+      thumbnail: "assets/images/project_salon_3.png",
+      images: [
+        "assets/images/project_salon_3.png",
+        "assets/images/project_salon.png",
+        "assets/images/project_salon_1.png",
+        "assets/images/project_salon_2.png",
+        "assets/images/project_salon_4.png",
+        "assets/images/project_salon_5.png",
+        "assets/images/project_salon_6.png"
+      ],
+      beforeImage: "assets/images/project_salon_1.png",
+      afterImage: "assets/images/project_salon_3.png",
+      tagline: "Unwinding luxury crafted into every square foot",
+      challenge: "Create a luxurious, Instagram-ready salon and spa that feels intimate yet spacious on a tight footprint.",
+      solution: "Individual styling pods with integrated LED vanity mirrors, a dedicated private pedicure suite, and botanical accent wall murals.",
+      result: "45% increase in repeat bookings and glowing client feedback from day one.",
+      processPhases: ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
+      testimonial: {
+        author: "Dr. Reshma Menon",
+        role: "Salon Director, Wings Wellness",
+        text: "Our clients feel like they're stepping into a 5-star spa retreat. The private styling pods and botanical murals created an ambiance that keeps customers coming back."
+      },
+      metrics: { sqft: "2,200", pods: 6, repeatBookingRate: "+45%", timeline: "3 months" }
+    },
+    {
+      id: "retail-jewellery",
+      name: "Wings Jewellery & Retail Showroom",
+      client: "Wings Retail International",
+      industry: "retail",
+      industryLabel: "Jewellery & Retail",
+      location: "Calicut, Kerala",
+      area: "1,800 sq ft",
+      budgetRange: "₹12L – ₹18L",
+      duration: "2 months",
+      completionDate: "02/2025",
+      rating: 5,
+      thumbnail: "assets/images/project_jewellery_1.jpg",
+      images: [
+        "assets/images/project_jewellery_1.jpg",
+        "assets/images/project_jewellery_2.jpg",
+        "assets/images/project_jewellery_3.jpg",
+        "assets/images/project_jewellery_4.jpg",
+        "assets/images/project_jewellery.png"
+      ],
+      beforeImage: "assets/images/project_jewellery_3.jpg",
+      afterImage: "assets/images/project_jewellery_1.jpg",
+      tagline: "Illuminating brilliance through architectural precision",
+      challenge: "Stand out in a busy luxury mall corridor with limited square footage and strict illumination requirements.",
+      solution: "High-impact storefront featuring grand arched maroon grid glass windows, a diamond-cut mirror feature wall, and precision spotlighting.",
+      result: "40% increase in corridor foot traffic and a 32% conversion lift within the first quarter.",
+      processPhases: ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
+      testimonial: {
+        author: "Faisal Rahman",
+        role: "Brand Manager, Wings Retail",
+        text: "The design makes our jewellery the hero. The arched glass storefront draws people in from across the mall."
+      },
+      metrics: { sqft: "1,800", footTraffic: "+40%", conversionLift: "+32%", timeline: "2 months" }
+    },
+    {
+      id: "corporate-lounge",
+      name: "Corporate VIP Reception & Lounge",
+      client: "Apex Zenith Group",
+      industry: "office",
+      industryLabel: "Offices & Workspaces",
+      location: "Kochi, Kerala",
+      area: "2,900 sq ft",
+      budgetRange: "₹15L – ₹20L",
+      duration: "2.5 months",
+      completionDate: "01/2025",
+      rating: 5,
+      thumbnail: "assets/images/project_lounge.png",
+      images: [
+        "assets/images/project_lounge.png",
+        "assets/images/project_lilaa_5.png"
+      ],
+      beforeImage: "assets/images/project_lilaa_5.png",
+      afterImage: "assets/images/project_lounge.png",
+      tagline: "Elegance meets executive presence",
+      challenge: "Design an executive reception and waiting lounge that conveys prestige, hospitality, and privacy.",
+      solution: "Sculptural cream armchairs, warm indirect LED ceiling troffers, organic cloud pendant chandeliers, and acoustic fabric wall panels.",
+      result: "98% executive visitor satisfaction rating and reinforced brand authority.",
+      processPhases: ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
+      testimonial: {
+        author: "Sameer Varma",
+        role: "Corporate Director, Apex Zenith",
+        text: "First impressions matter immensely in corporate business. VKREATE created a reception lounge that immediately commands respect and instills confidence."
+      },
+      metrics: { sqft: "2,900", executiveRating: "98%", timeline: "2.5 months" }
+    }
+  ];
+
+  staticOriginals.forEach(staticP => {
+    if (adminProjMap.has(staticP.id)) {
+      const adminP = adminProjMap.get(staticP.id);
+      if (adminP.status === 'published') {
+        const adminImgs = (adminP.images && adminP.images.length) ? adminP.images.map(fixPath) : null;
+        const adminThumb = fixPath(adminP.thumbnail) || (adminImgs && adminImgs[0]) || null;
+
+        finalProjects.push({
+          ...staticP,
+          name: adminP.name || staticP.name,
+          industry: adminP.industry || staticP.industry,
+          industryLabel: adminP.industryLabel || staticP.industryLabel,
+          location: adminP.location || staticP.location,
+          area: adminP.area || staticP.area,
+          duration: adminP.duration || staticP.duration,
+          budgetRange: adminP.budgetRange || staticP.budgetRange,
+          thumbnail: adminThumb || staticP.thumbnail,
+          images: adminImgs || staticP.images,
+          beforeImage: (adminImgs && adminImgs[0]) || staticP.beforeImage,
+          afterImage: adminThumb || staticP.afterImage,
+          challenge: adminP.challenge || staticP.challenge,
+          solution: adminP.solution || staticP.solution,
+          result: adminP.result || staticP.result,
+          testimonial: adminP.testimonial?.text ? {
+            author: adminP.testimonial.author || staticP.testimonial.author,
+            role: adminP.testimonial.role || staticP.testimonial.role,
+            text: adminP.testimonial.text || staticP.testimonial.text,
+            rating: adminP.testimonial.rating || 5
+          } : staticP.testimonial
+        });
+      }
+    } else {
+      finalProjects.push(staticP);
+    }
+  });
+
+  // B. Process custom admin-created projects
+  adminProjects.forEach(adminP => {
+    if (adminP.status === 'published' && !staticOriginals.some(sp => sp.id === adminP.id)) {
+      const rawThumb = adminP.thumbnail || (adminP.images && adminP.images[0]) || '';
+      const thumb = fixPath(rawThumb) || 'assets/images/project_lilaa_1.jpg';
+      const imgs = (adminP.images && adminP.images.length) ? adminP.images.map(fixPath) : [thumb];
+
+      finalProjects.push({
+        id: adminP.id,
+        name: adminP.name || 'Untitled Project',
+        client: adminP.client || adminP.testimonial?.author || 'Client',
+        industry: adminP.industry || 'restaurant',
+        industryLabel: adminP.industryLabel || adminP.industry || 'Commercial',
+        location: adminP.location || 'Kerala, India',
+        area: adminP.area || '2,000 sq ft',
+        budgetRange: adminP.budgetRange || '',
+        duration: adminP.duration || '3 months',
+        completionDate: adminP.completionDate || '',
+        rating: adminP.testimonial?.rating || 5,
+        thumbnail: thumb,
+        images: imgs,
+        beforeImage: fixPath(adminP.beforeImage) || imgs[0],
+        afterImage: fixPath(adminP.afterImage) || thumb,
+        tagline: adminP.tagline || (adminP.solution ? adminP.solution.slice(0, 70) + '...' : 'Designed by VKREATE Studio'),
+        challenge: adminP.challenge || 'Design a high-impact interior tailored to client vision.',
+        solution: adminP.solution || 'Integrated spatial strategy combining ambient lighting, bespoke materials, and ergonomic layouts.',
+        result: adminP.result || 'Delivered on time with 100% client satisfaction.',
+        processPhases: (adminP.processPhases && adminP.processPhases.length) ? adminP.processPhases : ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
+        testimonial: adminP.testimonial?.text ? adminP.testimonial : { author: 'Client', role: 'Owner', text: 'VKREATE delivered a stunning interior transformation.' },
+        metrics: adminP.metrics || { sqft: adminP.area || '2,000', satisfaction: '100%' }
+      });
+    }
+  });
+
+  VKREATE_DATA.projects = finalProjects;
+  if (VKREATE_DATA.stats && VKREATE_DATA.stats[0]) {
+    VKREATE_DATA.stats[0].value = finalProjects.length.toString();
+  }
+}
+
+// ============================================================
+// Sync Engine — Full-Duplex Admin Dashboard & Website Sync
+// ============================================================
 (function syncEngine() {
   try {
-    // ── 1. Projects Sync ─────────────────────────────────────
+    // ── 1. LocalStorage Sync ─────────────────────────────────
     const rawProjects = localStorage.getItem('vk_admin_projects');
     if (rawProjects) {
       const adminProjects = JSON.parse(rawProjects);
-      let adminProjMap = new Map(adminProjects.map(p => [p.id, p]));
-      let updatedAdminProjects = [...adminProjects];
-      let needsSave = false;
-
-      // Auto-heal any new static projects or stale image paths into localStorage
-      updatedAdminProjects.forEach(ap => {
-        if (ap.id === 'corporate-lounge' && (ap.thumbnail.includes('project_lilaa_5.png') || ap.thumbnail.includes('project_lilaa_4.jpg'))) {
-          ap.thumbnail = '../assets/images/project_lounge.png';
-          ap.images = ['../assets/images/project_lounge.png', '../assets/images/project_office.png'];
-          needsSave = true;
-        }
-      });
-
-      VKREATE_DATA.projects.forEach(sp => {
-        if (!adminProjMap.has(sp.id)) {
-          const newAdminP = {
-            id: sp.id,
-            name: sp.name,
-            industry: sp.industry,
-            industryLabel: sp.industryLabel,
-            location: sp.location,
-            area: sp.area,
-            duration: sp.duration,
-            completionDate: sp.completionDate || '',
-            budgetRange: sp.budgetRange || '',
-            status: 'published',
-            thumbnail: '../' + sp.thumbnail,
-            images: sp.images.map(img => '../' + img),
-            challenge: sp.challenge,
-            solution: sp.solution,
-            result: sp.result,
-            processPhases: sp.processPhases,
-            testimonial: sp.testimonial,
-            metrics: sp.metrics,
-            tags: [sp.industry],
-            views: 500, clicks: 150, leads: 5,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          };
-          updatedAdminProjects.push(newAdminP);
-          adminProjMap.set(sp.id, newAdminP);
-          needsSave = true;
-        }
-      });
-
-      if (needsSave) {
-        localStorage.setItem('vk_admin_projects', JSON.stringify(updatedAdminProjects));
-      }
-
-      const finalProjects = [];
-
-      // A. Process built-in static projects
-      VKREATE_DATA.projects.forEach(staticP => {
-        if (adminProjMap.has(staticP.id)) {
-          const adminP = adminProjMap.get(staticP.id);
-          const fixPath = (p) => (p && typeof p === 'string') ? (p.startsWith('data:') || p.startsWith('http') || p.startsWith('idb:') ? p : p.replace(/^\.\.\//, '')) : '';
-          if (adminP.status === 'published') {
-            const adminImgs = (adminP.images && adminP.images.length) ? adminP.images.map(fixPath) : null;
-            const adminThumb = fixPath(adminP.thumbnail) || (adminImgs && adminImgs[0]) || null;
-
-            finalProjects.push({
-              ...staticP,
-              name: adminP.name || staticP.name,
-              industry: adminP.industry || staticP.industry,
-              industryLabel: adminP.industryLabel || staticP.industryLabel,
-              location: adminP.location || staticP.location,
-              area: adminP.area || staticP.area,
-              duration: adminP.duration || staticP.duration,
-              budgetRange: adminP.budgetRange || staticP.budgetRange,
-              thumbnail: adminThumb || staticP.thumbnail,
-              images: adminImgs || staticP.images,
-              beforeImage: (adminImgs && adminImgs[0]) || staticP.beforeImage,
-              afterImage: adminThumb || staticP.afterImage,
-              challenge: adminP.challenge || staticP.challenge,
-              solution: adminP.solution || staticP.solution,
-              result: adminP.result || staticP.result,
-              testimonial: adminP.testimonial?.text ? {
-                author: adminP.testimonial.author || staticP.testimonial.author,
-                role: adminP.testimonial.role || staticP.testimonial.role,
-                text: adminP.testimonial.text || staticP.testimonial.text,
-                rating: adminP.testimonial.rating || 5
-              } : staticP.testimonial
-            });
-          }
-          // If status is 'draft', skip it (unpublishes it from main site!)
-        } else {
-          // If admin hasn't managed it yet, keep static project
-          finalProjects.push(staticP);
-        }
-      });
-
-      // B. Process custom admin-created projects
-      const fixPath = (p) => {
-        if (!p || typeof p !== 'string') return '';
-        if (p.startsWith('data:') || p.startsWith('http://') || p.startsWith('https://') || p.startsWith('idb:')) return p;
-        // Strip leading ../ so paths are relative to main website root
-        return p.replace(/^(\.\.\/)+/, '');
-      };
-      adminProjects.forEach(adminP => {
-        if (adminP.status === 'published' && !VKREATE_DATA.projects.some(sp => sp.id === adminP.id)) {
-          // Find a valid thumbnail — fall back gracefully
-          const rawThumb = adminP.thumbnail || (adminP.images && adminP.images[0]) || '';
-          const thumb = fixPath(rawThumb) || 'assets/images/project_lilaa_1.jpg';
-          const imgs = (adminP.images && adminP.images.length) ? adminP.images.map(fixPath) : [thumb];
-
-          finalProjects.push({
-            id: adminP.id,
-            name: adminP.name || 'Untitled Project',
-            client: adminP.client || adminP.testimonial?.author || 'Client',
-            industry: adminP.industry || 'restaurant',
-            industryLabel: adminP.industryLabel || adminP.industry || 'Commercial',
-            location: adminP.location || 'Kerala, India',
-            area: adminP.area || '2,000 sq ft',
-            budgetRange: adminP.budgetRange || '',
-            duration: adminP.duration || '3 months',
-            completionDate: adminP.completionDate || '',
-            rating: adminP.testimonial?.rating || 5,
-            thumbnail: thumb,
-            images: imgs,
-            beforeImage: fixPath(adminP.beforeImage) || imgs[0],
-            afterImage: fixPath(adminP.afterImage) || thumb,
-            tagline: adminP.tagline || (adminP.solution ? adminP.solution.slice(0, 70) + '...' : 'Designed by VKREATE Studio'),
-            challenge: adminP.challenge || 'Design a high-impact interior tailored to client vision.',
-            solution: adminP.solution || 'Integrated spatial strategy combining ambient lighting, bespoke materials, and ergonomic layouts.',
-            result: adminP.result || 'Delivered on time with 100% client satisfaction.',
-            processPhases: (adminP.processPhases && adminP.processPhases.length) ? adminP.processPhases : ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
-            testimonial: adminP.testimonial?.text ? adminP.testimonial : { author: 'Client', role: 'Owner', text: 'VKREATE delivered a stunning interior transformation.' },
-            metrics: adminP.metrics || { sqft: adminP.area || '2,000', satisfaction: '100%' }
-          });
-        }
-      });
-
-      VKREATE_DATA.projects = finalProjects;
-      if (VKREATE_DATA.stats && VKREATE_DATA.stats[0]) {
-        VKREATE_DATA.stats[0].value = finalProjects.length.toString();
-      }
+      applyAdminProjects(adminProjects);
     }
 
     // ── 2. Reviews Sync ──────────────────────────────────────
@@ -532,6 +630,23 @@ const ImageDBReader = {
 
   } catch (e) {
     console.warn('Error in syncEngine:', e);
+  }
+})();
+
+// ============================================================
+// Remote Admin-Projects Sync (from GitHub JSON file)
+// ============================================================
+(async function loadRemoteAdminProjects() {
+  try {
+    const res = await fetch('js/admin-projects.json?t=' + Date.now());
+    if (!res.ok) return;
+    const remoteProjects = await res.json();
+    if (Array.isArray(remoteProjects) && remoteProjects.length > 0) {
+      applyAdminProjects(remoteProjects);
+      window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
+    }
+  } catch (e) {
+    // optional fail silently
   }
 })();
 

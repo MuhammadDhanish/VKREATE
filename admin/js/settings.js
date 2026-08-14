@@ -231,6 +231,42 @@ const Settings = {
           </div>
         </div>
 
+        <!-- 🚀 Deploy Settings (GitHub Sync) -->
+        <div class="card" style="border:1px solid #4ade80">
+          <div class="card-header" style="background:linear-gradient(135deg,#052e16,#14532d);color:#fff">
+            <span class="card-title" style="color:#fff">🚀 Deploy Settings — Live Site Sync</span>
+          </div>
+          <div class="card-body">
+            <p class="text-sm text-muted mb-16">
+              Enter your <strong>GitHub Personal Access Token</strong> once. Every time you save or delete a project,
+              the live website at <strong>vkreatearchitecture.com</strong> will automatically update within ~60 seconds.
+            </p>
+            <div class="form-group" style="max-width:520px">
+              <label class="form-label">GitHub Token <span class="text-xs text-muted">(ghp_...)</span></label>
+              <div style="display:flex;gap:10px">
+                <input id="gh-token-input" class="form-control" type="password"
+                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                  value="${GithubSync && GithubSync.getToken() ? '••••••••••••••••••••' : ''}"
+                  style="font-family:monospace">
+                <button class="btn btn-primary" onclick="Settings.saveGithubToken()">Save</button>
+              </div>
+              <p class="text-xs text-muted mt-6">
+                Token needs <strong>repo</strong> scope. Get one at
+                <a href="https://github.com/settings/tokens/new" target="_blank" style="color:#4ade80">github.com/settings/tokens</a>
+              </p>
+            </div>
+            <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
+              <button class="btn btn-outline btn-sm" onclick="Settings.testDeploy()"
+                style="border-color:#4ade80;color:#16a34a">
+                🔁 Test Deploy Now
+              </button>
+              ${GithubSync && GithubSync.hasToken()
+                ? '<span class="text-xs" style="color:#16a34a">✅ Token saved — auto-deploy is active</span>'
+                : '<span class="text-xs text-muted">⚠️ No token set — changes will only sync on this device</span>'}
+            </div>
+          </div>
+        </div>
+
       </div>
     `;
   },
@@ -352,5 +388,29 @@ const Settings = {
       UI.toast('Data reset to demo content!', 'success');
       App.navigate('dashboard');
     }, true);
+  },
+
+  saveGithubToken() {
+    const input = document.getElementById('gh-token-input');
+    const val = input ? input.value.trim() : '';
+    if (!val || val.startsWith('•')) {
+      UI.toast('Please enter your GitHub token (ghp_...)', 'warning');
+      return;
+    }
+    if (!val.startsWith('ghp_') && !val.startsWith('github_pat_')) {
+      UI.toast('Token should start with ghp_ — please check and try again.', 'warning');
+      return;
+    }
+    GithubSync.setToken(val);
+    UI.toast('✅ GitHub token saved! Auto-deploy is now active.', 'success');
+    this.render(); // refresh to show active status
+  },
+
+  testDeploy() {
+    if (!GithubSync.hasToken()) {
+      UI.toast('Please enter and save your GitHub token first.', 'warning');
+      return;
+    }
+    GithubSync.push();
   },
 };

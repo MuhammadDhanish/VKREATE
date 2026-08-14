@@ -194,6 +194,8 @@ const Projects = {
       this.render();
       if (window.App && App.updateSidebar) App.updateSidebar();
       window.dispatchEvent(new Event('storage'));
+      // Push to GitHub so Vercel redeploys and all visitors see the change
+      if (window.GithubSync) GithubSync.push();
     }, true);
   },
 
@@ -612,6 +614,9 @@ const Projects = {
 
     // Broadcast storage sync event for instant live website updates
     window.dispatchEvent(new Event('storage'));
+
+    // Push to GitHub so Vercel redeploys and all visitors see the change
+    if (window.GithubSync) GithubSync.push();
   },
 
   save(e) {
