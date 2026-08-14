@@ -44,7 +44,7 @@ const Settings = {
                 </div>
                 <div class="form-group">
                   <label class="form-label">Phone</label>
-                  <input class="form-control" name="phone" value="${studio.phone||''}" placeholder="+91 98765 00000">
+                  <input class="form-control" name="phone" value="${studio.phone||''}" placeholder="+91 90371 61861">
                 </div>
               </div>
               <div class="form-group">

@@ -242,7 +242,7 @@ const DB = {
         name: 'VKREATE Design Studio',
         tagline: 'Where Design Speaks',
         email: 'hello@vkreate.com',
-        phone: '+91 98765 00000',
+        phone: '+91 90371 61861',
         address: 'Calicut, Kerala, India',
         instagram: 'https://www.instagram.com/vkreate_interior_architecture',
         facebook: '',
