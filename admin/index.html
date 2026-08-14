@@ -201,11 +201,14 @@ function settingsIcon()   { return `<svg class="nav-item__icon" viewBox="0 0 24 
 const App = {
   _current: 'dashboard',
 
-  init() {
+  async init() {
     DB.seed();
     if (!DB.auth.session.isValid()) {
       Auth.renderLogin();
       return;
+    }
+    if (typeof DB.loadRemoteData === 'function') {
+      await DB.loadRemoteData();
     }
     this._renderShell();
     const hash = location.hash.slice(1) || 'dashboard';

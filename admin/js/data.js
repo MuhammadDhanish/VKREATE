@@ -424,24 +424,52 @@ const DB = {
       },
     },
   },
+
+  // ── Remote Sync Engine (pulls GitHub JSON files for cross-admin sync) ──
+  async loadRemoteData() {
+    try {
+      // 1. Projects
+      const projRes = await fetch('../js/admin-projects.json?t=' + Date.now());
+      if (projRes.ok) {
+        const remoteProjects = await projRes.json();
+        if (Array.isArray(remoteProjects) && remoteProjects.length > 0) {
+          DB._set(DB.KEYS.projects, remoteProjects);
+        }
+      }
+    } catch (e) {}
+
+    try {
+      // 2. Reviews
+      const revRes = await fetch('../js/admin-reviews.json?t=' + Date.now());
+      if (revRes.ok) {
+        const remoteReviews = await revRes.json();
+        if (Array.isArray(remoteReviews) && remoteReviews.length > 0) {
+          DB._set(DB.KEYS.reviews, remoteReviews);
+        }
+      }
+    } catch (e) {}
+
+    try {
+      // 3. Inquiries
+      const inqRes = await fetch('../js/admin-inquiries.json?t=' + Date.now());
+      if (inqRes.ok) {
+        const remoteInquiries = await inqRes.json();
+        if (Array.isArray(remoteInquiries) && remoteInquiries.length > 0) {
+          const local = DB.inquiries.all();
+          const mergedMap = new Map();
+          remoteInquiries.forEach(i => mergedMap.set(i.id, i));
+          local.forEach(i => {
+            if (!mergedMap.has(i.id)) mergedMap.set(i.id, i);
+          });
+          DB._set(DB.KEYS.inquiries, Array.from(mergedMap.values()));
+        }
+      }
+    } catch (e) {}
+  },
 };
 
-(async function loadRemoteAdminInquiries() {
-  try {
-    const res = await fetch('../js/admin-inquiries.json?t=' + Date.now());
-    if (!res.ok) return;
-    const remoteInquiries = await res.json();
-    if (Array.isArray(remoteInquiries) && remoteInquiries.length > 0) {
-      const local = DB.inquiries.all();
-      const mergedMap = new Map();
-      remoteInquiries.forEach(i => mergedMap.set(i.id, i));
-      local.forEach(i => {
-        if (!mergedMap.has(i.id)) mergedMap.set(i.id, i);
-      });
-      const merged = Array.from(mergedMap.values());
-      DB._set(DB.KEYS.inquiries, merged);
-    }
-  } catch (e) {
-    // fail silently
+(async function autoLoadRemoteAdminData() {
+  if (typeof DB !== 'undefined' && DB.loadRemoteData) {
+    await DB.loadRemoteData();
   }
 })();
