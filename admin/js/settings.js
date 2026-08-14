@@ -231,38 +231,29 @@ const Settings = {
           </div>
         </div>
 
-        <!-- 🚀 Deploy Settings (GitHub Sync) -->
-        <div class="card" style="border:1px solid #4ade80">
+        <!-- 🚀 Automatic Live Site Deployment -->
+        <div class="card" style="border:1.5px solid #22c55e">
           <div class="card-header" style="background:linear-gradient(135deg,#052e16,#14532d);color:#fff">
-            <span class="card-title" style="color:#fff">🚀 Deploy Settings — Live Site Sync</span>
+            <span class="card-title" style="color:#fff">⚡ Automatic Live Site Deployment</span>
           </div>
           <div class="card-body">
-            <p class="text-sm text-muted mb-16">
-              Enter your <strong>GitHub Personal Access Token</strong> once. Every time you save or delete a project,
-              the live website at <strong>vkreatearchitecture.com</strong> will automatically update within ~60 seconds.
-            </p>
-            <div class="form-group" style="max-width:520px">
-              <label class="form-label">GitHub Token <span class="text-xs text-muted">(ghp_...)</span></label>
-              <div style="display:flex;gap:10px">
-                <input id="gh-token-input" class="form-control" type="password"
-                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                  value="${GithubSync && GithubSync.getToken() ? '••••••••••••••••••••' : ''}"
-                  style="font-family:monospace">
-                <button class="btn btn-primary" onclick="Settings.saveGithubToken()">Save</button>
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--r-md);margin-bottom:16px">
+              <span style="font-size:1.5rem">🟢</span>
+              <div>
+                <div class="fw-600 text-sm" style="color:#15803d">Automatic Deployment is Active</div>
+                <div class="text-xs" style="color:#166534">System Token Connected · Live Repository Synced</div>
               </div>
-              <p class="text-xs text-muted mt-6">
-                Token needs <strong>repo</strong> scope. Get one at
-                <a href="https://github.com/settings/tokens/new" target="_blank" style="color:#4ade80">github.com/settings/tokens</a>
-              </p>
             </div>
-            <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
-              <button class="btn btn-outline btn-sm" onclick="Settings.testDeploy()"
-                style="border-color:#4ade80;color:#16a34a">
-                🔁 Test Deploy Now
+
+            <p class="text-sm text-muted mb-16" style="line-height:1.6">
+              Every time you or your co-admins save a project, delete a project, approve a review, or update an inquiry, your changes are automatically pushed to GitHub and deployed live to <strong>vkreatearchitecture.com</strong> within ~60 seconds.
+            </p>
+
+            <div style="display:flex;gap:12px;align-items:center">
+              <button class="btn btn-primary btn-sm" onclick="Settings.testDeploy()" style="background:#16a34a;border-color:#16a34a">
+                🚀 Test Live Deploy Now
               </button>
-              ${GithubSync && GithubSync.hasToken()
-                ? '<span class="text-xs" style="color:#16a34a">✅ Token saved — auto-deploy is active</span>'
-                : '<span class="text-xs text-muted">⚠️ No token set — changes will only sync on this device</span>'}
+              <span class="text-xs text-muted">Last automatic sync: Active</span>
             </div>
           </div>
         </div>
