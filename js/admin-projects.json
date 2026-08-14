@@ -1,5 +1,43 @@
 [
   {
+    "id": "mstdbfcog1yob",
+    "name": "dhanish",
+    "industry": "restaurant",
+    "industryLabel": "Restaurants & Cafes",
+    "location": "",
+    "area": "",
+    "duration": "",
+    "budgetRange": "",
+    "challenge": "",
+    "solution": "",
+    "result": "",
+    "status": "published",
+    "images": [
+      "idb:proj_mstdbfcog1yob_0"
+    ],
+    "thumbnail": "idb:proj_mstdbfcog1yob_0",
+    "afterImage": "idb:proj_mstdbfcog1yob_0",
+    "beforeImage": "idb:proj_mstdbfcog1yob_0",
+    "testimonial": {
+      "author": "",
+      "role": "",
+      "text": "",
+      "rating": 5
+    },
+    "processPhases": [
+      "Discovery",
+      "Concept",
+      "Detailing",
+      "Execution",
+      "Handover"
+    ],
+    "views": 0,
+    "clicks": 0,
+    "leads": 0,
+    "createdAt": "2026-08-14T19:56:42.747Z",
+    "updatedAt": "2026-08-14T19:56:42.747Z"
+  },
+  {
     "id": "lilaa-restaurant",
     "name": "Lilaa — Malayali Cuisine",
     "industry": "restaurant",
