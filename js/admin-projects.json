@@ -1,5 +1,45 @@
 [
   {
+    "id": "mstb4zwzqwvye",
+    "name": "Muhammed Dhanish",
+    "industry": "restaurant",
+    "industryLabel": "Restaurants & Cafes",
+    "location": "",
+    "area": "",
+    "duration": "",
+    "budgetRange": "",
+    "challenge": "",
+    "solution": "",
+    "result": "",
+    "status": "published",
+    "images": [
+      "idb:proj_mstb4zwzqwvye_0",
+      "idb:proj_mstb4zwzqwvye_1",
+      "idb:proj_mstb4zwzqwvye_2"
+    ],
+    "thumbnail": "idb:proj_mstb4zwzqwvye_0",
+    "afterImage": "idb:proj_mstb4zwzqwvye_0",
+    "beforeImage": "idb:proj_mstb4zwzqwvye_1",
+    "testimonial": {
+      "author": "",
+      "role": "",
+      "text": "",
+      "rating": 5
+    },
+    "processPhases": [
+      "Discovery",
+      "Concept",
+      "Detailing",
+      "Execution",
+      "Handover"
+    ],
+    "views": 0,
+    "clicks": 0,
+    "leads": 0,
+    "createdAt": "2026-08-14T18:55:43.578Z",
+    "updatedAt": "2026-08-14T19:03:12.318Z"
+  },
+  {
     "id": "lilaa-restaurant",
     "name": "Lilaa — Malayali Cuisine",
     "industry": "restaurant",
@@ -10,14 +50,42 @@
     "completionDate": "2025-06-15",
     "budgetRange": "₹25L – ₹35L",
     "status": "published",
-    "thumbnail": "assets/images/project_lilaa_1.jpg",
-    "images": ["assets/images/project_lilaa_1.jpg", "assets/images/project_lilaa_2.png"],
+    "thumbnail": "../assets/images/project_lilaa_1.jpg",
+    "images": [
+      "../assets/images/project_lilaa_1.jpg",
+      "../assets/images/project_lilaa_2.png"
+    ],
     "challenge": "Transform an underutilized mall space into a premium dining destination.",
     "solution": "Multi-zone dining with arched niches, vertical ribbed wood panels, and warm cream palette.",
     "result": "30% increase in table turns, 100% weekend reservation capacity.",
-    "processPhases": ["Discovery","Concept","Detailing","Execution","Handover"],
-    "testimonial": { "author": "Unnikrishnan Nair", "role": "Founder & Owner, Lilaa Hospitality", "text": "VKREATE captured our brand's warmth and sophistication in every detail.", "rating": 5 },
-    "metrics": { "sqft": "2,500", "seatingCapacity": 85, "timeline": "4 months" }
+    "processPhases": [
+      "Discovery",
+      "Concept",
+      "Detailing",
+      "Execution",
+      "Handover"
+    ],
+    "testimonial": {
+      "author": "Unnikrishnan Nair",
+      "role": "Founder & Owner, Lilaa Hospitality",
+      "text": "VKREATE captured our brand's warmth and sophistication in every detail.",
+      "rating": 5
+    },
+    "metrics": {
+      "sqft": "2500",
+      "seatingCapacity": 85,
+      "timeline": "4 months"
+    },
+    "tags": [
+      "restaurant",
+      "dining",
+      "premium"
+    ],
+    "views": 1240,
+    "clicks": 387,
+    "leads": 12,
+    "createdAt": "2025-06-15T10:00:00Z",
+    "updatedAt": "2025-07-01T08:30:00Z"
   },
   {
     "id": "luxury-salon",
@@ -30,14 +98,41 @@
     "completionDate": "2025-04-10",
     "budgetRange": "₹18L – ₹25L",
     "status": "published",
-    "thumbnail": "assets/images/project_salon_3.png",
-    "images": ["assets/images/project_salon_3.png"],
+    "thumbnail": "../assets/images/project_salon_3.png",
+    "images": [
+      "../assets/images/project_salon_3.png"
+    ],
     "challenge": "Create a luxurious, Instagram-ready salon that feels intimate yet spacious.",
     "solution": "Individual styling pods with LED mirrors, private pedicure suite, botanical murals.",
     "result": "45% increase in repeat bookings, high client retention.",
-    "processPhases": ["Discovery","Concept","Detailing","Execution","Handover"],
-    "testimonial": { "author": "Dr. Reshma Menon", "role": "Salon Director, Wings Wellness", "text": "Our clients feel like they're stepping into a 5-star spa retreat.", "rating": 5 },
-    "metrics": { "sqft": "2,200", "pods": 6, "timeline": "3 months" }
+    "processPhases": [
+      "Discovery",
+      "Concept",
+      "Detailing",
+      "Execution",
+      "Handover"
+    ],
+    "testimonial": {
+      "author": "Dr. Reshma Menon",
+      "role": "Salon Director, Wings Wellness",
+      "text": "Our clients feel like they're stepping into a 5-star spa retreat.",
+      "rating": 5
+    },
+    "metrics": {
+      "sqft": "2200",
+      "pods": 6,
+      "timeline": "3 months"
+    },
+    "tags": [
+      "salon",
+      "beauty",
+      "wellness"
+    ],
+    "views": 890,
+    "clicks": 241,
+    "leads": 8,
+    "createdAt": "2025-04-10T09:00:00Z",
+    "updatedAt": "2025-05-20T11:00:00Z"
   },
   {
     "id": "retail-jewellery",
@@ -50,14 +145,42 @@
     "completionDate": "2025-02-14",
     "budgetRange": "₹12L – ₹18L",
     "status": "published",
-    "thumbnail": "assets/images/project_jewellery_1.jpg",
-    "images": ["assets/images/project_jewellery_1.jpg", "assets/images/project_jewellery_2.jpg"],
+    "thumbnail": "../assets/images/project_jewellery_1.jpg",
+    "images": [
+      "../assets/images/project_jewellery_1.jpg",
+      "../assets/images/project_jewellery_2.jpg"
+    ],
     "challenge": "Stand out in a busy luxury mall corridor with limited square footage.",
     "solution": "High-impact storefront featuring grand arched maroon grid glass windows, diamond-cut mirror wall.",
     "result": "40% increase in corridor foot traffic, 32% conversion lift.",
-    "processPhases": ["Discovery","Concept","Detailing","Execution","Handover"],
-    "testimonial": { "author": "Faisal Rahman", "role": "Brand Manager, Wings Retail", "text": "The design makes our jewellery the hero.", "rating": 5 },
-    "metrics": { "sqft": "1,800", "footTraffic": "+40%", "timeline": "2 months" }
+    "processPhases": [
+      "Discovery",
+      "Concept",
+      "Detailing",
+      "Execution",
+      "Handover"
+    ],
+    "testimonial": {
+      "author": "Faisal Rahman",
+      "role": "Brand Manager, Wings Retail",
+      "text": "The design makes our jewellery the hero.",
+      "rating": 5
+    },
+    "metrics": {
+      "sqft": "1800",
+      "footTraffic": "+40%",
+      "timeline": "2 months"
+    },
+    "tags": [
+      "retail",
+      "jewellery",
+      "showroom"
+    ],
+    "views": 760,
+    "clicks": 198,
+    "leads": 6,
+    "createdAt": "2025-02-14T10:00:00Z",
+    "updatedAt": "2025-03-01T09:00:00Z"
   },
   {
     "id": "corporate-lounge",
@@ -70,13 +193,41 @@
     "completionDate": "2025-01-20",
     "budgetRange": "₹15L – ₹20L",
     "status": "published",
-    "thumbnail": "assets/images/project_lounge.png",
-    "images": ["assets/images/project_lounge.png", "assets/images/project_lilaa_5.png"],
+    "thumbnail": "../assets/images/project_lounge.png",
+    "images": [
+      "../assets/images/project_lounge.png",
+      "../assets/images/project_lilaa_5.png"
+    ],
     "challenge": "Design an executive reception and waiting lounge that conveys prestige, hospitality, and privacy.",
     "solution": "Sculptural cream armchairs, warm indirect LED ceiling troffers, organic cloud pendant chandeliers.",
     "result": "98% executive visitor satisfaction, reinforced brand authority.",
-    "processPhases": ["Discovery","Concept","Detailing","Execution","Handover"],
-    "testimonial": { "author": "Sameer Varma", "role": "Corporate Director, Apex Zenith", "text": "First impressions matter immensely in corporate business.", "rating": 5 },
-    "metrics": { "sqft": "2,900", "satisfaction": "98%", "timeline": "2.5 months" }
+    "processPhases": [
+      "Discovery",
+      "Concept",
+      "Detailing",
+      "Execution",
+      "Handover"
+    ],
+    "testimonial": {
+      "author": "Sameer Varma",
+      "role": "Corporate Director, Apex Zenith",
+      "text": "First impressions matter immensely in corporate business.",
+      "rating": 5
+    },
+    "metrics": {
+      "sqft": "2900",
+      "satisfaction": "98%",
+      "timeline": "2.5 months"
+    },
+    "tags": [
+      "office",
+      "corporate",
+      "lounge"
+    ],
+    "views": 620,
+    "clicks": 154,
+    "leads": 5,
+    "createdAt": "2025-01-20T11:00:00Z",
+    "updatedAt": "2025-02-05T14:00:00Z"
   }
 ]
