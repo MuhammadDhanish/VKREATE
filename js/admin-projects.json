@@ -1,5 +1,45 @@
 [
   {
+    "id": "mstd7sbrkg419",
+    "name": "Sinu",
+    "industry": "beauty",
+    "industryLabel": "Beauty & Wellness",
+    "location": "advsdfvb",
+    "area": "dfb zdg",
+    "duration": "zfgnfz",
+    "budgetRange": "fgnz",
+    "challenge": "asdfghjklzxcvgh",
+    "solution": "dfghjkl",
+    "result": "dfghj",
+    "status": "published",
+    "images": [
+      "idb:proj_mstd7sbrkg419_0",
+      "idb:proj_mstd7sbrkg419_1",
+      "idb:proj_mstd7sbrkg419_2"
+    ],
+    "thumbnail": "idb:proj_mstd7sbrkg419_0",
+    "afterImage": "idb:proj_mstd7sbrkg419_0",
+    "beforeImage": "idb:proj_mstd7sbrkg419_1",
+    "testimonial": {
+      "author": "xa sd",
+      "role": "dgbxsv",
+      "text": "dfghjk",
+      "rating": 5
+    },
+    "processPhases": [
+      "Discovery",
+      "Concept",
+      "Detailing",
+      "Execution",
+      "Handover"
+    ],
+    "views": 0,
+    "clicks": 0,
+    "leads": 0,
+    "createdAt": "2026-08-14T19:53:52.967Z",
+    "updatedAt": "2026-08-14T19:53:52.967Z"
+  },
+  {
     "id": "lilaa-restaurant",
     "name": "Lilaa — Malayali Cuisine",
     "industry": "restaurant",
