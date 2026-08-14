@@ -275,21 +275,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const timeline = TIMELINE_LABELS[fields.timeline.value]     || 'Not specified';
     const brief    = fields.message.value.trim();
 
-    return `Hi VKREATE! 🎨
-
-✨ New Project Inquiry
-
-👤 Name: ${name}
-📧 Email: ${email}
-📱 Phone: ${phone}
-🎯 Project Type: ${type}
-💰 Budget: ${budget}
-⏰ Timeline: ${timeline}
-
-📝 Project Brief:
-${brief}
-
-Looking forward to connecting! 🙏`;
+    return `PROJECT INQUIRY BRIEF — VKREATE DESIGN STUDIO\n\n` +
+      `Client Information:\n` +
+      `• Full Name: ${name}\n` +
+      `• Email Address: ${email}\n` +
+      `• Phone Number: ${phone}\n\n` +
+      `Project Parameters:\n` +
+      `• Space Category: ${type}\n` +
+      `• Budget Range: ${budget}\n` +
+      `• Target Timeline: ${timeline}\n\n` +
+      `Brief & Requirements:\n` +
+      `${brief}`;
   }
 
   if (form && submitBtn) {

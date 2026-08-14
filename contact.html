@@ -407,15 +407,18 @@
       const location = document.getElementById('p3-location').value.trim() || 'Not specified';
       const brief    = document.getElementById('p3-brief').value.trim();
 
-      const text = `*New Project Brief — VKREATE Studio*%0A%0A` +
-        `*Name:* ${encodeURIComponent(name)}%0A` +
-        `*Email:* ${encodeURIComponent(email)}%0A` +
-        `*Phone:* ${encodeURIComponent(phone)}%0A` +
-        `*Type:* ${encodeURIComponent(type)}%0A` +
-        `*Budget:* ${encodeURIComponent(budget)}%0A` +
-        `*Timeline:* ${encodeURIComponent(timeline)}%0A` +
-        `*Location:* ${encodeURIComponent(location)}%0A` +
-        `*Brief:* ${encodeURIComponent(brief)}`;
+      const text = `PROJECT INQUIRY BRIEF — VKREATE DESIGN STUDIO%0A%0A` +
+        `Client Information:%0A` +
+        `• Full Name: ${encodeURIComponent(name)}%0A` +
+        `• Email Address: ${encodeURIComponent(email)}%0A` +
+        `• Phone Number: ${encodeURIComponent(phone)}%0A%0A` +
+        `Project Parameters:%0A` +
+        `• Space Category: ${encodeURIComponent(type)}%0A` +
+        `• Budget Range: ${encodeURIComponent(budget)}%0A` +
+        `• Target Timeline: ${encodeURIComponent(timeline)}%0A` +
+        `• Location: ${encodeURIComponent(location)}%0A%0A` +
+        `Brief %26 Requirements:%0A` +
+        `${encodeURIComponent(brief)}`;
 
       // Open WhatsApp with formatted brief
       window.open(`https://wa.me/919037161861?text=${text}`, '_blank');
