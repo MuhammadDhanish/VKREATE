@@ -519,7 +519,7 @@ function applyAdminProjects(adminProjects) {
           budgetRange: adminP.budgetRange || staticP.budgetRange,
           thumbnail: adminThumb || staticP.thumbnail,
           images: adminImgs || staticP.images,
-          beforeImage: (adminImgs && adminImgs[0]) || staticP.beforeImage,
+          beforeImage: (adminImgs && adminImgs[1]) || (adminImgs && adminImgs[0]) || staticP.beforeImage,
           afterImage: adminThumb || staticP.afterImage,
           challenge: adminP.challenge || staticP.challenge,
           solution: adminP.solution || staticP.solution,
