@@ -1065,34 +1065,9 @@
       });
       stage?.addEventListener('mouseleave', () => { layout(cur); });
 
-      // â”€â”€ Autoplay every 3 seconds â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // Autoplay disabled so gallery starts and stays on Image 1 (Render 1)
       let autoTimer = null;
-
-      const startAuto = () => {
-        clearInterval(autoTimer);
-        autoTimer = setInterval(() => go(cur + 1), 3000);
-      };
-
       const stopAuto = () => clearInterval(autoTimer);
-
-      // Start autoplay
-      startAuto();
-
-      // Pause on hover, resume on leave
-      stage?.addEventListener('mouseenter', stopAuto);
-      stage?.addEventListener('mouseleave', startAuto);
-
-      // Pause on touch, resume after touch ends
-      stage?.addEventListener('touchstart', stopAuto,  { passive: true });
-      stage?.addEventListener('touchend',   startAuto, { passive: true });
-
-      // After any manual nav (buttons / dots / keys), reset the 3s window
-      const resetAuto = () => { stopAuto(); startAuto(); };
-      document.getElementById('cflow-prev')?.addEventListener('click', resetAuto);
-      document.getElementById('cflow-next')?.addEventListener('click', resetAuto);
-      dots.forEach(dot => dot.addEventListener('click', resetAuto));
-      stage?.addEventListener('keydown', resetAuto);
-
     })();
 
 
