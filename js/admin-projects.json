@@ -1,44 +1,5 @@
 [
   {
-    "id": "mstcqnm8l2cys",
-    "name": "Sinu",
-    "industry": "office",
-    "industryLabel": "Corporate Office",
-    "location": "advsdfvb",
-    "area": "dfb zdg",
-    "duration": "zfgnfz",
-    "budgetRange": "fgnz",
-    "challenge": "zdvgSFG",
-    "solution": "dfbEDB",
-    "result": "dbZDEb",
-    "status": "published",
-    "images": [
-      "idb:proj_mstcqnm8l2cys_0",
-      "idb:proj_mstcqnm8l2cys_1"
-    ],
-    "thumbnail": "idb:proj_mstcqnm8l2cys_0",
-    "afterImage": "idb:proj_mstcqnm8l2cys_0",
-    "beforeImage": "idb:proj_mstcqnm8l2cys_1",
-    "testimonial": {
-      "author": "xa sd",
-      "role": "dgbxsv",
-      "text": "dflibja'oeibhle",
-      "rating": 5
-    },
-    "processPhases": [
-      "Discovery",
-      "Concept",
-      "Detailing",
-      "Execution",
-      "Handover"
-    ],
-    "views": 0,
-    "clicks": 0,
-    "leads": 0,
-    "createdAt": "2026-08-14T19:40:33.695Z",
-    "updatedAt": "2026-08-14T19:40:33.695Z"
-  },
-  {
     "id": "lilaa-restaurant",
     "name": "Lilaa — Malayali Cuisine",
     "industry": "restaurant",
