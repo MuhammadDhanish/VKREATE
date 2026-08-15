@@ -436,13 +436,28 @@
   box-shadow: 0 8px 32px rgba(201,169,110,0.45);
 }
 .btn-outline {
-  border: 1px solid rgba(255,255,255,0.35);
-  color: var(--white);
+  border: 1.5px solid var(--green-mid);
+  color: var(--green-mid);
+  background: var(--white);
+  font-weight: 600;
 }
 .btn-outline:hover {
-  border-color: rgba(255,255,255,0.8);
-  background: rgba(255,255,255,0.06);
+  border-color: var(--green-mid);
+  background: var(--green-mid);
+  color: var(--white);
   transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+.section--dark .btn-outline,
+.section--green .btn-outline {
+  border-color: rgba(255,255,255,0.4);
+  color: var(--white);
+  background: transparent;
+}
+.section--dark .btn-outline:hover,
+.section--green .btn-outline:hover {
+  border-color: var(--white);
+  background: rgba(255,255,255,0.15);
 }
 .btn-green {
   background: var(--green-mid);

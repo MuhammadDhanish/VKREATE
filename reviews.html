@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Reviews & Testimonials | VKREATE Design Studio</title>
+  <meta name="description" content="Read real client reviews and verified ratings for VKREATE's interior architecture projects across restaurants, salons, retail stores, offices, and hotels." />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/main.css" />
+  <script>window.IS_FULL_REVIEWS_PAGE = true;</script>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav class="nav" id="main-nav" role="navigation" aria-label="Main navigation" style="position:sticky;top:0;background:var(--charcoal);box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:100;">
+  <div class="container">
+    <div class="nav__inner">
+      <a class="nav__logo" href="index.html" aria-label="VKREATE — Home">
+        <img src="assets/images/logo.png" alt="VKREATE — Where Design Speaks" class="nav__logo-img" style="height:46px; width:auto; object-fit:contain; filter:brightness(0) invert(1);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+        <div class="nav__logo-text-wrap" style="display:none; flex-direction:column;">
+          <span class="nav__logo-name">VKREATE</span>
+          <span class="nav__logo-tagline">Where Design Speaks</span>
+        </div>
+      </a>
+
+      <ul class="nav__links" role="list">
+        <li><a class="nav__link" href="projects.html">Portfolio</a></li>
+        <li><a class="nav__link active" href="reviews.html">Reviews</a></li>
+        <li><a class="nav__link" href="index.html#about">About</a></li>
+        <li><a class="nav__link" href="index.html#services">Services</a></li>
+        <li><a class="nav__link nav__cta" href="contact.html">Start a Project</a></li>
+      </ul>
+
+      <button class="nav__hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Nav -->
+<div class="nav__mobile" id="mobile-nav" role="dialog" aria-label="Mobile menu">
+  <a class="nav__link" href="projects.html">Portfolio</a>
+  <a class="nav__link active" href="reviews.html">Reviews</a>
+  <a class="nav__link" href="index.html#about">About</a>
+  <a class="nav__link" href="index.html#services">Services</a>
+  <a class="nav__cta" href="contact.html">Start a Project</a>
+</div>
+
+<!-- PAGE HERO -->
+<header style="background:var(--charcoal);color:var(--white);padding:80px 0 60px 0;text-align:center;">
+  <div class="container">
+    <span class="t-overline" style="color:var(--gold);letter-spacing:0.12em;">Client Voices</span>
+    <h1 class="t-h1" style="color:var(--white);margin:12px 0 16px 0;">What Our Clients Say</h1>
+    <p class="t-body" style="color:rgba(255,255,255,0.7);max-width:580px;margin:0 auto;line-height:1.6;">
+      Every rating reflects a real project, a real relationship, and a real spatial transformation across commercial, residential, and wellness sectors.
+    </p>
+  </div>
+</header>
+
+<!-- REVIEWS SECTION -->
+<main class="section section--cream" style="padding-top:48px;">
+  <div class="container">
+
+    <!-- Aggregate Score Card & Write Review CTA -->
+    <div style="background:var(--white);border-radius:var(--radius-xl);padding:32px 36px;border:1px solid var(--border);box-shadow:0 8px 24px rgba(0,0,0,0.03);margin-bottom:40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;">
+      <div style="display:flex;align-items:center;gap:20px;">
+        <div style="font-family:var(--font-serif);font-size:3.5rem;font-weight:600;color:var(--charcoal);line-height:1;" id="agg-score">5.0</div>
+        <div>
+          <div style="color:#F59E0B;font-size:1.25rem;letter-spacing:2px;margin-bottom:4px;" id="agg-stars">★★★★★</div>
+          <div style="font-size:0.875rem;color:var(--text-muted);" id="agg-count">Based on verified client reviews</div>
+        </div>
+      </div>
+      <button type="button" class="btn btn-green open-review-modal-trigger" id="open-review-modal-btn" style="padding:14px 28px;font-size:0.9375rem;">
+        ✍️ Write a Client Review
+      </button>
+    </div>
+
+    <!-- Review Filters -->
+    <div class="reviews__filters reveal delay-1" id="reviews-filters" role="group" aria-label="Filter reviews by industry" style="margin-bottom:40px;">
+      <button class="filter-btn active" data-filter="all" id="rev-filter-all">All Reviews</button>
+      <button class="filter-btn" data-filter="restaurant" id="rev-filter-restaurant">Restaurants</button>
+      <button class="filter-btn" data-filter="beauty" id="rev-filter-beauty">Beauty &amp; Wellness</button>
+      <button class="filter-btn" data-filter="retail" id="rev-filter-retail">Retail</button>
+      <button class="filter-btn" data-filter="office" id="rev-filter-office">Offices</button>
+    </div>
+
+    <!-- Review Cards Grid -->
+    <div class="reviews__grid" id="reviews-grid" role="list" aria-label="Client review cards"></div>
+  </div>
+</main>
+
+<!-- FOOTER CTA -->
+<footer style="background:var(--charcoal);color:var(--white);padding:60px 0;text-align:center;">
+  <div class="container">
+    <h2 class="t-h2" style="color:var(--white);margin-bottom:12px;">Ready to Work Together?</h2>
+    <p class="t-body" style="color:rgba(255,255,255,0.6);margin-bottom:24px;">Start a project brief and receive an expert spatial assessment within 24 hours.</p>
+    <a href="contact.html" class="btn btn-green" style="padding:14px 28px;">Start Project Brief →</a>
+    <div style="margin-top:32px;font-size:0.875rem;color:rgba(255,255,255,0.4);">
+      © VKREATE Design Studio. All rights reserved. • Calicut, Kerala, India
+    </div>
+  </div>
+</footer>
+
+<!-- CLIENT REVIEW SUBMISSION MODAL -->
+<div class="review-modal-overlay" id="pub-review-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-review-title">
+  <div class="review-modal">
+    <div class="review-modal__header">
+      <div>
+        <h3 class="review-modal__title" id="modal-review-title">Share Your Experience</h3>
+        <div class="review-modal__subtitle">Tell us about working with VKREATE Design Studio</div>
+      </div>
+      <button type="button" class="review-modal__close" id="close-pub-review-btn" aria-label="Close modal">✕</button>
+    </div>
+    
+    <div class="review-modal__body" id="pub-review-modal-body">
+      <form id="pub-review-form">
+        <!-- Interactive Star Selector -->
+        <div class="star-rating-wrap">
+          <div class="star-rating-stars" id="pub-star-selector">
+            <span class="star-rating-star" data-rating="1">★</span>
+            <span class="star-rating-star" data-rating="2">★</span>
+            <span class="star-rating-star" data-rating="3">★</span>
+            <span class="star-rating-star" data-rating="4">★</span>
+            <span class="star-rating-star" data-rating="5">★</span>
+          </div>
+          <div class="star-rating-label" id="pub-star-label">Click stars to rate (1–5)</div>
+          <input type="hidden" id="pub-rating-val" name="rating" value="0" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pub-client-name">Your Name *</label>
+            <input type="text" id="pub-client-name" name="clientName" placeholder="e.g. Unnikrishnan Nair" required />
+          </div>
+          <div class="form-group">
+            <label for="pub-client-role">Role / Title *</label>
+            <input type="text" id="pub-client-role" name="clientRole" placeholder="e.g. Founder, Lilaa Hospitality" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pub-client-email">Email Address *</label>
+            <input type="email" id="pub-client-email" name="clientEmail" placeholder="your@company.com" required />
+          </div>
+          <div class="form-group">
+            <label for="pub-project-sel">Select Project (Optional)</label>
+            <select id="pub-project-sel" name="projectId">
+              <option value="general">General Studio Review</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:12px;">
+          <label for="pub-review-text">Your Review *</label>
+          <textarea id="pub-review-text" name="reviewText" rows="4" placeholder="Tell us about the design quality, spatial flow, timeline, and overall experience..." required minlength="50" maxlength="500"></textarea>
+          <div class="char-count-wrap" id="pub-char-count">
+            <span>Minimum 50 characters required</span>
+            <span id="pub-char-num">0 / 500</span>
+          </div>
+        </div>
+
+        <!-- Optional Photo Upload -->
+        <div class="form-group" style="margin-top:16px;">
+          <label>Optional Photo (Profile or Project)</label>
+          <div class="photo-drop-zone" id="pub-photo-zone">
+            <div class="photo-drop-zone__text">📸 Click to upload a photo (JPG, PNG)</div>
+            <input type="file" id="pub-photo-input" accept="image/*" style="display:none" />
+          </div>
+          <div id="pub-photo-preview" style="margin-top:8px;display:none;"></div>
+        </div>
+
+        <div class="form-group" style="margin-top:16px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:0.8125rem;cursor:pointer;">
+            <input type="checkbox" id="pub-subscribe" name="subscribe" checked />
+            Keep me updated on VKREATE project showcases
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-green w-full" id="pub-review-submit-btn" style="margin-top:20px;width:100%;justify-content:center;">
+          Submit Review for Approval
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="js/data.js"></script>
+<script src="js/reviews.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

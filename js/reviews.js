@@ -12,8 +12,9 @@
     const moreBtn = document.getElementById('reviews-more-btn');
     if (!grid) return;
 
-    const PAGE_LIMIT = 6;
-    let isExpanded = false;
+    const isFullPage = !!window.IS_FULL_REVIEWS_PAGE;
+    const PAGE_LIMIT = isFullPage ? 999 : 6;
+    let isExpanded = isFullPage;
     let currentList = [];
 
     function sortReviews(list) {

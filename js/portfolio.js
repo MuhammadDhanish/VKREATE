@@ -9,8 +9,9 @@
   const moreBtn = document.getElementById('portfolio-more-btn');
   if (!grid) return;
 
-  const PAGE_LIMIT = 6;
-  let isExpanded = false;
+  const isFullPage = !!window.IS_FULL_PORTFOLIO_PAGE;
+  const PAGE_LIMIT = isFullPage ? 999 : 6;
+  let isExpanded = isFullPage;
   let currentList = [];
 
   // Helper to sort projects by rank
