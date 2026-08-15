@@ -51,7 +51,7 @@
       grid.innerHTML = '';
       visibleReviews.forEach((r, idx) => {
         const card = document.createElement('article');
-        card.className = 'review-card reveal visible';
+        card.className = 'review-card';
         card.dataset.industry = r.industry;
         card.style.transitionDelay = `${(idx % 3) * 0.08}s`;
         const color = avatarColors[idx % avatarColors.length];
@@ -131,6 +131,9 @@
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', doInitialRender);
     }
+    window.addEventListener('load', doInitialRender);
+    setTimeout(doInitialRender, 100);
+    setTimeout(doInitialRender, 500);
 
     // Dynamic re-render listeners for approved reviews
     window.addEventListener('vkreate:reviews-updated', () => {

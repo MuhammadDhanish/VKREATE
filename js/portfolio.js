@@ -49,7 +49,7 @@
     grid.innerHTML = '';
     visibleProjects.forEach((proj, idx) => {
       const card = document.createElement('article');
-      card.className = 'portfolio__card reveal visible card-hover';
+      card.className = 'portfolio__card card-hover';
       card.dataset.industry = proj.industry;
       card.style.animationDelay = `${idx * 80}ms`;
       card.setAttribute('role', 'button');
@@ -149,6 +149,9 @@
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', doInitialRender);
   }
+  window.addEventListener('load', doInitialRender);
+  setTimeout(doInitialRender, 100);
+  setTimeout(doInitialRender, 500);
 
   // Event listeners for dynamic updates
   window.addEventListener('vkreate:idb-resolved', () => {
