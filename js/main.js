@@ -493,4 +493,30 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { threshold: 0.6 });
   statEls.forEach(el => countObserver.observe(el));
 
+  // ── Contact Info Dynamic Sync ──
+  const syncContactDOM = () => {
+    const email = (window.VKREATE_DATA && VKREATE_DATA.studio && VKREATE_DATA.studio.email) || 'vkreatearchitecture@gmail.com';
+    const address = (window.VKREATE_DATA && VKREATE_DATA.studio && VKREATE_DATA.studio.address) || 'Calicut, Kerala, India';
+    
+    document.querySelectorAll('a[href^="mailto:"]').forEach(el => {
+      el.href = 'mailto:' + email;
+      el.textContent = email;
+    });
+
+    document.querySelectorAll('.contact__detail').forEach(el => {
+      const label = el.querySelector('.contact__detail-label');
+      if (label && label.textContent.trim().toLowerCase() === 'studio') {
+        const valDiv = el.querySelector('div:not(.contact__detail-icon):not(.contact__detail-label)');
+        if (valDiv) valDiv.innerHTML = address.includes('India') ? address : (address + ', India');
+      }
+    });
+
+    document.querySelectorAll('.footer__link').forEach(el => {
+      if (el.textContent.includes('HSR') || el.textContent.includes('Bengaluru')) {
+        el.textContent = 'Calicut, Kerala';
+      }
+    });
+  };
+  syncContactDOM();
+
 });

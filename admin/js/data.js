@@ -241,7 +241,7 @@ const DB = {
       studio: {
         name: 'VKREATE Design Studio',
         tagline: 'Where Design Speaks',
-        email: 'hello@vkreate.com',
+        email: 'vkreatearchitecture@gmail.com',
         phone: '+91 90371 61861',
         address: 'Calicut, Kerala, India',
         instagram: 'https://www.instagram.com/vkreate_interior_architecture',

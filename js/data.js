@@ -622,10 +622,19 @@ function applyAdminProjects(adminProjects) {
     // ── 3. Studio Settings Sync ──────────────────────────────
     const rawSettings = localStorage.getItem('vk_admin_settings');
     if (rawSettings) {
-      const settings = JSON.parse(rawSettings);
-      if (settings.studio) {
-        VKREATE_DATA.studio = settings.studio;
-      }
+      try {
+        const settings = JSON.parse(rawSettings);
+        if (settings.studio) {
+          if (!settings.studio.email || settings.studio.email === 'hello@vkreate.com' || settings.studio.email.includes('dhanish')) {
+            settings.studio.email = 'vkreatearchitecture@gmail.com';
+          }
+          if (!settings.studio.address || settings.studio.address.includes('HSR') || settings.studio.address.includes('Bengaluru')) {
+            settings.studio.address = 'Calicut, Kerala, India';
+          }
+          localStorage.setItem('vk_admin_settings', JSON.stringify(settings));
+          VKREATE_DATA.studio = settings.studio;
+        }
+      } catch (err) {}
     }
 
   } catch (e) {
