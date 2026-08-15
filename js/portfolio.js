@@ -1,11 +1,26 @@
 // ============================================================
-// VKREATE — Portfolio Gallery JS
+// VKREATE — Portfolio Gallery JS (with 6-item pagination & ranking)
 // ============================================================
 
 (function () {
   const grid = document.getElementById('portfolio-grid');
   const filterBtns = document.querySelectorAll('#portfolio-filters .filter-btn');
+  const moreWrap = document.getElementById('portfolio-more-wrap');
+  const moreBtn = document.getElementById('portfolio-more-btn');
   if (!grid) return;
+
+  const PAGE_LIMIT = 6;
+  let isExpanded = false;
+  let currentList = [];
+
+  // Helper to sort projects by rank
+  function sortProjects(list) {
+    return [...list].sort((a, b) => {
+      const rA = typeof a.rank === 'number' ? a.rank : (parseInt(a.rank) || 999);
+      const rB = typeof b.rank === 'number' ? b.rank : (parseInt(b.rank) || 999);
+      return rA - rB;
+    });
+  }
 
   // Render star rating HTML
   function renderStars(rating) {
@@ -25,8 +40,13 @@
 
   // Render portfolio cards from data
   function renderCards(projects) {
+    const sorted = sortProjects(projects);
+    currentList = sorted;
+
+    const visibleProjects = isExpanded ? sorted : sorted.slice(0, PAGE_LIMIT);
+
     grid.innerHTML = '';
-    projects.forEach((proj, idx) => {
+    visibleProjects.forEach((proj, idx) => {
       const card = document.createElement('article');
       card.className = 'portfolio__card reveal card-hover';
       card.dataset.industry = proj.industry;
@@ -77,6 +97,24 @@
       grid.appendChild(card);
     });
 
+    // Handle Show More / Show Less button visibility
+    if (moreWrap && moreBtn) {
+      if (sorted.length > PAGE_LIMIT) {
+        moreWrap.style.display = 'block';
+        const label = moreBtn.querySelector('span:first-child');
+        const icon = document.getElementById('portfolio-more-icon');
+        if (isExpanded) {
+          if (label) label.textContent = 'Show Less Projects';
+          if (icon) icon.textContent = '↑';
+        } else {
+          if (label) label.textContent = `Show More Projects (${sorted.length - PAGE_LIMIT} more)`;
+          if (icon) icon.textContent = '↓';
+        }
+      } else {
+        moreWrap.style.display = 'none';
+      }
+    }
+
     // Re-trigger reveal observer on new cards
     setTimeout(() => {
       const newCards = grid.querySelectorAll('.reveal:not(.visible)');
@@ -88,27 +126,41 @@
     window.location.href = `project.html?id=${id}`;
   }
 
-  // Initial render
-  renderCards(VKREATE_DATA.projects);
+  // Toggle button click listener
+  if (moreBtn) {
+    moreBtn.addEventListener('click', () => {
+      isExpanded = !isExpanded;
+      renderCards(currentList);
+      if (!isExpanded) {
+        grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }
 
-  // Re-render when IndexedDB images have been resolved (for admin-uploaded photos)
-  window.addEventListener('vkreate:idb-resolved', () => {
+  // Initial render
+  if (window.VKREATE_DATA && VKREATE_DATA.projects) {
     renderCards(VKREATE_DATA.projects);
+  }
+
+  // Event listeners for dynamic updates
+  window.addEventListener('vkreate:idb-resolved', () => {
+    if (window.VKREATE_DATA && VKREATE_DATA.projects) renderCards(VKREATE_DATA.projects);
   });
   window.addEventListener('vkreate:projects-updated', () => {
-    renderCards(VKREATE_DATA.projects);
+    if (window.VKREATE_DATA && VKREATE_DATA.projects) renderCards(VKREATE_DATA.projects);
   });
   window.addEventListener('storage', () => {
-    renderCards(VKREATE_DATA.projects);
+    if (window.VKREATE_DATA && VKREATE_DATA.projects) renderCards(VKREATE_DATA.projects);
   });
 
-  // Filter behaviour
+  // Filter behavior
   filterBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const filter = btn.dataset.filter;
       filterBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
+      isExpanded = false; // reset expand on filter change
       const filtered = filter === 'all'
         ? VKREATE_DATA.projects
         : VKREATE_DATA.projects.filter(p => p.industry === filter);

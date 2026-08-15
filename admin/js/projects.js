@@ -122,6 +122,7 @@ const Projects = {
     return `<table>
       <thead><tr>
         <th style="width:48px"></th>
+        <th style="width:60px">Rank</th>
         <th class="sortable">Project Name</th>
         <th>Industry</th>
         <th>Status</th>
@@ -143,6 +144,7 @@ const Projects = {
                 ? `<img src="${isIdb ? '../assets/images/project_lilaa_1.jpg' : thumbSrc}" data-idb-key="${isIdb ? rawSrc.slice(4) : ''}" class="td-thumb" alt="" onerror="this.src='../assets/images/project_lilaa_1.jpg'">`
                 : `<div class="td-thumb-placeholder">No img</div>`}
             </td>
+            <td class="text-sm fw-600" style="color:var(--primary)">#${p.rank || 99}</td>
             <td class="td-name">${p.name || 'Untitled'}</td>
             <td><span class="text-sm text-muted">${p.industryLabel||p.industry||'Commercial'}</span></td>
             <td>${UI.badge(p.status)}</td>
@@ -231,6 +233,17 @@ const Projects = {
 
     UI.modal(`${id ? 'Edit' : 'Add'} Project`, `
       <form id="proj-form" class="form-grid" style="gap:20px" onsubmit="event.preventDefault(); Projects.submitDirect();">
+        <div style="background:rgba(201,169,110,0.1);padding:14px 18px;border-radius:var(--r-md);border:1px solid rgba(201,169,110,0.3);display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div>
+            <div class="fw-600 text-sm" style="color:var(--text-1)">🏆 Display Position / Rank on Website</div>
+            <div class="text-xs text-muted">Set to 1 to show this project in the 1st position on your website</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="text-xs text-muted">Rank #</span>
+            <input type="number" min="1" max="999" class="form-control" name="rank" value="${p?.rank || 99}" style="width:70px;text-align:center;font-weight:700">
+          </div>
+        </div>
+
         <div class="form-grid form-grid-2">
           <div class="form-group">
             <label class="form-label">Project Name <span>*</span></label>
@@ -551,6 +564,7 @@ const Projects = {
       challenge:    f.querySelector('[name="challenge"]')?.value.trim() || '',
       solution:     f.querySelector('[name="solution"]')?.value.trim() || '',
       result:       f.querySelector('[name="result"]')?.value.trim() || '',
+      rank:         parseInt(f.querySelector('[name="rank"]')?.value || '99'),
       status:       f.querySelector('[name="status"]')?.checked ? 'published' : 'draft',
       images:       imageList,
       thumbnail:    thumbRef,

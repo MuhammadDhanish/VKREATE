@@ -8,10 +8,24 @@
   function initReviewsGrid() {
     const grid = document.getElementById('reviews-grid');
     const filterBtns = document.querySelectorAll('#reviews-filters .filter-btn');
+    const moreWrap = document.getElementById('reviews-more-wrap');
+    const moreBtn = document.getElementById('reviews-more-btn');
     if (!grid) return;
 
+    const PAGE_LIMIT = 6;
+    let isExpanded = false;
+    let currentList = [];
+
+    function sortReviews(list) {
+      return [...list].sort((a, b) => {
+        const rA = typeof a.rank === 'number' ? a.rank : (parseInt(a.rank) || 999);
+        const rB = typeof b.rank === 'number' ? b.rank : (parseInt(b.rank) || 999);
+        return rA - rB;
+      });
+    }
+
     function getInitials(name) {
-      return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+      return name ? name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() : 'C';
     }
 
     function renderStars(rating) {
@@ -28,8 +42,13 @@
     ];
 
     function renderReviews(reviews) {
+      const sorted = sortReviews(reviews);
+      currentList = sorted;
+
+      const visibleReviews = isExpanded ? sorted : sorted.slice(0, PAGE_LIMIT);
+
       grid.innerHTML = '';
-      reviews.forEach((r, idx) => {
+      visibleReviews.forEach((r, idx) => {
         const card = document.createElement('article');
         card.className = 'review-card reveal';
         card.dataset.industry = r.industry;
@@ -65,9 +84,39 @@
         `;
         grid.appendChild(card);
       });
+
+      // Handle Show More / Show Less button visibility
+      if (moreWrap && moreBtn) {
+        if (sorted.length > PAGE_LIMIT) {
+          moreWrap.style.display = 'block';
+          const label = moreBtn.querySelector('span:first-child');
+          const icon = document.getElementById('reviews-more-icon');
+          if (isExpanded) {
+            if (label) label.textContent = 'Show Less Reviews';
+            if (icon) icon.textContent = '↑';
+          } else {
+            if (label) label.textContent = `Show More Reviews (${sorted.length - PAGE_LIMIT} more)`;
+            if (icon) icon.textContent = '↓';
+          }
+        } else {
+          moreWrap.style.display = 'none';
+        }
+      }
+
       setTimeout(() => {
         grid.querySelectorAll('.reveal:not(.visible)').forEach(c => c.classList.add('visible'));
       }, 80);
+    }
+
+    // Toggle button click listener
+    if (moreBtn) {
+      moreBtn.addEventListener('click', () => {
+        isExpanded = !isExpanded;
+        renderReviews(currentList);
+        if (!isExpanded) {
+          grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
     }
 
     // Initial render
@@ -93,6 +142,7 @@
         filterBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const filter = btn.dataset.filter;
+        isExpanded = false; // reset expand on filter change
         const filtered = filter === 'all'
           ? VKREATE_DATA.reviews
           : VKREATE_DATA.reviews.filter(r => r.industry === filter);

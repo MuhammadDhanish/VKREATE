@@ -108,6 +108,7 @@ const Reviews = {
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
+            <span class="badge" style="background:rgba(201,169,110,0.15);color:var(--text-1);border:1px solid rgba(201,169,110,0.3);font-weight:600">Rank #${r.rank || 99}</span>
             <div class="stars">${stars}</div>
             ${UI.badge(r.status)}
             <span class="text-xs text-muted">${UI.timeAgo(r.createdAt)}</span>
@@ -199,6 +200,17 @@ const Reviews = {
     const r = DB.reviews.get(id);
     UI.modal('Edit Review', `
       <div class="form-grid" style="gap:16px">
+        <div style="background:rgba(201,169,110,0.1);padding:12px 16px;border-radius:var(--r-md);border:1px solid rgba(201,169,110,0.3);display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="fw-600 text-sm">🏆 Website Display Position / Rank</div>
+            <div class="text-xs text-muted">Set to 1 to show this review in the 1st position on your website</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="text-xs text-muted">Rank #</span>
+            <input type="number" min="1" max="999" class="form-control" id="edit-rank" value="${r.rank || 99}" style="width:70px;text-align:center;font-weight:700">
+          </div>
+        </div>
+
         <div class="form-grid form-grid-2">
           <div class="form-group">
             <label class="form-label">Client Name</label>
@@ -239,6 +251,7 @@ const Reviews = {
       reviewText:       document.getElementById('edit-text').value.trim(),
       shortTestimonial: document.getElementById('edit-short').value.trim(),
       rating:           parseInt(document.getElementById('edit-rating').value),
+      rank:             parseInt(document.getElementById('edit-rank')?.value || '99'),
     });
     UI.toast('Review updated!', 'success');
     UI.closeModal();
@@ -249,6 +262,17 @@ const Reviews = {
     const projects = DB.projects.all();
     UI.modal('Add Review', `
       <div class="form-grid" style="gap:16px">
+        <div style="background:rgba(201,169,110,0.1);padding:12px 16px;border-radius:var(--r-md);border:1px solid rgba(201,169,110,0.3);display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="fw-600 text-sm">🏆 Website Display Position / Rank</div>
+            <div class="text-xs text-muted">Set to 1 to show this review in the 1st position on your website</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="text-xs text-muted">Rank #</span>
+            <input type="number" min="1" max="999" class="form-control" id="add-rank" value="99" style="width:70px;text-align:center;font-weight:700">
+          </div>
+        </div>
+
         <div class="form-group">
           <label class="form-label">Project <span>*</span></label>
           <select class="form-control" id="add-project" required>
@@ -299,8 +323,9 @@ const Reviews = {
       clientName:  name,
       clientRole:  document.getElementById('add-role').value.trim(),
       reviewText:  text,
+      shortTestimonial: text.slice(0, 140),
       rating:      parseInt(document.getElementById('add-rating').value),
-      shortTestimonial: text.slice(0,140),
+      rank:        parseInt(document.getElementById('add-rank')?.value || '99'),
       status: 'pending',
       studioResponse: '',
       tags: [],
