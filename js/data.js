@@ -2,7 +2,7 @@
 // VKREATE — Static Data Layer
 // ============================================================
 
-const VKREATE_DATA = {
+window.VKREATE_DATA = {
 
   projects: [
     {
@@ -343,6 +343,7 @@ const ImageDBReader = {
     return proj;
   },
 };
+var VKREATE_DATA = window.VKREATE_DATA;
 
 // ============================================================
 // Sync Engine — Full-Duplex Admin Dashboard & Website Sync

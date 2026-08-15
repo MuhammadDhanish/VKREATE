@@ -120,10 +120,15 @@
       });
     }
 
+    const getReviewsData = () => {
+      return (window.VKREATE_DATA && window.VKREATE_DATA.reviews) || (typeof VKREATE_DATA !== 'undefined' && VKREATE_DATA.reviews) || [];
+    };
+
     // Initial render
     const doInitialRender = () => {
-      if (window.VKREATE_DATA && VKREATE_DATA.reviews && VKREATE_DATA.reviews.length) {
-        renderReviews(VKREATE_DATA.reviews);
+      const list = getReviewsData();
+      if (list && list.length) {
+        renderReviews(list);
       }
     };
 
@@ -132,20 +137,13 @@
       document.addEventListener('DOMContentLoaded', doInitialRender);
     }
     window.addEventListener('load', doInitialRender);
-    setTimeout(doInitialRender, 100);
-    setTimeout(doInitialRender, 500);
+    setTimeout(doInitialRender, 50);
+    setTimeout(doInitialRender, 200);
+    setTimeout(doInitialRender, 600);
 
     // Dynamic re-render listeners for approved reviews
-    window.addEventListener('vkreate:reviews-updated', () => {
-      if (window.VKREATE_DATA && VKREATE_DATA.reviews) {
-        renderReviews(VKREATE_DATA.reviews);
-      }
-    });
-    window.addEventListener('storage', () => {
-      if (window.VKREATE_DATA && VKREATE_DATA.reviews) {
-        renderReviews(VKREATE_DATA.reviews);
-      }
-    });
+    window.addEventListener('vkreate:reviews-updated', () => renderReviews(getReviewsData()));
+    window.addEventListener('storage', () => renderReviews(getReviewsData()));
 
     // Filter
     filterBtns.forEach(btn => {

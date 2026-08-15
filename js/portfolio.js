@@ -138,10 +138,15 @@
     });
   }
 
+  const getProjectsData = () => {
+    return (window.VKREATE_DATA && window.VKREATE_DATA.projects) || (typeof VKREATE_DATA !== 'undefined' && VKREATE_DATA.projects) || [];
+  };
+
   // Initial render
   const doInitialRender = () => {
-    if (window.VKREATE_DATA && VKREATE_DATA.projects && VKREATE_DATA.projects.length) {
-      renderCards(VKREATE_DATA.projects);
+    const list = getProjectsData();
+    if (list && list.length) {
+      renderCards(list);
     }
   };
 
@@ -150,19 +155,14 @@
     document.addEventListener('DOMContentLoaded', doInitialRender);
   }
   window.addEventListener('load', doInitialRender);
-  setTimeout(doInitialRender, 100);
-  setTimeout(doInitialRender, 500);
+  setTimeout(doInitialRender, 50);
+  setTimeout(doInitialRender, 200);
+  setTimeout(doInitialRender, 600);
 
   // Event listeners for dynamic updates
-  window.addEventListener('vkreate:idb-resolved', () => {
-    if (window.VKREATE_DATA && VKREATE_DATA.projects) renderCards(VKREATE_DATA.projects);
-  });
-  window.addEventListener('vkreate:projects-updated', () => {
-    if (window.VKREATE_DATA && VKREATE_DATA.projects) renderCards(VKREATE_DATA.projects);
-  });
-  window.addEventListener('storage', () => {
-    if (window.VKREATE_DATA && VKREATE_DATA.projects) renderCards(VKREATE_DATA.projects);
-  });
+  window.addEventListener('vkreate:idb-resolved', () => renderCards(getProjectsData()));
+  window.addEventListener('vkreate:projects-updated', () => renderCards(getProjectsData()));
+  window.addEventListener('storage', () => renderCards(getProjectsData()));
 
   // Filter behavior
   filterBtns.forEach(btn => {
