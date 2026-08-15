@@ -163,10 +163,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ── Render Services Grid (6 Disciplines 3x2) ──────────────
-  const servicesGrid = document.getElementById('services-grid');
-  const servicesData = (window.VKREATE_DATA && VKREATE_DATA.services) || [];
-  if (servicesGrid && servicesData.length) {
-    servicesGrid.innerHTML = servicesData.map((s, idx) => `
+  function renderServicesGrid() {
+    const servicesGrid = document.getElementById('services-grid');
+    if (!servicesGrid) return;
+    const data = (window.VKREATE_DATA || (typeof VKREATE_DATA !== 'undefined' ? VKREATE_DATA : null));
+    const services = data && data.services;
+    if (!services || !services.length) return;
+
+    servicesGrid.innerHTML = services.map((s, idx) => `
       <article class="service-card card-hover" style="animation-delay:${idx * 70}ms">
         <div class="service-card__top">
           <div class="service-card__icon">${s.icon}</div>
@@ -179,13 +183,17 @@ document.addEventListener('DOMContentLoaded', () => {
           ${(s.features || []).map(f => `<span class="service-chip">${f}</span>`).join('')}
         </div>
         <div class="service-card__footer">
-          <a href="#contact" class="service-card__link">
+          <a href="contact.html" class="service-card__link">
             <span>See this in action →</span>
           </a>
         </div>
       </article>
     `).join('');
   }
+
+  renderServicesGrid();
+  setTimeout(renderServicesGrid, 50);
+  setTimeout(renderServicesGrid, 250);
 
   // ── Contact Form — WhatsApp Integration ─────────────────────
   const WHATSAPP_NUMBER = '919037161861'; // +91 9037161861
