@@ -12,7 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (preloader) {
     // If already seen this session, skip immediately and remove
-    if (sessionStorage.getItem('vkreate_intro_seen')) {
+    let hasSeen = false;
+    try { hasSeen = sessionStorage.getItem('vkreate_intro_seen'); } catch(e) {}
+
+    if (hasSeen) {
       preloader.remove();
       document.body.style.overflow = '';
     } else {
@@ -24,16 +27,27 @@ document.addEventListener('DOMContentLoaded', () => {
       const dismiss = () => {
         if (dismissed) return;
         dismissed = true;
-        // Mark as seen so it won't show again this session
-        sessionStorage.setItem('vkreate_intro_seen', '1');
+        try { sessionStorage.setItem('vkreate_intro_seen', '1'); } catch(e) {}
         cancelAnimationFrame(rafId);
         if (progressFill) progressFill.style.width = '100%';
+        preloader.classList.add('fade-out');
+        document.body.style.overflow = '';
         setTimeout(() => {
-          preloader.classList.add('fade-out');
-          document.body.style.overflow = '';
-          setTimeout(() => preloader?.remove(), 900);
-        }, 150);
+          try { preloader.remove(); } catch (e) {}
+        }, 400);
       };
+
+      // Click anywhere on preloader or skip button to dismiss immediately
+      preloader.addEventListener('click', dismiss);
+      if (skipBtn) {
+        skipBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dismiss();
+        });
+      }
+
+      // Hard safety fallback — dismiss after 1.8s max
+      const fallback = setTimeout(dismiss, 1800);
 
       // Sync progress bar to video playback position
       const tickVideo = () => {
@@ -49,15 +63,23 @@ document.addEventListener('DOMContentLoaded', () => {
         video.addEventListener('loadedmetadata', () => {
           rafId = requestAnimationFrame(tickVideo);
         });
-        video.addEventListener('ended', dismiss);
+        video.addEventListener('ended', () => {
+          clearTimeout(fallback);
+          dismiss();
+        });
+        video.addEventListener('error', dismiss);
 
-        const fallback = setTimeout(dismiss, 8000);
-        video.addEventListener('ended', () => clearTimeout(fallback));
-        skipBtn?.addEventListener('click', () => { clearTimeout(fallback); dismiss(); });
+        // Attempt video autoplay
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Autoplay prevented by browser policy — trigger fast fallback
+            setTimeout(dismiss, 600);
+          });
+        }
       } else {
-        // No video — fallback timer
         const startTime = performance.now();
-        const TOTAL_MS  = 3200;
+        const TOTAL_MS  = 1200;
         const tick = (now) => {
           const elapsed = now - startTime;
           const pct = Math.min((elapsed / TOTAL_MS) * 100, 100);
@@ -66,10 +88,19 @@ document.addEventListener('DOMContentLoaded', () => {
           rafId = requestAnimationFrame(tick);
         };
         rafId = requestAnimationFrame(tick);
-        skipBtn?.addEventListener('click', dismiss);
       }
     }
   }
+
+  // Global safety watchdog — guarantee overflow is restored and preloader removed within 2.2s
+  setTimeout(() => {
+    const p = document.getElementById('preloader');
+    if (p) {
+      p.classList.add('fade-out');
+      setTimeout(() => p.remove(), 300);
+    }
+    document.body.style.overflow = '';
+  }, 2200);
 
 
 
@@ -604,6 +635,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
+  });
+
   // ── Master Section Accordion Architecture ──
   const sectionAccordions = document.querySelectorAll('.mobile-section-accordion');
   sectionAccordions.forEach(acc => {

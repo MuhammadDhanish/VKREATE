@@ -25,8 +25,10 @@
 <!-- ══════════════════════════════════════════════════════════
      PRELOADER / LOGO ANIMATION  (index.html only)
 ══════════════════════════════════════════════════════════ -->
-<div id="preloader" class="preloader" aria-label="Loading VKREATE Studio">
-
+<div id="preloader" class="preloader" aria-label="Loading VKREATE Studio" onclick="this.classList.add('fade-out'); document.body.style.overflow=''; setTimeout(() => this.remove(), 400);">
+  <button class="preloader__skip" id="preloader-skip" aria-label="Skip intro" onclick="event.stopPropagation(); const p=document.getElementById('preloader'); if(p){p.classList.add('fade-out'); document.body.style.overflow=''; setTimeout(()=>p.remove(),300);}">
+    SKIP INTRO ✕
+  </button>
 
   <div class="preloader__inner">
     <!-- Logo animation video -->
@@ -42,8 +44,6 @@
   <div class="preloader__progress-bar">
     <div class="preloader__progress-fill" id="preloader-progress"></div>
   </div>
-
-  <button class="preloader__skip" id="preloader-skip" aria-label="Skip intro">Skip →</button>
 </div>
 
 
