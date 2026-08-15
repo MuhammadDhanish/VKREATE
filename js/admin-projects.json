@@ -41,11 +41,14 @@
       "dining",
       "premium"
     ],
-    "views": 1240,
-    "clicks": 387,
-    "leads": 12,
+    "views": 0,
+    "clicks": 0,
+    "leads": 0,
     "createdAt": "2025-06-15T10:00:00Z",
-    "updatedAt": "2025-07-01T08:30:00Z"
+    "updatedAt": "2026-08-15T10:21:56.440Z",
+    "rank": 1,
+    "afterImage": "../assets/images/project_lilaa_1.jpg",
+    "beforeImage": "../assets/images/project_lilaa_2.png"
   },
   {
     "id": "luxury-salon",
@@ -88,17 +91,20 @@
       "beauty",
       "wellness"
     ],
-    "views": 890,
-    "clicks": 241,
-    "leads": 8,
+    "views": 0,
+    "clicks": 0,
+    "leads": 0,
     "createdAt": "2025-04-10T09:00:00Z",
-    "updatedAt": "2025-05-20T11:00:00Z"
+    "updatedAt": "2026-08-15T10:22:06.750Z",
+    "rank": 3,
+    "afterImage": "../assets/images/project_salon_3.png",
+    "beforeImage": "../assets/images/project_salon_3.png"
   },
   {
     "id": "retail-jewellery",
     "name": "Wings Jewellery & Retail Showroom",
     "industry": "retail",
-    "industryLabel": "Jewellery & Retail",
+    "industryLabel": "Retail & Jewellery",
     "location": "Calicut, Kerala",
     "area": "1,800 sq ft",
     "duration": "2 months",
@@ -136,17 +142,20 @@
       "jewellery",
       "showroom"
     ],
-    "views": 760,
-    "clicks": 198,
-    "leads": 6,
+    "views": 0,
+    "clicks": 0,
+    "leads": 0,
     "createdAt": "2025-02-14T10:00:00Z",
-    "updatedAt": "2025-03-01T09:00:00Z"
+    "updatedAt": "2026-08-15T10:22:31.092Z",
+    "rank": 4,
+    "afterImage": "../assets/images/project_jewellery_1.jpg",
+    "beforeImage": "../assets/images/project_jewellery_2.jpg"
   },
   {
     "id": "corporate-lounge",
     "name": "Corporate VIP Reception & Lounge",
     "industry": "office",
-    "industryLabel": "Offices & Workspaces",
+    "industryLabel": "Corporate Office",
     "location": "Kochi, Kerala",
     "area": "2,900 sq ft",
     "duration": "2.5 months",
@@ -184,10 +193,13 @@
       "corporate",
       "lounge"
     ],
-    "views": 620,
-    "clicks": 154,
-    "leads": 5,
+    "views": 0,
+    "clicks": 0,
+    "leads": 0,
     "createdAt": "2025-01-20T11:00:00Z",
-    "updatedAt": "2025-02-05T14:00:00Z"
+    "updatedAt": "2026-08-15T10:22:41.455Z",
+    "rank": 2,
+    "afterImage": "../assets/images/project_lounge.png",
+    "beforeImage": "../assets/images/project_lilaa_5.png"
   }
 ]
