@@ -160,31 +160,7 @@
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════════════════════
-     STATS STRIP
-══════════════════════════════════════════════════════════ -->
-<div class="stats" role="region" aria-label="Studio statistics">
-  <div class="container">
-    <div class="stats__grid">
-      <div class="stats__item reveal">
-        <span class="stats__value" data-target="4" aria-label="4 completed projects">4</span>
-        <span class="stats__label">Projects Completed</span>
-      </div>
-      <div class="stats__item reveal delay-1">
-        <span class="stats__value" data-target="12+" aria-label="12 plus years">12+</span>
-        <span class="stats__label">Years of Excellence</span>
-      </div>
-      <div class="stats__item reveal delay-2">
-        <span class="stats__value" aria-label="4.9 average rating">4.9</span>
-        <span class="stats__label">Average Client Rating</span>
-      </div>
-      <div class="stats__item reveal delay-3">
-        <span class="stats__value" aria-label="100 percent on time delivery">100%</span>
-        <span class="stats__label">On-Time Delivery</span>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- Stats strip removed per Loop 1: duplicate of hero inline stats strip -->
 
 <!-- ══════════════════════════════════════════════════════════
      PORTFOLIO GALLERY — SECTION 2
@@ -198,8 +174,8 @@
       <p class="section__desc t-body">Completed across offices, restaurants, retail spaces, healthcare facilities, hospitality venues, and private residences across India.</p>
     </div>
 
-    <!-- Filter Bar -->
-    <div class="portfolio__filters reveal delay-1" id="portfolio-filters" role="group" aria-label="Filter projects by industry">
+    <!-- Filter Bar (Desktop) -->
+    <div class="portfolio__filters desktop-only reveal delay-1" id="portfolio-filters" role="group" aria-label="Filter projects by industry">
       <button class="filter-btn active" data-filter="all" id="filter-all">All Projects</button>
       <button class="filter-btn" data-filter="restaurant" id="filter-restaurant">Restaurants &amp; Cafes</button>
       <button class="filter-btn" data-filter="beauty" id="filter-beauty">Beauty &amp; Wellness</button>
@@ -208,6 +184,21 @@
       <button class="filter-btn" data-filter="villa" id="filter-villa">Villas &amp; Residential</button>
       <button class="filter-btn" data-filter="healthcare" id="filter-healthcare">Healthcare &amp; Clinics</button>
       <button class="filter-btn" data-filter="hospitality" id="filter-hospitality">Hotels &amp; Resorts</button>
+    </div>
+
+    <!-- Filter Bar (Mobile Dropdown) -->
+    <div class="portfolio__filters-mobile mobile-only reveal delay-1">
+      <label for="portfolio-filter-select" class="sr-only">Filter projects by industry</label>
+      <select class="filter-dropdown" id="portfolio-filter-select" aria-label="Select project category">
+        <option value="all">All Projects (4)</option>
+        <option value="restaurant">Restaurants &amp; Cafes</option>
+        <option value="beauty">Beauty &amp; Wellness</option>
+        <option value="retail">Retail &amp; Jewellery</option>
+        <option value="office">Offices &amp; Lounges</option>
+        <option value="villa">Villas &amp; Residential</option>
+        <option value="healthcare">Healthcare &amp; Clinics</option>
+        <option value="hospitality">Hotels &amp; Resorts</option>
+      </select>
     </div>
 
     <!-- Cards rendered by portfolio.js -->
@@ -272,13 +263,25 @@
       </div>
     </div>
 
-    <!-- Review Filters -->
-    <div class="reviews__filters reveal delay-1" id="reviews-filters" role="group" aria-label="Filter reviews by industry">
+    <!-- Review Filters (Desktop) -->
+    <div class="reviews__filters desktop-only reveal delay-1" id="reviews-filters" role="group" aria-label="Filter reviews by industry">
       <button class="filter-btn active" data-filter="all" id="rev-filter-all">All Reviews</button>
       <button class="filter-btn" data-filter="restaurant" id="rev-filter-restaurant">Restaurants</button>
       <button class="filter-btn" data-filter="beauty" id="rev-filter-beauty">Beauty &amp; Wellness</button>
       <button class="filter-btn" data-filter="retail" id="rev-filter-retail">Retail</button>
       <button class="filter-btn" data-filter="office" id="rev-filter-office">Offices</button>
+    </div>
+
+    <!-- Review Filters (Mobile Dropdown) -->
+    <div class="reviews__filters-mobile mobile-only reveal delay-1">
+      <label for="reviews-filter-select" class="sr-only">Filter reviews by industry</label>
+      <select class="filter-dropdown" id="reviews-filter-select" aria-label="Select review category">
+        <option value="all">All Reviews</option>
+        <option value="restaurant">Restaurants</option>
+        <option value="beauty">Beauty &amp; Wellness</option>
+        <option value="retail">Retail</option>
+        <option value="office">Offices</option>
+      </select>
     </div>
 
     <!-- Review Cards rendered by reviews.js -->
@@ -604,9 +607,12 @@
           A premium commercial interior design studio transforming spaces across India. From concept to accomplishment — we design environments that perform.
         </p>
       </div>
-      <div>
-        <div class="footer__col-title">Navigate</div>
-        <ul class="footer__links" role="list">
+      <div class="footer__col footer__col--accordion">
+        <button type="button" class="footer__col-title footer__accordion-btn" aria-expanded="false">
+          <span>Navigate</span>
+          <span class="footer__accordion-icon mobile-only" aria-hidden="true">+</span>
+        </button>
+        <ul class="footer__links footer__accordion-content" role="list">
           <li><a class="footer__link" href="#portfolio">Portfolio</a></li>
           <li><a class="footer__link" href="#reviews">Reviews</a></li>
           <li><a class="footer__link" href="#about">About</a></li>
@@ -615,9 +621,12 @@
           <li><a class="footer__link" href="admin/index.html" target="_blank" style="color:var(--gold)">🔒 Admin Portal</a></li>
         </ul>
       </div>
-      <div>
-        <div class="footer__col-title">Industries</div>
-        <ul class="footer__links" role="list">
+      <div class="footer__col footer__col--accordion">
+        <button type="button" class="footer__col-title footer__accordion-btn" aria-expanded="false">
+          <span>Industries</span>
+          <span class="footer__accordion-icon mobile-only" aria-hidden="true">+</span>
+        </button>
+        <ul class="footer__links footer__accordion-content" role="list">
           <li><span class="footer__link">Corporate Offices</span></li>
           <li><span class="footer__link">Restaurants & Bars</span></li>
           <li><span class="footer__link">Retail & Jewellery</span></li>
@@ -626,7 +635,7 @@
           <li><span class="footer__link">Luxury Villas</span></li>
         </ul>
       </div>
-      <div>
+      <div class="footer__col">
         <div class="footer__col-title">Contact</div>
         <ul class="footer__links" role="list">
           <li><a class="footer__link" href="mailto:vkreatearchitecture@gmail.com">vkreatearchitecture@gmail.com</a></li>

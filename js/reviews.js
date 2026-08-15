@@ -13,7 +13,11 @@
     if (!grid) return;
 
     const isFullPage = !!window.IS_FULL_REVIEWS_PAGE;
-    const PAGE_LIMIT = isFullPage ? 999 : 6;
+    function getPageLimit() {
+      if (isFullPage) return 999;
+      const isMobile = window.innerWidth <= 768;
+      return isMobile ? 3 : 6;
+    }
     let isExpanded = isFullPage;
     let currentList = [];
 
@@ -45,8 +49,9 @@
     function renderReviews(reviews) {
       const sorted = sortReviews(reviews);
       currentList = sorted;
+      const limit = getPageLimit();
 
-      const visibleReviews = isExpanded ? sorted : sorted.slice(0, PAGE_LIMIT);
+      const visibleReviews = isExpanded ? sorted : sorted.slice(0, limit);
 
       grid.innerHTML = '';
       visibleReviews.forEach((r, idx) => {
@@ -88,7 +93,7 @@
 
       // Handle Show More / Show Less button visibility
       if (moreWrap && moreBtn) {
-        if (sorted.length > PAGE_LIMIT) {
+        if (sorted.length > limit) {
           moreWrap.style.display = 'block';
           const label = moreBtn.querySelector('span:first-child');
           const icon = document.getElementById('reviews-more-icon');
@@ -96,7 +101,7 @@
             if (label) label.textContent = 'Show Less Reviews';
             if (icon) icon.textContent = '↑';
           } else {
-            if (label) label.textContent = `Show More Reviews (${sorted.length - PAGE_LIMIT} more)`;
+            if (label) label.textContent = `Show More Reviews (${sorted.length - limit} more)`;
             if (icon) icon.textContent = '↓';
           }
         } else {
@@ -141,23 +146,47 @@
     setTimeout(doInitialRender, 200);
     setTimeout(doInitialRender, 600);
 
-    // Dynamic re-render listeners for approved reviews
+    // Dynamic re-render listeners for approved reviews & window resize
+    window.addEventListener('resize', () => renderReviews(getReviewsData()));
     window.addEventListener('vkreate:reviews-updated', () => renderReviews(getReviewsData()));
     window.addEventListener('storage', () => renderReviews(getReviewsData()));
 
-    // Filter
+    // Filter (Desktop buttons)
     filterBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         filterBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const filter = btn.dataset.filter;
-        isExpanded = false; // reset expand on filter change
+
+        const revSelect = document.getElementById('reviews-filter-select');
+        if (revSelect) revSelect.value = filter;
+
+        isExpanded = false;
+        const allReviews = getReviewsData();
         const filtered = filter === 'all'
-          ? VKREATE_DATA.reviews
-          : VKREATE_DATA.reviews.filter(r => r.industry === filter);
+          ? allReviews
+          : allReviews.filter(r => r.industry === filter);
         renderReviews(filtered);
       });
     });
+
+    // Filter (Mobile Select Dropdown)
+    const revSelect = document.getElementById('reviews-filter-select');
+    if (revSelect) {
+      revSelect.addEventListener('change', (e) => {
+        const filter = e.target.value;
+        filterBtns.forEach(b => {
+          b.classList.toggle('active', b.dataset.filter === filter);
+        });
+
+        isExpanded = false;
+        const allReviews = getReviewsData();
+        const filtered = filter === 'all'
+          ? allReviews
+          : allReviews.filter(r => r.industry === filter);
+        renderReviews(filtered);
+      });
+    }
 
     // Render aggregate score
     if (window.VKREATE_DATA && VKREATE_DATA.reviews && VKREATE_DATA.reviews.length) {

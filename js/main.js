@@ -540,4 +540,71 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   syncContactDOM();
 
+  // ── Loop 6: Process Section Accordion on Mobile ──
+  const processSteps = document.querySelectorAll('.process__step');
+  processSteps.forEach((step, idx) => {
+    const titleEl = step.querySelector('.process__step-title');
+    const numEl = step.querySelector('.process__num');
+    const descEl = step.querySelector('.process__step-desc');
+
+    if (titleEl && numEl && descEl && !step.querySelector('.process__step-header')) {
+      const header = document.createElement('div');
+      header.className = 'process__step-header';
+      
+      const headLeft = document.createElement('div');
+      headLeft.className = 'process__step-head-left';
+      headLeft.appendChild(numEl.cloneNode(true));
+      headLeft.appendChild(titleEl.cloneNode(true));
+
+      const icon = document.createElement('span');
+      icon.className = 'process__step-icon mobile-only';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = '+';
+
+      header.appendChild(headLeft);
+      header.appendChild(icon);
+
+      step.innerHTML = '';
+      step.appendChild(header);
+      step.appendChild(descEl);
+
+      step.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768) {
+          const isCurrentlyOpen = step.classList.contains('open');
+          processSteps.forEach(s => {
+            s.classList.remove('open');
+            const ic = s.querySelector('.process__step-icon');
+            if (ic) ic.textContent = '+';
+          });
+          if (!isCurrentlyOpen) {
+            step.classList.add('open');
+            icon.textContent = '−';
+          }
+        }
+      });
+    }
+  });
+
+  // ── Loop 10: Footer Accordion Columns on Mobile ──
+  const footerAccBtns = document.querySelectorAll('.footer__accordion-btn');
+  footerAccBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768) {
+        const col = btn.closest('.footer__col--accordion');
+        if (!col) return;
+        const isOpen = col.classList.contains('open');
+        document.querySelectorAll('.footer__col--accordion').forEach(c => {
+          c.classList.remove('open');
+          const b = c.querySelector('.footer__accordion-btn');
+          if (b) b.setAttribute('aria-expanded', 'false');
+        });
+        if (!isOpen) {
+          col.classList.add('open');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      }
+    });
+  });
+
 });
+

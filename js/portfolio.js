@@ -10,7 +10,11 @@
   if (!grid) return;
 
   const isFullPage = !!window.IS_FULL_PORTFOLIO_PAGE;
-  const PAGE_LIMIT = isFullPage ? 999 : 6;
+  function getPageLimit() {
+    if (isFullPage) return 999;
+    const isMobile = window.innerWidth <= 768;
+    return isMobile ? 2 : 6;
+  }
   let isExpanded = isFullPage;
   let currentList = [];
 
@@ -43,8 +47,9 @@
   function renderCards(projects) {
     const sorted = sortProjects(projects);
     currentList = sorted;
+    const limit = getPageLimit();
 
-    const visibleProjects = isExpanded ? sorted : sorted.slice(0, PAGE_LIMIT);
+    const visibleProjects = isExpanded ? sorted : sorted.slice(0, limit);
 
     grid.innerHTML = '';
     visibleProjects.forEach((proj, idx) => {
@@ -100,7 +105,7 @@
 
     // Handle Show More / Show Less button visibility
     if (moreWrap && moreBtn) {
-      if (sorted.length > PAGE_LIMIT) {
+      if (sorted.length > limit) {
         moreWrap.style.display = 'block';
         const label = moreBtn.querySelector('span:first-child');
         const icon = document.getElementById('portfolio-more-icon');
@@ -108,7 +113,7 @@
           if (label) label.textContent = 'Show Less Projects';
           if (icon) icon.textContent = '↑';
         } else {
-          if (label) label.textContent = `Show More Projects (${sorted.length - PAGE_LIMIT} more)`;
+          if (label) label.textContent = `Show More Projects (${sorted.length - limit} more)`;
           if (icon) icon.textContent = '↓';
         }
       } else {
@@ -159,24 +164,48 @@
   setTimeout(doInitialRender, 200);
   setTimeout(doInitialRender, 600);
 
-  // Event listeners for dynamic updates
+  // Event listeners for dynamic updates & resize
+  window.addEventListener('resize', () => renderCards(getProjectsData()));
   window.addEventListener('vkreate:idb-resolved', () => renderCards(getProjectsData()));
   window.addEventListener('vkreate:projects-updated', () => renderCards(getProjectsData()));
   window.addEventListener('storage', () => renderCards(getProjectsData()));
 
-  // Filter behavior
+  // Filter behavior (Desktop buttons)
   filterBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const filter = btn.dataset.filter;
       filterBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
-      isExpanded = false; // reset expand on filter change
+      const mobileSelect = document.getElementById('portfolio-filter-select');
+      if (mobileSelect) mobileSelect.value = filter;
+
+      isExpanded = false;
+      const allProjects = getProjectsData();
       const filtered = filter === 'all'
-        ? VKREATE_DATA.projects
-        : VKREATE_DATA.projects.filter(p => p.industry === filter);
+        ? allProjects
+        : allProjects.filter(p => p.industry === filter);
       renderCards(filtered);
     });
   });
 
+  // Filter behavior (Mobile Dropdown Select)
+  const mobileSelect = document.getElementById('portfolio-filter-select');
+  if (mobileSelect) {
+    mobileSelect.addEventListener('change', (e) => {
+      const filter = e.target.value;
+      filterBtns.forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === filter);
+      });
+
+      isExpanded = false;
+      const allProjects = getProjectsData();
+      const filtered = filter === 'all'
+        ? allProjects
+        : allProjects.filter(p => p.industry === filter);
+      renderCards(filtered);
+    });
+  }
+
 })();
+
