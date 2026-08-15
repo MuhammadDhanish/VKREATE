@@ -12,7 +12,10 @@
     "shortTestimonial": "VKREATE captured our brand's warmth and sophistication in every detail.",
     "status": "approved",
     "studioResponse": "Thank you Unnikrishnan! It was an absolute pleasure bringing Lilaa's heritage vision to life.",
-    "tags": ["restaurant", "dining"],
+    "tags": [
+      "restaurant",
+      "dining"
+    ],
     "visibility": "public",
     "createdAt": "2025-06-20T10:00:00Z",
     "approvedAt": "2025-06-21T09:00:00Z"
@@ -30,7 +33,10 @@
     "shortTestimonial": "Our clients feel like they're stepping into a 5-star spa retreat.",
     "status": "approved",
     "studioResponse": "So glad to hear Dr. Reshma! Designing your spa sanctuary was a rewarding journey.",
-    "tags": ["salon", "spa"],
+    "tags": [
+      "salon",
+      "spa"
+    ],
     "visibility": "public",
     "createdAt": "2025-04-15T11:00:00Z",
     "approvedAt": "2025-04-16T08:00:00Z"
@@ -48,7 +54,10 @@
     "shortTestimonial": "The interior design makes our jewellery display the hero.",
     "status": "approved",
     "studioResponse": "Appreciate your trust Faisal! The custom display showcases turned out brilliant.",
-    "tags": ["jewellery", "retail"],
+    "tags": [
+      "jewellery",
+      "retail"
+    ],
     "visibility": "public",
     "createdAt": "2025-02-20T12:00:00Z",
     "approvedAt": "2025-02-21T10:00:00Z"
@@ -66,7 +75,10 @@
     "shortTestimonial": "First impressions matter immensely in corporate business.",
     "status": "approved",
     "studioResponse": "Thank you Sameer! It was an honor executing the VIP corporate lounge.",
-    "tags": ["office", "corporate"],
+    "tags": [
+      "office",
+      "corporate"
+    ],
     "visibility": "public",
     "createdAt": "2025-01-25T14:00:00Z",
     "approvedAt": "2025-01-26T09:00:00Z"
@@ -84,7 +96,10 @@
     "shortTestimonial": "Our villa interior is breathtaking. VKREATE blended teak wood warmth seamlessly.",
     "status": "approved",
     "studioResponse": "Warmest wishes Anjali & Vikram! May your home bring endless serenity.",
-    "tags": ["villa", "residential"],
+    "tags": [
+      "villa",
+      "residential"
+    ],
     "visibility": "public",
     "createdAt": "2025-07-25T10:00:00Z",
     "approvedAt": "2025-07-26T11:00:00Z"
@@ -102,7 +117,10 @@
     "shortTestimonial": "The clinical layout reduces patient anxiety while offering high efficiency.",
     "status": "approved",
     "studioResponse": "Thank you Dr. Vivek! Designing a soothing medical environment was a great experience.",
-    "tags": ["healthcare", "clinic"],
+    "tags": [
+      "healthcare",
+      "clinic"
+    ],
     "visibility": "public",
     "createdAt": "2025-05-25T09:00:00Z",
     "approvedAt": "2025-05-26T14:00:00Z"
@@ -120,7 +138,10 @@
     "shortTestimonial": "The lobby redesign surpassed expectations. Completed 2 weeks ahead of schedule.",
     "status": "approved",
     "studioResponse": "Thank you Mathew! Congratulations on the successful resort reopening.",
-    "tags": ["hotel", "hospitality"],
+    "tags": [
+      "hotel",
+      "hospitality"
+    ],
     "visibility": "public",
     "createdAt": "2025-08-05T15:00:00Z",
     "approvedAt": "2025-08-06T10:00:00Z"
@@ -138,7 +159,10 @@
     "shortTestimonial": "An absolute delight to work with. Created a buzzing community hotspot.",
     "status": "approved",
     "studioResponse": "Cheers Priya! Wishing Emerald Brew continued success.",
-    "tags": ["cafe", "restaurant"],
+    "tags": [
+      "cafe",
+      "restaurant"
+    ],
     "visibility": "public",
     "createdAt": "2025-03-28T16:00:00Z",
     "approvedAt": "2025-03-29T11:00:00Z"
