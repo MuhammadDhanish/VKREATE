@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About Us | VKREATE Studio — Commercial Interior Design Studio</title>
+  <meta name="description" content="Learn about VKREATE — 12+ years of architectural expertise, 4 flagship projects delivered across Kerala. Spatial strategy, vision, and execution." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+
+  <!-- CSS Core -->
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+</head>
+<body>
+
+  <!-- Floating Glass Navbar -->
+  <nav class="nav" role="navigation" aria-label="Main Navigation">
+    <div class="container">
+      <div class="nav__inner">
+        <a class="nav__logo" href="index.html" aria-label="VKREATE Home">
+          <img src="PRIMARY LOGO PNG.png" alt="VKREATE Interior Architecture Logo" class="nav__logo-img" />
+          <div style="margin-left:12px;display:flex;flex-direction:column;">
+            <span class="nav__logo-name">VKREATE</span>
+            <span class="nav__logo-tagline">INTERIOR ARCHITECTURE</span>
+          </div>
+        </a>
+        <ul class="nav__links">
+          <li><a class="nav__link" href="index.html">Home</a></li>
+          <li><a class="nav__link" href="projects.html">Portfolio</a></li>
+          <li><a class="nav__link" href="reviews.html">Reviews</a></li>
+          <li><a class="nav__link active" href="about.html">About</a></li>
+          <li><a class="nav__link" href="services.html">Services</a></li>
+          <li><a class="nav__cta" href="contact.html">Start a Project</a></li>
+        </ul>
+        <button class="nav__hamburger" id="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Nav Drawer -->
+  <div class="nav__mobile" id="mobile-nav" role="dialog" aria-label="Mobile menu">
+    <div class="nav__mobile-header">
+      <span class="nav__mobile-brand">VKREATE STUDIO</span>
+    </div>
+    <nav class="nav__mobile-links">
+      <a class="nav__mobile-link" href="index.html">Home</a>
+      <a class="nav__mobile-link" href="projects.html">Portfolio Showcase</a>
+      <a class="nav__mobile-link" href="reviews.html">Client Reviews</a>
+      <a class="nav__mobile-link active" href="about.html">About VKREATE</a>
+      <a class="nav__mobile-link" href="services.html">Our Services</a>
+      <a class="nav__mobile-cta" href="contact.html">Start Project Brief</a>
+    </nav>
+    <div class="nav__mobile-footer">
+      <a href="admin/index.html" target="_blank" class="nav__mobile-admin">🔒 Admin Portal</a>
+    </div>
+  </div>
+
+  <main style="padding-top: calc(var(--nav-height, 70px) + 32px);">
+    <section class="about section" aria-label="About VKREATE">
+      <div class="container">
+        <div class="section__header reveal">
+          <span class="t-overline section__overline">About VKREATE</span>
+          <h1 class="t-h1 section__title">12+ Years of Design Excellence</h1>
+          <div class="divider"></div>
+          <p class="section__desc t-body">Spatial strategy, architectural precision, and vision-led commercial interior transformations.</p>
+        </div>
+
+        <div class="about__grid" style="margin-top:40px">
+          <div class="about__body">
+            <h2 class="t-h2">From Concept to <em style="font-style:italic;color:var(--green-mid)">Accomplishment</em></h2>
+            <div class="divider" style="margin-top:16px;margin-bottom:24px"></div>
+            <p class="about__text reveal delay-1">
+              VKREATE was founded on a single belief: that designed spaces change how people think, feel, and perform. We are not decorators. We are spatial strategists — bringing vision, function, and precision to every brief we accept.
+            </p>
+            <p class="about__text reveal delay-2">
+              Over 12 years of architectural expertise and 4 flagship completed projects, we have designed for some of Kerala's most discerning clients — from high-traffic commercial dining and luxury wellness sanctuaries to flagship retail showrooms and executive corporate lounges. Our process is rigorous. Our results are measurable. Our design speaks.
+            </p>
+            <div class="about__values reveal delay-3">
+              <div class="about__value"><span class="about__value-dot"></span>Vision-Led</div>
+              <div class="about__value"><span class="about__value-dot"></span>Functionally Precise</div>
+              <div class="about__value"><span class="about__value-dot"></span>Collaborative</div>
+              <div class="about__value"><span class="about__value-dot"></span>Trend-Forward</div>
+              <div class="about__value"><span class="about__value-dot"></span>Delivery-Committed</div>
+              <div class="about__value"><span class="about__value-dot"></span>Detail-Obsessed</div>
+            </div>
+            <div class="reveal delay-4" style="margin-top:var(--space-lg)">
+              <a href="contact.html" class="btn btn-green btn-arrow">Start a Project Brief</a>
+            </div>
+          </div>
+
+          <div class="about__image-wrap reveal-right">
+            <img src="assets/images/project_lilaa_1.jpg" alt="VKREATE interior design showcase" loading="lazy" />
+            <div class="about__image-tag">
+              <div class="about__image-tag-number">4</div>
+              <div class="about__image-tag-label">Projects Delivered</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Studio Team Section -->
+    <section class="our-team-banner section" id="team" aria-label="Our team">
+      <div class="container">
+        <div class="our-team-card reveal">
+          <div class="our-team-card__badge">
+            <span class="our-team-card__badge-dot"></span>
+            The Studio
+          </div>
+          <h2 class="our-team-card__title">OUR TEAM</h2>
+          <h3 class="our-team-card__subtitle">Together, we turn ideas into impactful spaces.</h3>
+          <div class="our-team-card__divider"></div>
+          <p class="our-team-card__text">
+            Our team is a blend of creative thinkers, skilled professionals, and passionate innovators who work together to bring ideas to life. With diverse expertise across architecture, design, and strategy, we collaborate closely to deliver meaningful and impactful results. Every member contributes unique strengths, ensuring every project reflects precision, creativity, and purpose. Together, we turn visions into lasting realities.
+          </p>
+          <div class="our-team-card__pillars">
+            <div class="team-pillar"><span class="team-pillar__icon">✦</span><span>Architecture &amp; Detailing</span></div>
+            <div class="team-pillar"><span class="team-pillar__icon">✦</span><span>Spatial Strategy</span></div>
+            <div class="team-pillar"><span class="team-pillar__icon">✦</span><span>Turnkey Execution</span></div>
+            <div class="team-pillar"><span class="team-pillar__icon">✦</span><span>Material Innovation</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <div class="footer__logo">VKREATE</div>
+          <div class="footer__tagline">Where Design Speaks</div>
+          <p class="footer__brand-desc">A premium commercial interior design studio transforming spaces across India.</p>
+        </div>
+        <div class="footer__col">
+          <div class="footer__col-title">Navigate</div>
+          <ul class="footer__links">
+            <li><a class="footer__link" href="index.html">Home</a></li>
+            <li><a class="footer__link" href="projects.html">Portfolio</a></li>
+            <li><a class="footer__link" href="reviews.html">Reviews</a></li>
+            <li><a class="footer__link" href="about.html">About</a></li>
+            <li><a class="footer__link" href="services.html">Services</a></li>
+            <li><a class="footer__link" href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <div class="footer__col-title">Contact</div>
+          <ul class="footer__links">
+            <li><a class="footer__link" href="mailto:vkreatearchitecture@gmail.com">vkreatearchitecture@gmail.com</a></li>
+            <li><a class="footer__link" href="tel:+919037161861">+91 90371 61861</a></li>
+            <li><span class="footer__link">Calicut, Kerala, India</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copy">© 2025 VKREATE Design Studio. All rights reserved.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

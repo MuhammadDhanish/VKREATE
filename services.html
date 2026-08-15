@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Our Services | VKREATE Studio — Commercial Interior Design</title>
+  <meta name="description" content="Explore commercial interior design, turnkey execution, spatial strategy, and bespoke styling services by VKREATE Design Studio." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+
+  <!-- CSS Core -->
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+</head>
+<body>
+
+  <!-- Floating Glass Navbar -->
+  <nav class="nav" role="navigation" aria-label="Main Navigation">
+    <div class="container">
+      <div class="nav__inner">
+        <a class="nav__logo" href="index.html" aria-label="VKREATE Home">
+          <img src="PRIMARY LOGO PNG.png" alt="VKREATE Interior Architecture Logo" class="nav__logo-img" />
+          <div style="margin-left:12px;display:flex;flex-direction:column;">
+            <span class="nav__logo-name">VKREATE</span>
+            <span class="nav__logo-tagline">INTERIOR ARCHITECTURE</span>
+          </div>
+        </a>
+        <ul class="nav__links">
+          <li><a class="nav__link" href="index.html">Home</a></li>
+          <li><a class="nav__link" href="projects.html">Portfolio</a></li>
+          <li><a class="nav__link" href="reviews.html">Reviews</a></li>
+          <li><a class="nav__link" href="about.html">About</a></li>
+          <li><a class="nav__link active" href="services.html">Services</a></li>
+          <li><a class="nav__cta" href="contact.html">Start a Project</a></li>
+        </ul>
+        <button class="nav__hamburger" id="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Nav Drawer -->
+  <div class="nav__mobile" id="mobile-nav" role="dialog" aria-label="Mobile menu">
+    <div class="nav__mobile-header">
+      <span class="nav__mobile-brand">VKREATE STUDIO</span>
+    </div>
+    <nav class="nav__mobile-links">
+      <a class="nav__mobile-link" href="index.html">Home</a>
+      <a class="nav__mobile-link" href="projects.html">Portfolio Showcase</a>
+      <a class="nav__mobile-link" href="reviews.html">Client Reviews</a>
+      <a class="nav__mobile-link" href="about.html">About VKREATE</a>
+      <a class="nav__mobile-link active" href="services.html">Our Services</a>
+      <a class="nav__mobile-cta" href="contact.html">Start Project Brief</a>
+    </nav>
+    <div class="nav__mobile-footer">
+      <a href="admin/index.html" target="_blank" class="nav__mobile-admin">🔒 Admin Portal</a>
+    </div>
+  </div>
+
+  <main style="padding-top: calc(var(--nav-height, 70px) + 32px);">
+    <section id="services" class="services section" aria-label="Our services">
+      <div class="container">
+        <div class="section__header section__header--center reveal">
+          <span class="t-overline section__overline">What We Do</span>
+          <h1 class="t-h1 section__title">Services Offered</h1>
+          <div class="divider divider--center"></div>
+          <p class="section__desc t-body">Design. Create. Handover — Complete Interior Design &amp; Activity Management solutions from concept to completion.</p>
+        </div>
+
+        <div class="services__grid" id="services-grid" role="list" aria-label="Service offerings" style="margin-top:40px"></div>
+      </div>
+    </section>
+
+    <!-- Design Process Section -->
+    <section class="process section--dark" aria-label="Our design process">
+      <div class="container">
+        <div class="section__header section__header--center reveal">
+          <span class="t-overline section__overline">Our Process</span>
+          <h2 class="t-h1" style="color:var(--white)">How We Work</h2>
+          <div class="divider divider--center"></div>
+          <p class="t-body" style="color:rgba(255,255,255,0.55);max-width:480px">Five phases. Zero ambiguity. Every project, every time.</p>
+        </div>
+
+        <div class="process__track" role="list" aria-label="Design process phases">
+          <div class="process__step reveal delay-1" role="listitem">
+            <div class="process__num" aria-hidden="true">01</div>
+            <div>
+              <div class="process__step-title">Discovery</div>
+              <div class="process__step-desc">Understanding your brief, culture, brand, and constraints</div>
+            </div>
+          </div>
+          <div class="process__step reveal delay-2" role="listitem">
+            <div class="process__num" aria-hidden="true">02</div>
+            <div>
+              <div class="process__step-title">Concept</div>
+              <div class="process__step-desc">Spatial strategy, mood, and 3D visualisation</div>
+            </div>
+          </div>
+          <div class="process__step reveal delay-3" role="listitem">
+            <div class="process__num" aria-hidden="true">03</div>
+            <div>
+              <div class="process__step-title">Detailing</div>
+              <div class="process__step-desc">Full drawings, material specs, FF&amp;E selection</div>
+            </div>
+          </div>
+          <div class="process__step reveal delay-4" role="listitem">
+            <div class="process__num" aria-hidden="true">04</div>
+            <div>
+              <div class="process__step-title">Execution</div>
+              <div class="process__step-desc">On-site management and vendor coordination</div>
+            </div>
+          </div>
+          <div class="process__step reveal delay-5" role="listitem">
+            <div class="process__num" aria-hidden="true">05</div>
+            <div>
+              <div class="process__step-title">Handover</div>
+              <div class="process__step-desc">Snagging, styling, photography, and sign-off</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <div class="footer__logo">VKREATE</div>
+          <div class="footer__tagline">Where Design Speaks</div>
+          <p class="footer__brand-desc">A premium commercial interior design studio transforming spaces across India.</p>
+        </div>
+        <div class="footer__col">
+          <div class="footer__col-title">Navigate</div>
+          <ul class="footer__links">
+            <li><a class="footer__link" href="index.html">Home</a></li>
+            <li><a class="footer__link" href="projects.html">Portfolio</a></li>
+            <li><a class="footer__link" href="reviews.html">Reviews</a></li>
+            <li><a class="footer__link" href="about.html">About</a></li>
+            <li><a class="footer__link" href="services.html">Services</a></li>
+            <li><a class="footer__link" href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <div class="footer__col-title">Contact</div>
+          <ul class="footer__links">
+            <li><a class="footer__link" href="mailto:vkreatearchitecture@gmail.com">vkreatearchitecture@gmail.com</a></li>
+            <li><a class="footer__link" href="tel:+919037161861">+91 90371 61861</a></li>
+            <li><span class="footer__link">Calicut, Kerala, India</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copy">© 2025 VKREATE Design Studio. All rights reserved.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

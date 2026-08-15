@@ -288,33 +288,80 @@
     width: 100vw;
     height: 100vh;
     height: 100dvh;
-    background: rgba(246, 248, 246, 0.96);
-    backdrop-filter: blur(24px) saturate(1.8);
-    -webkit-backdrop-filter: blur(24px) saturate(1.8);
-    padding: calc(64px + 32px) var(--space-xl) var(--space-2xl);
+    background: rgba(26, 36, 32, 0.96);
+    backdrop-filter: blur(28px) saturate(1.8);
+    -webkit-backdrop-filter: blur(28px) saturate(1.8);
+    padding: 90px 28px 40px 28px;
     flex-direction: column;
-    gap: var(--space-lg);
-    align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     z-index: 999;
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--dur-mid) var(--ease-out);
+    transition: opacity var(--dur-mid) var(--ease-out), transform var(--dur-mid) var(--ease-out);
+    transform: translateY(-10px);
+    box-sizing: border-box;
   }
   .nav__mobile.open {
     opacity: 1;
     pointer-events: all;
+    transform: translateY(0);
   }
-  .nav__mobile .nav__link {
-    font-size: 1.25rem;
+  .nav__mobile-header {
+    margin-bottom: 20px;
+  }
+  .nav__mobile-brand {
+    font-family: var(--font-sans, 'Inter', sans-serif);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold, #C9A96E);
+  }
+  .nav__mobile-links {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .nav__mobile-link {
+    font-family: var(--font-serif, serif);
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--white, #FFFFFF);
+    text-decoration: none;
+    transition: color 0.2s ease, padding-left 0.2s ease;
+  }
+  .nav__mobile-link.active,
+  .nav__mobile-link:hover {
+    color: var(--gold, #C9A96E);
+    padding-left: 6px;
+  }
+  .nav__mobile-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 12px;
+    padding: 16px 24px;
+    border-radius: 30px;
+    background: var(--gold, #C9A96E);
+    color: var(--charcoal, #1A2420);
+    font-family: var(--font-sans, 'Inter', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    box-shadow: 0 6px 20px rgba(201, 169, 110, 0.35);
+  }
+  .nav__mobile-footer {
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .nav__mobile-admin {
+    color: var(--gold, #C9A96E);
+    font-family: var(--font-sans, 'Inter', sans-serif);
+    font-size: 0.8125rem;
     font-weight: 600;
-    color: var(--charcoal);
-  }
-  .nav__mobile .nav__cta {
-    width: 100%;
-    max-width: 280px;
-    padding: 14px 20px;
-    margin-top: var(--space-md);
+    text-decoration: none;
   }
 }
 
