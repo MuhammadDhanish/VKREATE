@@ -745,9 +745,11 @@
 (function () {
   const grid = document.getElementById('team-grid');
   if (!grid) return;
-  VKREATE_DATA.team.forEach((member, i) => {
+  const data = (window.VKREATE_DATA || (typeof VKREATE_DATA !== 'undefined' ? VKREATE_DATA : null));
+  if (!data || !data.team) return;
+  data.team.forEach((member, i) => {
     const card = document.createElement('article');
-    card.className = 'team__card reveal visible';
+    card.className = 'team__card';
     card.style.transitionDelay = `${i * 0.1}s`;
     card.setAttribute('role', 'listitem');
     card.innerHTML = `
@@ -764,9 +766,11 @@
 (function () {
   const grid = document.getElementById('services-grid');
   if (!grid) return;
-  VKREATE_DATA.services.forEach((svc, i) => {
+  const data = (window.VKREATE_DATA || (typeof VKREATE_DATA !== 'undefined' ? VKREATE_DATA : null));
+  if (!data || !data.services) return;
+  data.services.forEach((svc, i) => {
     const card = document.createElement('div');
-    card.className = 'service-card reveal visible';
+    card.className = 'service-card';
     card.style.transitionDelay = `${(i % 3) * 0.1}s`;
     card.setAttribute('role', 'listitem');
     card.setAttribute('tabindex', '0');
@@ -805,7 +809,9 @@
 (function () {
   const list = document.getElementById('faq-list');
   if (!list) return;
-  VKREATE_DATA.faqs.forEach((faq, i) => {
+  const data = (window.VKREATE_DATA || (typeof VKREATE_DATA !== 'undefined' ? VKREATE_DATA : null));
+  if (!data || !data.faqs) return;
+  data.faqs.forEach((faq, i) => {
     const item = document.createElement('div');
     item.className = 'faq__item';
     item.setAttribute('role', 'listitem');
