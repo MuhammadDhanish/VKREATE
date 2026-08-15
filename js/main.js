@@ -637,8 +637,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ── Master Section Accordion Architecture ──
+  // ── Master Section Accordion Architecture (Option 1: Luxury Visual Card Hub) ──
   const sectionAccordions = document.querySelectorAll('.mobile-section-accordion');
+
+  const updatePillText = (acc, isExpanded) => {
+    const pill = acc.querySelector('.mobile-visual-card__pill');
+    if (!pill) return;
+    if (isExpanded) {
+      pill.innerHTML = 'CLOSE <span class="card-arrow">↑</span>';
+    } else {
+      pill.innerHTML = 'EXPLORE <span class="card-arrow">↓</span>';
+    }
+  };
+
+  // Sync initial state on load
+  sectionAccordions.forEach(acc => {
+    updatePillText(acc, acc.classList.contains('is-expanded'));
+  });
+
   sectionAccordions.forEach(acc => {
     const btn = acc.querySelector('.mobile-section-header');
     if (!btn) return;
@@ -652,17 +668,19 @@ document.addEventListener('DOMContentLoaded', () => {
         a.classList.remove('is-expanded');
         const b = a.querySelector('.mobile-section-header');
         if (b) b.setAttribute('aria-expanded', 'false');
+        updatePillText(a, false);
       });
 
       // Toggle current
       if (!isExpanded) {
         acc.classList.add('is-expanded');
         btn.setAttribute('aria-expanded', 'true');
+        updatePillText(acc, true);
 
         // Trigger resize event to ensure grids & limits recalculate
         window.dispatchEvent(new Event('resize'));
 
-        // Scroll header into view smoothly
+        // Scroll card header into view smoothly
         setTimeout(() => {
           btn.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 120);
