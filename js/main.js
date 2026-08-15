@@ -164,9 +164,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Render Services Grid (6 Disciplines 3x2) ──────────────
   const servicesGrid = document.getElementById('services-grid');
-  if (servicesGrid && window.VKREATE_DATA && VKREATE_DATA.services) {
-    servicesGrid.innerHTML = VKREATE_DATA.services.map((s, idx) => `
-      <article class="service-card reveal card-hover" style="animation-delay:${idx * 70}ms">
+  const servicesData = (window.VKREATE_DATA && VKREATE_DATA.services) || [];
+  if (servicesGrid && servicesData.length) {
+    servicesGrid.innerHTML = servicesData.map((s, idx) => `
+      <article class="service-card card-hover" style="animation-delay:${idx * 70}ms">
         <div class="service-card__top">
           <div class="service-card__icon">${s.icon}</div>
           <span class="service-card__num">${s.num || '0' + (idx + 1)}</span>
