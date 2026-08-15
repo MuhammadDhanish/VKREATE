@@ -620,17 +620,22 @@ function applyAdminProjects(adminProjects) {
     }
 
     // ── 3. Studio Settings Sync ──────────────────────────────
+    VKREATE_DATA.studio = {
+      name: 'VKREATE Design Studio',
+      tagline: 'Where Design Speaks',
+      email: 'vkreatearchitecture@gmail.com',
+      phone: '+91 90371 61861',
+      address: 'Calicut, Kerala, India',
+      instagram: 'https://www.instagram.com/vkreate_interior_architecture',
+      website: 'https://vkreatearchitecture.com'
+    };
     const rawSettings = localStorage.getItem('vk_admin_settings');
     if (rawSettings) {
       try {
         const settings = JSON.parse(rawSettings);
         if (settings.studio) {
-          if (!settings.studio.email || settings.studio.email === 'hello@vkreate.com' || settings.studio.email.includes('dhanish')) {
-            settings.studio.email = 'vkreatearchitecture@gmail.com';
-          }
-          if (!settings.studio.address || settings.studio.address.includes('HSR') || settings.studio.address.includes('Bengaluru')) {
-            settings.studio.address = 'Calicut, Kerala, India';
-          }
+          settings.studio.email = 'vkreatearchitecture@gmail.com';
+          settings.studio.address = 'Calicut, Kerala, India';
           localStorage.setItem('vk_admin_settings', JSON.stringify(settings));
           VKREATE_DATA.studio = settings.studio;
         }
