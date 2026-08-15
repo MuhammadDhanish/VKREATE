@@ -108,7 +108,9 @@ const Reviews = {
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
-            <span class="badge" style="background:rgba(201,169,110,0.15);color:var(--text-1);border:1px solid rgba(201,169,110,0.3);font-weight:600">Rank #${r.rank || 99}</span>
+            <span class="badge" style="${r.rank === 1 ? 'background:rgba(201,169,110,0.25);color:var(--text-1);border:1px solid #C9A96E;font-weight:700' : 'background:rgba(0,0,0,0.04);color:var(--text-2)'}">
+              ${r.rank === 1 ? '⭐ Top Preference #1' : 'Preference #' + (r.rank || 99)}
+            </span>
             <div class="stars">${stars}</div>
             ${UI.badge(r.status)}
             <span class="text-xs text-muted">${UI.timeAgo(r.createdAt)}</span>
@@ -202,12 +204,13 @@ const Reviews = {
       <div class="form-grid" style="gap:16px">
         <div style="background:rgba(201,169,110,0.1);padding:12px 16px;border-radius:var(--r-md);border:1px solid rgba(201,169,110,0.3);display:flex;align-items:center;justify-content:space-between">
           <div>
-            <div class="fw-600 text-sm">🏆 Website Display Position / Rank</div>
-            <div class="text-xs text-muted">Set to 1 to show this review in the 1st position on your website</div>
+            <div class="fw-600 text-sm">⭐ Top Preference / Display Order</div>
+            <div class="text-xs text-muted">Set to 1 to show this review in the #1 top spot on your website</div>
           </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <span class="text-xs text-muted">Rank #</span>
-            <input type="number" min="1" max="999" class="form-control" id="edit-rank" value="${r.rank || 99}" style="width:70px;text-align:center;font-weight:700">
+          <div style="display:flex;align-items:center;gap:8px">
+            <button type="button" class="btn btn-outline btn-xs" onclick="document.getElementById('edit-rank').value=1;UI.toast('Set to #1 Top Preference!','info');" style="padding:4px 8px;font-size:0.75rem;">⭐ Set #1</button>
+            <span class="text-xs text-muted">Preference #</span>
+            <input type="number" min="1" max="999" class="form-control" id="edit-rank" value="${r.rank || 99}" style="width:65px;text-align:center;font-weight:700">
           </div>
         </div>
 
@@ -264,12 +267,13 @@ const Reviews = {
       <div class="form-grid" style="gap:16px">
         <div style="background:rgba(201,169,110,0.1);padding:12px 16px;border-radius:var(--r-md);border:1px solid rgba(201,169,110,0.3);display:flex;align-items:center;justify-content:space-between">
           <div>
-            <div class="fw-600 text-sm">🏆 Website Display Position / Rank</div>
-            <div class="text-xs text-muted">Set to 1 to show this review in the 1st position on your website</div>
+            <div class="fw-600 text-sm">⭐ Top Preference / Display Order</div>
+            <div class="text-xs text-muted">Set to 1 to show this review in the #1 top spot on your website</div>
           </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <span class="text-xs text-muted">Rank #</span>
-            <input type="number" min="1" max="999" class="form-control" id="add-rank" value="99" style="width:70px;text-align:center;font-weight:700">
+          <div style="display:flex;align-items:center;gap:8px">
+            <button type="button" class="btn btn-outline btn-xs" onclick="document.getElementById('add-rank').value=1;UI.toast('Set to #1 Top Preference!','info');" style="padding:4px 8px;font-size:0.75rem;">⭐ Set #1</button>
+            <span class="text-xs text-muted">Preference #</span>
+            <input type="number" min="1" max="999" class="form-control" id="add-rank" value="99" style="width:65px;text-align:center;font-weight:700">
           </div>
         </div>
 

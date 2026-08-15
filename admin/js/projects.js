@@ -122,7 +122,7 @@ const Projects = {
     return `<table>
       <thead><tr>
         <th style="width:48px"></th>
-        <th style="width:60px">Rank</th>
+        <th style="width:110px">Top Preference</th>
         <th class="sortable">Project Name</th>
         <th>Industry</th>
         <th>Status</th>
@@ -144,7 +144,11 @@ const Projects = {
                 ? `<img src="${isIdb ? '../assets/images/project_lilaa_1.jpg' : thumbSrc}" data-idb-key="${isIdb ? rawSrc.slice(4) : ''}" class="td-thumb" alt="" onerror="this.src='../assets/images/project_lilaa_1.jpg'">`
                 : `<div class="td-thumb-placeholder">No img</div>`}
             </td>
-            <td class="text-sm fw-600" style="color:var(--primary)">#${p.rank || 99}</td>
+            <td class="text-sm fw-600">
+              <span class="badge" style="${p.rank === 1 ? 'background:rgba(201,169,110,0.25);color:var(--text-1);border:1px solid #C9A96E;font-weight:700' : 'background:rgba(0,0,0,0.04);color:var(--text-2)'}">
+                ${p.rank === 1 ? '⭐ Top #1' : '#' + (p.rank || 99)}
+              </span>
+            </td>
             <td class="td-name">${p.name || 'Untitled'}</td>
             <td><span class="text-sm text-muted">${p.industryLabel||p.industry||'Commercial'}</span></td>
             <td>${UI.badge(p.status)}</td>
@@ -235,12 +239,13 @@ const Projects = {
       <form id="proj-form" class="form-grid" style="gap:20px" onsubmit="event.preventDefault(); Projects.submitDirect();">
         <div style="background:rgba(201,169,110,0.1);padding:14px 18px;border-radius:var(--r-md);border:1px solid rgba(201,169,110,0.3);display:flex;align-items:center;justify-content:space-between;gap:12px">
           <div>
-            <div class="fw-600 text-sm" style="color:var(--text-1)">🏆 Display Position / Rank on Website</div>
-            <div class="text-xs text-muted">Set to 1 to show this project in the 1st position on your website</div>
+            <div class="fw-600 text-sm" style="color:var(--text-1)">⭐ Top Preference / Display Order</div>
+            <div class="text-xs text-muted">Set to 1 to show this project in the #1 top spot on your website portfolio</div>
           </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <span class="text-xs text-muted">Rank #</span>
-            <input type="number" min="1" max="999" class="form-control" name="rank" value="${p?.rank || 99}" style="width:70px;text-align:center;font-weight:700">
+          <div style="display:flex;align-items:center;gap:8px">
+            <button type="button" class="btn btn-outline btn-xs" onclick="document.querySelector('#proj-form [name=rank]').value=1;UI.toast('Set to #1 Top Preference!','info');" style="padding:4px 8px;font-size:0.75rem;">⭐ Set #1</button>
+            <span class="text-xs text-muted">Preference #</span>
+            <input type="number" min="1" max="999" class="form-control" name="rank" value="${p?.rank || 99}" style="width:65px;text-align:center;font-weight:700">
           </div>
         </div>
 
