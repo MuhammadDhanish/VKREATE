@@ -747,7 +747,7 @@
   if (!grid) return;
   VKREATE_DATA.team.forEach((member, i) => {
     const card = document.createElement('article');
-    card.className = 'team__card reveal';
+    card.className = 'team__card reveal visible';
     card.style.transitionDelay = `${i * 0.1}s`;
     card.setAttribute('role', 'listitem');
     card.innerHTML = `
@@ -766,7 +766,7 @@
   if (!grid) return;
   VKREATE_DATA.services.forEach((svc, i) => {
     const card = document.createElement('div');
-    card.className = 'service-card reveal';
+    card.className = 'service-card reveal visible';
     card.style.transitionDelay = `${(i % 3) * 0.1}s`;
     card.setAttribute('role', 'listitem');
     card.setAttribute('tabindex', '0');

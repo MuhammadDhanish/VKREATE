@@ -51,7 +51,7 @@
       grid.innerHTML = '';
       visibleReviews.forEach((r, idx) => {
         const card = document.createElement('article');
-        card.className = 'review-card reveal';
+        card.className = 'review-card reveal visible';
         card.dataset.industry = r.industry;
         card.style.transitionDelay = `${(idx % 3) * 0.08}s`;
         const color = avatarColors[idx % avatarColors.length];
