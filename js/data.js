@@ -587,38 +587,27 @@ function applyAdminProjects(adminProjects) {
     // ── 1. LocalStorage Sync ─────────────────────────────────
     const rawProjects = localStorage.getItem('vk_admin_projects');
     if (rawProjects) {
-      const adminProjects = JSON.parse(rawProjects);
-      applyAdminProjects(adminProjects);
+      try {
+        const adminProjects = JSON.parse(rawProjects);
+        if (Array.isArray(adminProjects) && adminProjects.length > 0) {
+          applyAdminProjects(adminProjects);
+        } else {
+          localStorage.removeItem('vk_admin_projects');
+        }
+      } catch (e) {}
     }
 
     // ── 2. Reviews Sync ──────────────────────────────────────
     const rawReviews = localStorage.getItem('vk_admin_reviews');
-    if (rawReviews !== null) {
-      const adminReviews = JSON.parse(rawReviews) || [];
-      const approved = adminReviews.filter(r => r.status === 'approved');
-
-      VKREATE_DATA.reviews = approved.map(r => {
-        let industry = 'restaurant';
-        if (r.projectId && VKREATE_DATA.projects) {
-          const proj = VKREATE_DATA.projects.find(p => p.id === r.projectId);
-          if (proj) industry = proj.industry;
+    if (rawReviews) {
+      try {
+        const adminReviews = JSON.parse(rawReviews);
+        if (Array.isArray(adminReviews) && adminReviews.length > 0) {
+          applyAdminReviews(adminReviews);
+        } else {
+          localStorage.removeItem('vk_admin_reviews');
         }
-        const dateFormatted = r.createdAt
-          ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-          : 'Recent';
-
-        return {
-          id: r.id,
-          projectId: r.projectId || 'general',
-          author: r.clientName || r.author || 'Client',
-          role: r.clientRole || r.role || 'Client',
-          industry: industry,
-          rating: r.rating || 5,
-          date: dateFormatted,
-          text: r.reviewText || r.text || '',
-          verified: true
-        };
-      });
+      } catch (e) {}
     }
 
     // ── 3. Studio Settings Sync ──────────────────────────────
@@ -650,8 +639,9 @@ function applyAdminProjects(adminProjects) {
 })();
 
 function applyAdminReviews(adminReviews) {
-  if (!Array.isArray(adminReviews)) return;
+  if (!Array.isArray(adminReviews) || !adminReviews.length) return;
   const approved = adminReviews.filter(r => r.status === 'approved');
+  if (!approved.length) return;
 
   VKREATE_DATA.reviews = approved.map(r => {
     let industry = 'restaurant';

@@ -139,8 +139,15 @@
   }
 
   // Initial render
-  if (window.VKREATE_DATA && VKREATE_DATA.projects) {
-    renderCards(VKREATE_DATA.projects);
+  const doInitialRender = () => {
+    if (window.VKREATE_DATA && VKREATE_DATA.projects && VKREATE_DATA.projects.length) {
+      renderCards(VKREATE_DATA.projects);
+    }
+  };
+
+  doInitialRender();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', doInitialRender);
   }
 
   // Event listeners for dynamic updates

@@ -121,8 +121,15 @@
     }
 
     // Initial render
-    if (window.VKREATE_DATA && VKREATE_DATA.reviews) {
-      renderReviews(VKREATE_DATA.reviews);
+    const doInitialRender = () => {
+      if (window.VKREATE_DATA && VKREATE_DATA.reviews && VKREATE_DATA.reviews.length) {
+        renderReviews(VKREATE_DATA.reviews);
+      }
+    };
+
+    doInitialRender();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', doInitialRender);
     }
 
     // Dynamic re-render listeners for approved reviews
