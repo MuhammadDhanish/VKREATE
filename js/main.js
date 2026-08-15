@@ -604,7 +604,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
+  // ── Master Section Accordion Architecture ──
+  const sectionAccordions = document.querySelectorAll('.mobile-section-accordion');
+  sectionAccordions.forEach(acc => {
+    const btn = acc.querySelector('.mobile-section-header');
+    if (!btn) return;
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const isExpanded = acc.classList.contains('is-expanded');
+
+      // Collapse all section accordions
+      sectionAccordions.forEach(a => {
+        a.classList.remove('is-expanded');
+        const b = a.querySelector('.mobile-section-header');
+        if (b) b.setAttribute('aria-expanded', 'false');
+      });
+
+      // Toggle current
+      if (!isExpanded) {
+        acc.classList.add('is-expanded');
+        btn.setAttribute('aria-expanded', 'true');
+
+        // Trigger resize event to ensure grids & limits recalculate
+        window.dispatchEvent(new Event('resize'));
+
+        // Scroll header into view smoothly
+        setTimeout(() => {
+          btn.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
+      }
+    });
   });
 
 });
+
+
 

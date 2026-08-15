@@ -2542,13 +2542,13 @@
 .desktop-only { display: flex; }
 .mobile-only { display: none !important; }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .desktop-only { display: none !important; }
   .mobile-only { display: block !important; }
 }
 
 /* Loop 2: Hero Section Mobile Sizing */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .hero {
     min-height: 60vh !important;
     min-height: 60dvh !important;
@@ -2796,6 +2796,153 @@
     font-size: 16px !important; /* Prevents automatic zoom-on-focus on iOS Safari */
   }
 }
+
+/* ══════════════════════════════════════════════════════════
+   MASTER SECTION ACCORDION ARCHITECTURE (MOBILE & TABLET)
+══════════════════════════════════════════════════════════ */
+
+/* Desktop view (> 900px): hide section headers and render normal layout */
+@media (min-width: 901px) {
+  .mobile-section-header {
+    display: none !important;
+  }
+  .mobile-section-body {
+    display: block !important;
+    max-height: none !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+  }
+  .mobile-footer-sticky {
+    display: none !important;
+  }
+}
+
+/* Mobile & Tablet view (<= 900px): collapse section bodies, show accordion headers */
+@media (max-width: 900px) {
+  .mobile-section-accordion {
+    border-bottom: 1px solid var(--border, #E5E7E6);
+    background: var(--white, #FFFFFF);
+    margin: 0;
+  }
+
+  .mobile-section-header {
+    width: 100%;
+    min-height: 58px;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: #FFFFFF;
+    border: none;
+    border-left: 4px solid transparent;
+    cursor: pointer;
+    text-align: left;
+    gap: 12px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    box-sizing: border-box;
+  }
+
+  .mobile-section-header:active {
+    background: var(--warm-white, #FAF8F5);
+  }
+
+  .mobile-section-accordion.is-expanded .mobile-section-header {
+    background: rgba(61, 92, 80, 0.08);
+    border-left-color: var(--green-mid, #3D5C50);
+  }
+
+  .mobile-section-header__icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .mobile-section-header__titles {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-section-header__title {
+    font-family: var(--font-sans, 'Inter', sans-serif);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--charcoal, #1A2420);
+    line-height: 1.25;
+  }
+
+  .mobile-section-header__preview {
+    font-size: 0.75rem;
+    color: var(--text-muted, #6B7B76);
+    margin-top: 2px;
+    font-weight: 400;
+  }
+
+  .mobile-section-header__arrow {
+    font-size: 0.8125rem;
+    color: var(--text-light, #999999);
+    transition: transform 0.3s ease, color 0.3s ease;
+    flex-shrink: 0;
+  }
+
+  .mobile-section-accordion.is-expanded .mobile-section-header__arrow {
+    transform: rotate(180deg);
+    color: var(--green-mid, #3D5C50);
+  }
+
+  /* Hide collapsed section bodies completely on mobile */
+  .mobile-section-accordion .mobile-section-body {
+    display: none !important;
+  }
+
+  /* Show ONLY expanded section body on mobile */
+  .mobile-section-accordion.is-expanded .mobile-section-body {
+    display: block !important;
+    max-height: none !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    padding: 12px 0 24px 0;
+  }
+
+  /* Sticky Mobile Action Footer Bar */
+  .mobile-footer-sticky {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 99999 !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-around;
+    background: var(--green-deep, #2E4A40);
+    padding: 10px 14px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+    border-top: 1px solid rgba(201, 169, 110, 0.3);
+  }
+
+  .mobile-footer-sticky__btn {
+    color: var(--white, #FFFFFF);
+    font-family: var(--font-sans, 'Inter', sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.12);
+    transition: background 0.2s ease, transform 0.15s ease;
+  }
+
+  .mobile-footer-sticky__btn:active {
+    background: var(--gold, #C9A96E);
+    color: var(--charcoal, #1A2420);
+    transform: scale(0.96);
+  }
+}
+
+
 
 
 
