@@ -2961,54 +2961,7 @@
   }
 }
 
-/* Direct Call Mobile Bar (Mobile Phone Only <= 768px) */
-.mobile-footer-sticky {
-  display: none !important;
-}
 
-@media (max-width: 768px) {
-  .mobile-footer-sticky {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 99999 !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    background: rgba(26, 36, 32, 0.95);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    padding: 10px 16px;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
-    border-top: 1px solid rgba(201, 169, 110, 0.35);
-  }
-
-  .mobile-footer-sticky__btn--call {
-    width: 100%;
-    max-width: 380px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 13px 20px;
-    border-radius: 25px;
-    background: var(--gold, #C9A96E);
-    color: var(--charcoal, #1A2420);
-    font-family: var(--font-sans, 'Inter', sans-serif);
-    font-size: 0.875rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-decoration: none;
-    box-shadow: 0 4px 16px rgba(201, 169, 110, 0.4);
-    transition: transform 0.15s ease, background 0.2s ease;
-  }
-
-  .mobile-footer-sticky__btn--call:active {
-    transform: scale(0.97);
-    background: #b5945b;
-  }
-}
 
 
 
