@@ -517,6 +517,7 @@ function applyAdminProjects(adminProjects) {
           area: adminP.area || staticP.area,
           duration: adminP.duration || staticP.duration,
           budgetRange: adminP.budgetRange || staticP.budgetRange,
+          rank: typeof adminP.rank === 'number' ? adminP.rank : (staticP.rank || 99),
           thumbnail: adminThumb || staticP.thumbnail,
           images: adminImgs || staticP.images,
           beforeImage: (adminImgs && adminImgs[1]) || (adminImgs && adminImgs[0]) || staticP.beforeImage,
@@ -556,6 +557,7 @@ function applyAdminProjects(adminProjects) {
         duration: adminP.duration || '3 months',
         completionDate: adminP.completionDate || '',
         rating: adminP.testimonial?.rating || 5,
+        rank: typeof adminP.rank === 'number' ? adminP.rank : (parseInt(adminP.rank) || 99),
         thumbnail: thumb,
         images: imgs,
         beforeImage: fixPath(adminP.beforeImage) || imgs[0],
@@ -668,6 +670,7 @@ function applyAdminReviews(adminReviews) {
       role: r.clientRole || r.role || 'Client',
       industry: industry,
       rating: r.rating || 5,
+      rank: typeof r.rank === 'number' ? r.rank : (parseInt(r.rank) || 99),
       date: dateFormatted,
       text: r.reviewText || r.text || '',
       verified: true
