@@ -40,7 +40,7 @@ const Settings = {
               <div class="form-grid form-grid-2">
                 <div class="form-group">
                   <label class="form-label">Email</label>
-                  <input class="form-control" type="email" name="email" value="${studio.email||''}" placeholder="hello@vkreate.com">
+                  <input class="form-control" type="email" name="email" value="${studio.email||''}" placeholder="vkreatearchitecture@gmail.com">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Phone</label>
@@ -49,7 +49,7 @@ const Settings = {
               </div>
               <div class="form-group">
                 <label class="form-label">Address</label>
-                <input class="form-control" name="address" value="${studio.address||''}" placeholder="City, State, India">
+                <input class="form-control" name="address" value="${studio.address||''}" placeholder="Calicut, Kerala, India">
               </div>
               <div class="form-grid form-grid-2">
                 <div class="form-group">
@@ -58,7 +58,7 @@ const Settings = {
                 </div>
                 <div class="form-group">
                   <label class="form-label">Website URL</label>
-                  <input class="form-control" name="website" value="${studio.website||''}" placeholder="https://vkreate.com">
+                  <input class="form-control" name="website" value="${studio.website||''}" placeholder="https://vkreatearchitecture.com">
                 </div>
               </div>
               <div>
