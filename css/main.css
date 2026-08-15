@@ -72,46 +72,44 @@
   transition: width 0.1s linear;
 }
 
-/* Prominent Floating Skip Button (Visible on Mobile & Desktop) */
+/* Classic Preloader Skip Button */
 .preloader__skip {
   position: fixed !important;
-  top: 20px !important;
-  right: 20px !important;
+  top: 24px !important;
+  right: 24px !important;
   z-index: 2147483647 !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 10px 20px !important;
-  background: var(--gold, #C9A96E) !important;
-  color: var(--charcoal, #1A2420) !important;
-  border: 2px solid #FFFFFF !important;
-  border-radius: 30px !important;
+  padding: 8px 18px !important;
+  background: rgba(26, 36, 32, 0.75) !important;
+  border: 1px solid rgba(201, 169, 110, 0.5) !important;
+  color: var(--gold, #C9A96E) !important;
+  border-radius: 20px !important;
   font-family: var(--font-sans, 'Inter', sans-serif) !important;
-  font-size: 0.875rem !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.06em !important;
-  text-transform: uppercase !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.08em !important;
   cursor: pointer !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
-  transition: transform 0.2s ease, background 0.2s ease !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  transition: all 0.25s ease !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
 }
 
 .preloader__skip:hover,
 .preloader__skip:active {
-  background: #FFFFFF !important;
+  background: var(--gold, #C9A96E) !important;
   color: var(--charcoal, #1A2420) !important;
-  transform: scale(1.06) !important;
+  border-color: var(--gold, #C9A96E) !important;
 }
 
 @media (max-width: 768px) {
   .preloader__skip {
-    top: 14px !important;
-    right: 14px !important;
-    padding: 8px 16px !important;
-    font-size: 0.8125rem !important;
+    top: 16px !important;
+    right: 16px !important;
+    padding: 7px 14px !important;
+    font-size: 0.75rem !important;
   }
   .preloader__video-wrap {
     max-width: 260px;
