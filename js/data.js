@@ -599,25 +599,29 @@ function applyAdminProjects(adminProjects) {
     }
 
     // ── 2. Reviews Sync ──────────────────────────────────────
+    const deletedReviewIds = getDeletedReviewIds();
     const rawReviews = localStorage.getItem('vk_admin_reviews');
-    if (rawReviews) {
+    if (rawReviews !== null) {
       try {
         const adminReviews = JSON.parse(rawReviews);
-        if (Array.isArray(adminReviews) && adminReviews.length > 0) {
+        if (Array.isArray(adminReviews)) {
           applyAdminReviews(adminReviews);
-        } else {
-          localStorage.removeItem('vk_admin_reviews');
         }
       } catch (e) {}
+    } else {
+      if (Array.isArray(VKREATE_DATA.reviews)) {
+        VKREATE_DATA.reviews = VKREATE_DATA.reviews.filter(r => !isDeletedReview(r, deletedReviewIds));
+      }
     }
 
     // ── 3. Studio Settings Sync ──────────────────────────────
     VKREATE_DATA.studio = {
-      name: 'VKREATE Design Studio',
+      name: 'Vkreate Interior Architecture',
       tagline: 'Where Design Speaks',
       email: 'vkreatearchitecture@gmail.com',
       phone: '+91 90371 61861',
-      address: 'Calicut, Kerala, India',
+      address: 'LPOne Beyond, Venture Arcade, Thondayad, Kozhikode - 673016',
+      mapsUrl: 'https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw',
       instagram: 'https://www.instagram.com/vkreate_interior_architecture',
       website: 'https://vkreatearchitecture.com'
     };
@@ -626,8 +630,10 @@ function applyAdminProjects(adminProjects) {
       try {
         const settings = JSON.parse(rawSettings);
         if (settings.studio) {
+          settings.studio.name = 'Vkreate Interior Architecture';
           settings.studio.email = 'vkreatearchitecture@gmail.com';
-          settings.studio.address = 'Calicut, Kerala, India';
+          settings.studio.address = 'LPOne Beyond, Venture Arcade, Thondayad, Kozhikode - 673016';
+          settings.studio.mapsUrl = 'https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw';
           localStorage.setItem('vk_admin_settings', JSON.stringify(settings));
           VKREATE_DATA.studio = settings.studio;
         }
@@ -639,34 +645,173 @@ function applyAdminProjects(adminProjects) {
   }
 })();
 
+function getDeletedReviewIds() {
+  try {
+    return JSON.parse(localStorage.getItem('vk_admin_deleted_reviews')) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function isDeletedReview(r, deletedIds) {
+  if (!r || !deletedIds || !deletedIds.length) return false;
+  if (r.id && deletedIds.includes(r.id)) return true;
+  if (r.projectId && (deletedIds.includes(r.projectId) || deletedIds.includes('proj:' + r.projectId))) return true;
+  const name = (r.clientName || r.author || '').toLowerCase().trim();
+  if (name && (deletedIds.includes(name) || deletedIds.includes('name:' + name))) return true;
+  return false;
+}
+
+const staticDefaultReviews = [
+  {
+    id: "rev-lilaa-01",
+    projectId: "lilaa-restaurant",
+    author: "Unnikrishnan Nair",
+    role: "Founder & Owner, Lilaa Hospitality",
+    industry: "restaurant",
+    rating: 5,
+    rank: 1,
+    date: "Jun 2025",
+    text: "VKREATE captured our brand's warmth and sophistication in every detail. The spatial flow, arched niches, warm lighting, and seating layout elevated our entire dining experience. The space speaks for itself and guest retention has been phenomenal.",
+    verified: true,
+    status: 'approved'
+  },
+  {
+    id: "rev-salon-02",
+    projectId: "luxury-salon",
+    author: "Dr. Reshma Menon",
+    role: "Salon Director, Wings Wellness",
+    industry: "beauty",
+    rating: 5,
+    rank: 2,
+    date: "Apr 2025",
+    text: "Our clients feel like they're stepping into a 5-star spa retreat. VKREATE's design elevated our entire brand perception. The private pedicure suite, illuminated vanity pods, and botanical murals are guest favorites!",
+    verified: true,
+    status: 'approved'
+  },
+  {
+    id: "rev-retail-03",
+    projectId: "retail-jewellery",
+    author: "Faisal Rahman",
+    role: "Brand Manager, Wings Retail",
+    industry: "retail",
+    rating: 5,
+    rank: 3,
+    date: "Feb 2025",
+    text: "The interior design makes our jewellery display the hero. Corridor foot traffic increased by 40% immediately after handover, and the arched grid glass storefront gives us high visibility.",
+    verified: true,
+    status: 'approved'
+  },
+  {
+    id: "rev-lounge-04",
+    projectId: "corporate-lounge",
+    author: "Sameer Varma",
+    role: "Corporate Director, Apex Zenith",
+    industry: "office",
+    rating: 5,
+    rank: 4,
+    date: "Jan 2025",
+    text: "First impressions matter immensely in corporate business. The VIP reception lounge designed by VKREATE commands respect, offers privacy, and reflects high-level prestige for all visiting dignitaries.",
+    verified: true,
+    status: 'approved'
+  },
+  {
+    id: "rev-villa-05",
+    projectId: "serene-villa",
+    author: "Anjali & Vikram Rao",
+    role: "Homeowners, Serene Heights",
+    industry: "residential",
+    rating: 5,
+    rank: 5,
+    date: "Jul 2025",
+    text: "Our villa interior is breathtaking. VKREATE blended teak wood warmth with clean minimalist lines seamlessly. Waking up to natural light streaming through the custom double-height void is pure magic.",
+    verified: true,
+    status: 'approved'
+  },
+  {
+    id: "rev-clinic-06",
+    projectId: "aura-clinic",
+    author: "Dr. Vivek Kurup",
+    role: "Chief Surgeon, Aura Clinic",
+    industry: "healthcare",
+    rating: 5,
+    rank: 6,
+    date: "May 2025",
+    text: "The clinical layout reduces patient anxiety while offering high-efficiency workflow for our medical staff. The sage green accent walls and acoustic partitions make a massive difference.",
+    verified: true,
+    status: 'approved'
+  },
+  {
+    id: "rev-hotel-07",
+    projectId: "grand-horizon-hotel",
+    author: "Mathew Joseph",
+    role: "GM, Grand Horizon Hotel",
+    industry: "hospitality",
+    rating: 5,
+    rank: 7,
+    date: "Aug 2025",
+    text: "The lobby redesign surpassed expectations. Turnkey execution was completed 2 weeks ahead of our festival launch, and our guest satisfaction scores have reached an all-time high.",
+    verified: true,
+    status: 'approved'
+  },
+  {
+    id: "rev-cafe-08",
+    projectId: "emerald-brew-cafe",
+    author: "Priya Ramakrishnan",
+    role: "Owner, Emerald Brew Cafe",
+    industry: "restaurant",
+    rating: 5,
+    rank: 8,
+    date: "Mar 2025",
+    text: "An absolute delight to work with. The custom espresso bar, acoustic wood ceiling bays, and cozy seating created a buzzing community hotspot that customers rave about daily.",
+    verified: true,
+    status: 'approved'
+  }
+];
+
 function applyAdminReviews(adminReviews) {
-  if (!Array.isArray(adminReviews) || !adminReviews.length) return;
-  const approved = adminReviews.filter(r => r.status === 'approved');
-  if (!approved.length) return;
+  const deletedIds = getDeletedReviewIds();
+  const reviewsMap = new Map();
 
-  VKREATE_DATA.reviews = approved.map(r => {
-    let industry = 'restaurant';
-    if (r.projectId && VKREATE_DATA.projects) {
-      const proj = VKREATE_DATA.projects.find(p => p.id === r.projectId);
-      if (proj) industry = proj.industry;
+  staticDefaultReviews.forEach(r => {
+    if (!isDeletedReview(r, deletedIds)) {
+      reviewsMap.set(r.id, r);
     }
-    const dateFormatted = r.createdAt
-      ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-      : 'Recent';
-
-    return {
-      id: r.id,
-      projectId: r.projectId || 'general',
-      author: r.clientName || r.author || 'Client',
-      role: r.clientRole || r.role || 'Client',
-      industry: industry,
-      rating: r.rating || 5,
-      rank: typeof r.rank === 'number' ? r.rank : (parseInt(r.rank) || 99),
-      date: dateFormatted,
-      text: r.reviewText || r.text || '',
-      verified: true
-    };
   });
+
+  if (Array.isArray(adminReviews)) {
+    adminReviews.forEach(r => {
+      const isApproved = r.status === 'approved' || (r.status !== 'pending' && r.status !== 'rejected' && r.verified === true);
+      if (isApproved && !isDeletedReview(r, deletedIds)) {
+        let industry = r.industry || 'restaurant';
+        if (r.projectId && VKREATE_DATA.projects) {
+          const proj = VKREATE_DATA.projects.find(p => p.id === r.projectId);
+          if (proj) industry = proj.industry;
+        }
+        const dateFormatted = r.createdAt
+          ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+          : (r.date || 'Recent');
+
+        reviewsMap.set(r.id, {
+          id: r.id,
+          projectId: r.projectId || 'general',
+          author: r.clientName || r.author || 'Client',
+          role: r.clientRole || r.role || 'Client',
+          industry: r.industry || industry,
+          rating: r.rating || 5,
+          rank: typeof r.rank === 'number' ? r.rank : (parseInt(r.rank) || 99),
+          date: dateFormatted,
+          text: r.reviewText || r.text || '',
+          verified: true,
+          status: 'approved'
+        });
+      }
+    });
+  }
+
+  const resultList = Array.from(reviewsMap.values());
+  resultList.sort((a, b) => (a.rank || 99) - (b.rank || 99));
+  VKREATE_DATA.reviews = resultList;
 }
 
 // ============================================================
@@ -687,18 +832,49 @@ function applyAdminReviews(adminReviews) {
 })();
 
 (async function loadRemoteAdminReviews() {
+  let combinedAdmin = [];
+
+  try {
+    const rawLocal = localStorage.getItem('vk_admin_reviews');
+    if (rawLocal) {
+      const parsed = JSON.parse(rawLocal);
+      if (Array.isArray(parsed)) combinedAdmin = parsed;
+    }
+  } catch (e) {}
+
   try {
     const res = await fetch('js/admin-reviews.json?t=' + Date.now());
-    if (!res.ok) return;
-    const remoteReviews = await res.json();
-    if (Array.isArray(remoteReviews) && remoteReviews.length > 0) {
-      applyAdminReviews(remoteReviews);
-      window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+    if (res.ok) {
+      const remoteReviews = await res.json();
+      if (Array.isArray(remoteReviews)) {
+        const map = new Map();
+        combinedAdmin.forEach(r => map.set(r.id, r));
+        remoteReviews.forEach(r => {
+          if (!map.has(r.id)) map.set(r.id, r);
+        });
+        combinedAdmin = Array.from(map.values());
+      }
     }
-  } catch (e) {
-    // optional fail silently
-  }
+  } catch (e) {}
+
+  applyAdminReviews(combinedAdmin);
+  window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
 })();
+
+window.addEventListener('storage', (e) => {
+  if (!e || !e.key || e.key === 'vk_admin_reviews' || e.key === 'vk_admin_deleted_reviews') {
+    try {
+      const rawLocal = localStorage.getItem('vk_admin_reviews');
+      if (rawLocal) {
+        const parsed = JSON.parse(rawLocal);
+        if (Array.isArray(parsed)) {
+          applyAdminReviews(parsed);
+          window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+        }
+      }
+    } catch (err) {}
+  }
+});
 
 // ============================================================
 // Async IDB Resolution — resolve idb: image refs after page load

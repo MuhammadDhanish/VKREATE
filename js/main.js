@@ -370,6 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
         inquiries.unshift(newInquiry);
         localStorage.setItem('vk_admin_inquiries', JSON.stringify(inquiries));
         pushInquiryToGithub(newInquiry);
+        sendInquiryEmailNotification(newInquiry);
       } catch (err) {
         console.warn('Could not save inquiry:', err);
       }
@@ -423,6 +424,33 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hint) hint.remove();
       });
     });
+  }
+
+  async function sendInquiryEmailNotification(inquiry) {
+    try {
+      const settings = JSON.parse(localStorage.getItem('vk_admin_settings')) || {};
+      const notif = settings.notifications || {};
+      if (notif.newInquiry === false) return;
+      const recipient = notif.notifEmail || 'dhanishdhanishkk@gmail.com';
+
+      const formData = new FormData();
+      formData.append('_subject', `🔔 New Inquiry from ${inquiry.name} — VKREATE Studio`);
+      formData.append('_template', 'table');
+      formData.append('_captcha', 'false');
+      formData.append('Client Name', inquiry.name);
+      formData.append('Email', inquiry.email);
+      formData.append('Phone', inquiry.phone || 'N/A');
+      formData.append('Industry', inquiry.industry || 'N/A');
+      formData.append('Budget', inquiry.projectBudget || 'N/A');
+      formData.append('Timeline', inquiry.timeline || 'N/A');
+      formData.append('Project Brief', inquiry.brief || 'No brief provided');
+
+      fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json' }
+      }).catch(e => console.warn('Inquiry email dispatch warning:', e));
+    } catch(e) {}
   }
 
   async function pushInquiryToGithub(inquiryItem) {
@@ -536,11 +564,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Contact Info Dynamic Sync ──
   const syncContactDOM = () => {
     const email = 'vkreatearchitecture@gmail.com';
-    const address = 'Calicut, Kerala, India';
+    const address = 'LPOne Beyond, Venture Arcade, Thondayad, Kozhikode - 673016';
+    const mapUrl = 'https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw';
     
     document.querySelectorAll('a[href^="mailto:"]').forEach(el => {
       el.href = 'mailto:' + email;
-      el.textContent = email;
+      if (el.textContent.includes('@') && !el.textContent.includes('Email')) {
+        el.textContent = email;
+      }
     });
 
     document.querySelectorAll('.contact__detail').forEach(el => {
@@ -550,22 +581,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (txt === 'email') {
           const emailLink = el.querySelector('a');
           if (emailLink) { emailLink.href = 'mailto:' + email; emailLink.textContent = email; }
-        } else if (txt === 'studio') {
-          const valDiv = el.querySelector('div:not(.contact__detail-icon):not(.contact__detail-label)');
-          if (valDiv) valDiv.innerHTML = address;
         } else if (txt.includes('hour')) {
           el.remove();
         }
-      }
-    });
-
-    document.querySelectorAll('.footer__link').forEach(el => {
-      if (el.textContent.includes('dhanish') || el.textContent.includes('hello@')) {
-        el.textContent = email;
-        if (el.tagName === 'A') el.href = 'mailto:' + email;
-      }
-      if (el.textContent.includes('HSR') || el.textContent.includes('Bengaluru')) {
-        el.textContent = 'Calicut, Kerala';
       }
     });
   };

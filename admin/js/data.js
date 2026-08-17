@@ -6,12 +6,15 @@ const DB = {
 
   // ── Keys ─────────────────────────────────────────────────
   KEYS: {
-    projects:  'vk_admin_projects',
-    reviews:   'vk_admin_reviews',
-    inquiries: 'vk_admin_inquiries',
-    settings:  'vk_admin_settings',
-    analytics: 'vk_admin_analytics',
-    session:   'vk_admin_session',
+    projects:          'vk_admin_projects',
+    reviews:           'vk_admin_reviews',
+    inquiries:         'vk_admin_inquiries',
+    settings:          'vk_admin_settings',
+    analytics:         'vk_admin_analytics',
+    session:           'vk_admin_session',
+    deletedProjects:   'vk_admin_deleted_projects',
+    deletedReviews:    'vk_admin_deleted_reviews',
+    deletedInquiries:  'vk_admin_deleted_inquiries',
   },
 
   // ── Helpers ───────────────────────────────────────────────
@@ -26,6 +29,17 @@ const DB = {
       if (window.UI && UI.toast) UI.toast('Storage limit reached. Please use smaller image files.', 'error');
       console.warn('LocalStorage error:', e);
       return false;
+    }
+  },
+  _getDeleted(key) {
+    try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
+  },
+  _addDeleted(key, id) {
+    if (!id) return;
+    const list = this._getDeleted(key);
+    if (!list.includes(id)) {
+      list.push(id);
+      try { localStorage.setItem(key, JSON.stringify(list)); } catch {}
     }
   },
   _id() {
@@ -142,108 +156,223 @@ const DB = {
     if (!this._get(this.KEYS.reviews)) {
       this._set(this.KEYS.reviews, [
         {
-          id: 'r-lilaa-1',
-          projectId: 'lilaa-restaurant',
-          projectName: 'Lilaa — Malayali Cuisine',
-          clientName: 'Arjun Krishnan',
-          clientRole: 'Operations Manager, Lilaa',
+          id: "rev-lilaa-01",
+          projectId: "lilaa-restaurant",
+          projectName: "Lilaa — Malayali Cuisine",
+          clientName: "Unnikrishnan Nair",
+          clientRole: "Founder & Owner, Lilaa Hospitality",
+          clientEmail: "unnikrishnan@lilaa.com",
           rating: 5,
-          reviewText: 'The transformation was beyond our expectations. Every corner of the space tells a story.',
-          shortTestimonial: 'Every corner of the space tells a story.',
-          status: 'pending',
-          studioResponse: '',
-          tags: ['quality', 'professionalism'],
-          visibility: 'public',
-          createdAt: '2025-07-30T08:15:00Z',
-          approvedAt: null,
+          rank: 1,
+          reviewText: "VKREATE captured our brand's warmth and sophistication in every detail. The spatial flow, arched niches, warm lighting, and seating layout elevated our entire dining experience. The space speaks for itself and guest retention has been phenomenal.",
+          shortTestimonial: "VKREATE captured our brand's warmth and sophistication in every detail.",
+          status: "approved",
+          studioResponse: "Thank you Unnikrishnan! It was an absolute pleasure bringing Lilaa's heritage vision to life.",
+          tags: ["restaurant", "dining"],
+          visibility: "public",
+          createdAt: "2025-06-20T10:00:00Z",
+          approvedAt: "2025-06-21T09:00:00Z"
         },
         {
-          id: 'r-salon-1',
-          projectId: 'luxury-salon',
-          projectName: 'Wings Luxury Beauty & Wellness',
-          clientName: 'Priya Nair',
-          clientRole: 'Client, Wings Wellness',
+          id: "rev-salon-02",
+          projectId: "luxury-salon",
+          projectName: "Wings Luxury Beauty & Wellness",
+          clientName: "Dr. Reshma Menon",
+          clientRole: "Salon Director, Wings Wellness",
+          clientEmail: "reshma@wingswellness.in",
           rating: 5,
-          reviewText: 'Walking into Wings feels like entering a world-class spa. The design is immaculate.',
-          shortTestimonial: 'Immaculate design — every detail creates a premium experience.',
-          status: 'approved',
-          studioResponse: 'Thank you Priya!',
-          tags: ['quality'],
-          visibility: 'public',
-          createdAt: '2025-07-10T16:00:00Z',
-          approvedAt: '2025-07-11T09:00:00Z',
+          rank: 2,
+          reviewText: "Our clients feel like they're stepping into a 5-star spa retreat. VKREATE's design elevated our entire brand perception. The private pedicure suite, illuminated vanity pods, and botanical murals are guest favorites!",
+          shortTestimonial: "Our clients feel like they're stepping into a 5-star spa retreat.",
+          status: "approved",
+          studioResponse: "So glad to hear Dr. Reshma! Designing your spa sanctuary was a rewarding journey.",
+          tags: ["salon", "spa"],
+          visibility: "public",
+          createdAt: "2025-04-15T11:00:00Z",
+          approvedAt: "2025-04-16T08:00:00Z"
+        },
+        {
+          id: "rev-retail-03",
+          projectId: "retail-jewellery",
+          projectName: "Wings Jewellery & Retail Showroom",
+          clientName: "Faisal Rahman",
+          clientRole: "Brand Manager, Wings Retail",
+          clientEmail: "faisal@wingsretail.com",
+          rating: 5,
+          rank: 3,
+          reviewText: "The interior design makes our jewellery display the hero. Corridor foot traffic increased by 40% immediately after handover, and the arched grid glass storefront gives us high visibility.",
+          shortTestimonial: "The interior design makes our jewellery display the hero.",
+          status: "approved",
+          studioResponse: "Appreciate your trust Faisal! The custom display showcases turned out brilliant.",
+          tags: ["jewellery", "retail"],
+          visibility: "public",
+          createdAt: "2025-02-20T12:00:00Z",
+          approvedAt: "2025-02-21T10:00:00Z"
+        },
+        {
+          id: "rev-lounge-04",
+          projectId: "corporate-lounge",
+          projectName: "Corporate VIP Reception & Lounge",
+          clientName: "Sameer Varma",
+          clientRole: "Corporate Director, Apex Zenith",
+          clientEmail: "sameer@apexzenith.com",
+          rating: 5,
+          rank: 4,
+          reviewText: "First impressions matter immensely in corporate business. The VIP reception lounge designed by VKREATE commands respect, offers privacy, and reflects high-level prestige for all visiting dignitaries.",
+          shortTestimonial: "First impressions matter immensely in corporate business.",
+          status: "approved",
+          studioResponse: "Thank you Sameer! It was an honor executing the VIP corporate lounge.",
+          tags: ["office", "corporate"],
+          visibility: "public",
+          createdAt: "2025-01-25T14:00:00Z",
+          approvedAt: "2025-01-26T09:00:00Z"
+        },
+        {
+          id: "rev-villa-05",
+          projectId: "serene-villa",
+          projectName: "Serene Heights Luxury Villa",
+          clientName: "Anjali & Vikram Rao",
+          clientRole: "Homeowners, Serene Heights",
+          clientEmail: "vikram.rao@gmail.com",
+          rating: 5,
+          rank: 5,
+          reviewText: "Our villa interior is breathtaking. VKREATE blended teak wood warmth with clean minimalist lines seamlessly. Waking up to natural light streaming through the custom double-height void is pure magic.",
+          shortTestimonial: "Our villa interior is breathtaking. VKREATE blended teak wood warmth seamlessly.",
+          status: "approved",
+          studioResponse: "Warmest wishes Anjali & Vikram! May your home bring endless serenity.",
+          tags: ["villa", "residential"],
+          visibility: "public",
+          createdAt: "2025-07-25T10:00:00Z",
+          approvedAt: "2025-07-26T11:00:00Z"
+        },
+        {
+          id: "rev-clinic-06",
+          projectId: "aura-clinic",
+          projectName: "Aura Dental & Wellness Clinic",
+          clientName: "Dr. Vivek Kurup",
+          clientRole: "Chief Surgeon, Aura Clinic",
+          clientEmail: "drvivek@auraclinic.org",
+          rating: 5,
+          rank: 6,
+          reviewText: "The clinical layout reduces patient anxiety while offering high-efficiency workflow for our medical staff. The sage green accent walls and acoustic partitions make a massive difference.",
+          shortTestimonial: "The clinical layout reduces patient anxiety while offering high efficiency.",
+          status: "approved",
+          studioResponse: "Thank you Dr. Vivek! Designing a soothing medical environment was a great experience.",
+          tags: ["healthcare", "clinic"],
+          visibility: "public",
+          createdAt: "2025-05-25T09:00:00Z",
+          approvedAt: "2025-05-26T14:00:00Z"
+        },
+        {
+          id: "rev-hotel-07",
+          projectId: "grand-horizon-hotel",
+          projectName: "The Grand Horizon Boutique Hotel",
+          clientName: "Mathew Joseph",
+          clientRole: "GM, Grand Horizon Hotel",
+          clientEmail: "gm@grandhorizonresort.com",
+          rating: 5,
+          rank: 7,
+          reviewText: "The lobby redesign surpassed expectations. Turnkey execution was completed 2 weeks ahead of our festival launch, and our guest satisfaction scores have reached an all-time high.",
+          shortTestimonial: "The lobby redesign surpassed expectations. Completed 2 weeks ahead of schedule.",
+          status: "approved",
+          studioResponse: "Thank you Mathew! Congratulations on the successful resort reopening.",
+          tags: ["hotel", "hospitality"],
+          visibility: "public",
+          createdAt: "2025-08-05T15:00:00Z",
+          approvedAt: "2025-08-06T10:00:00Z"
+        },
+        {
+          id: "rev-cafe-08",
+          projectId: "emerald-brew-cafe",
+          projectName: "Emerald Brew Artisan Coffee Lounge",
+          clientName: "Priya Ramakrishnan",
+          clientRole: "Owner, Emerald Brew Cafe",
+          clientEmail: "priya@emeraldbrew.in",
+          rating: 5,
+          rank: 8,
+          reviewText: "An absolute delight to work with. The custom espresso bar, acoustic wood ceiling bays, and cozy seating created a buzzing community hotspot that customers rave about daily.",
+          shortTestimonial: "An absolute delight to work with. Created a buzzing community hotspot.",
+          status: "approved",
+          studioResponse: "Cheers Priya! Wishing Emerald Brew continued success.",
+          tags: ["cafe", "restaurant"],
+          visibility: "public",
+          createdAt: "2025-03-28T16:00:00Z",
+          approvedAt: "2025-03-29T11:00:00Z"
         }
       ]);
     }
 
     // Inquiries
-    this._set(this.KEYS.inquiries, [
-      {
-        id: this._id(),
-        name: 'Rajesh Kumar',
-        email: 'rajesh@grandhotel.com',
-        phone: '+91 98765 43210',
-        industry: 'Hospitality',
-        projectBudget: '₹50L – ₹75L',
-        timeline: '6 months',
-        brief: 'Looking to redesign our hotel lobby and 3 dining areas. 5-star property in Trivandrum.',
-        status: 'new',
-        notes: '',
-        createdAt: '2025-07-31T09:00:00Z',
-        respondedAt: null,
-      },
-      {
-        id: this._id(),
-        name: 'Meera Thomas',
-        email: 'meera@blossomcafe.in',
-        phone: '+91 94400 12345',
-        industry: 'Restaurants & Cafes',
-        projectBudget: '₹15L – ₹25L',
-        timeline: '3 months',
-        brief: 'Café design for a new 1,500 sq ft space in Kochi. Inspired by European café culture.',
-        status: 'contacted',
-        notes: 'Called on 28 July. Interested in a full concept presentation. Scheduled site visit for Aug 5.',
-        createdAt: '2025-07-25T14:30:00Z',
-        respondedAt: '2025-07-28T11:00:00Z',
-      },
-      {
-        id: this._id(),
-        name: 'Dr. Anil Sharma',
-        email: 'dr.anil@skincare.com',
-        phone: '+91 90001 23456',
-        industry: 'Beauty & Wellness',
-        projectBudget: '₹20L – ₹30L',
-        timeline: '4 months',
-        brief: 'Premium dermatology clinic in Bangalore. Need a modern clinical-yet-luxurious feel.',
-        status: 'quoted',
-        notes: 'Sent proposal on 20 July. Follow up scheduled for Aug 3.',
-        createdAt: '2025-07-15T11:00:00Z',
-        respondedAt: '2025-07-18T10:00:00Z',
-      },
-      {
-        id: this._id(),
-        name: 'Sanjay Pillai',
-        email: 'sanjay@fashionretail.in',
-        phone: '+91 80000 98765',
-        industry: 'Retail',
-        projectBudget: '₹35L – ₹45L',
-        timeline: '5 months',
-        brief: 'High-end fashion boutique in Kochi. 3,000 sq ft with a focus on premium materials.',
-        status: 'won',
-        notes: 'Contract signed on 10 July. Kickoff meeting scheduled for Aug 1.',
-        createdAt: '2025-07-01T15:00:00Z',
-        respondedAt: '2025-07-05T09:00:00Z',
-      },
-    ]);
+    if (!this._get(this.KEYS.inquiries)) {
+      this._set(this.KEYS.inquiries, [
+        {
+          id: this._id(),
+          name: 'Rajesh Kumar',
+          email: 'rajesh@grandhotel.com',
+          phone: '+91 98765 43210',
+          industry: 'Hospitality',
+          projectBudget: '₹50L – ₹75L',
+          timeline: '6 months',
+          brief: 'Looking to redesign our hotel lobby and 3 dining areas. 5-star property in Trivandrum.',
+          status: 'new',
+          notes: '',
+          createdAt: '2025-07-31T09:00:00Z',
+          respondedAt: null,
+        },
+        {
+          id: this._id(),
+          name: 'Meera Thomas',
+          email: 'meera@blossomcafe.in',
+          phone: '+91 94400 12345',
+          industry: 'Restaurants & Cafes',
+          projectBudget: '₹15L – ₹25L',
+          timeline: '3 months',
+          brief: 'Café design for a new 1,500 sq ft space in Kochi. Inspired by European café culture.',
+          status: 'contacted',
+          notes: 'Called on 28 July. Interested in a full concept presentation. Scheduled site visit for Aug 5.',
+          createdAt: '2025-07-25T14:30:00Z',
+          respondedAt: '2025-07-28T11:00:00Z',
+        },
+        {
+          id: this._id(),
+          name: 'Dr. Anil Sharma',
+          email: 'dr.anil@skincare.com',
+          phone: '+91 90001 23456',
+          industry: 'Beauty & Wellness',
+          projectBudget: '₹20L – ₹30L',
+          timeline: '4 months',
+          brief: 'Premium dermatology clinic in Bangalore. Need a modern clinical-yet-luxurious feel.',
+          status: 'quoted',
+          notes: 'Sent proposal on 20 July. Follow up scheduled for Aug 3.',
+          createdAt: '2025-07-15T11:00:00Z',
+          respondedAt: '2025-07-18T10:00:00Z',
+        },
+        {
+          id: this._id(),
+          name: 'Sanjay Pillai',
+          email: 'sanjay@fashionretail.in',
+          phone: '+91 80000 98765',
+          industry: 'Retail',
+          projectBudget: '₹35L – ₹45L',
+          timeline: '5 months',
+          brief: 'High-end fashion boutique in Kochi. 3,000 sq ft with a focus on premium materials.',
+          status: 'won',
+          notes: 'Contract signed on 10 July. Kickoff meeting scheduled for Aug 1.',
+          createdAt: '2025-07-01T15:00:00Z',
+          respondedAt: '2025-07-05T09:00:00Z',
+        },
+      ]);
+    }
 
     // Settings
     this._set(this.KEYS.settings, {
       studio: {
-        name: 'VKREATE Design Studio',
+        name: 'Vkreate Interior Architecture',
         tagline: 'Where Design Speaks',
         email: 'vkreatearchitecture@gmail.com',
         phone: '+91 90371 61861',
-        address: 'Calicut, Kerala, India',
+        address: 'LPOne Beyond, Venture Arcade, Thondayad, Kozhikode - 673016',
+        mapsUrl: 'https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw',
         instagram: 'https://www.instagram.com/vkreate_interior_architecture',
         facebook: '',
         website: 'https://vkreate.com',
@@ -279,10 +408,11 @@ const DB = {
     all() {
       const list = DB._get(DB.KEYS.projects) || [];
       const defaults = DB._defaultProjects();
+      const deleted = DB._getDeleted(DB.KEYS.deletedProjects);
       let updated = false;
 
       defaults.forEach(def => {
-        if (!list.some(p => p.id === def.id)) {
+        if (!deleted.includes(def.id) && !list.some(p => p.id === def.id)) {
           list.push(def);
           updated = true;
         }
@@ -291,7 +421,7 @@ const DB = {
       if (updated) {
         DB._set(DB.KEYS.projects, list);
       }
-      return list;
+      return list.filter(p => !deleted.includes(p.id));
     },
     get(id)     { return this.all().find(p => p.id === id) || null; },
     save(list)  { DB._set(DB.KEYS.projects, list); },
@@ -317,14 +447,23 @@ const DB = {
       if (!ok) return null;
       return l[i];
     },
-    delete(id)  { this.save(this.all().filter(p => p.id !== id)); },
+    delete(id)  {
+      const p = this.get(id);
+      DB._addDeleted(DB.KEYS.deletedProjects, id);
+      if (p && p.name) DB._addDeleted(DB.KEYS.deletedProjects, 'name:' + p.name.toLowerCase().trim());
+      this.save(this.all().filter(p => p.id !== id));
+    },
     published() { return this.all().filter(p => p.status === 'published'); },
     drafts()    { return this.all().filter(p => p.status === 'draft'); },
   },
 
   // ── Reviews CRUD ──────────────────────────────────────────
   reviews: {
-    all()       { return DB._get(DB.KEYS.reviews) || []; },
+    all()       {
+      const list = DB._get(DB.KEYS.reviews) || [];
+      const deleted = DB._getDeleted(DB.KEYS.deletedReviews);
+      return list.filter(r => !deleted.includes(r.id));
+    },
     get(id)     { return this.all().find(r => r.id === id) || null; },
     save(list)  { DB._set(DB.KEYS.reviews, list); },
     add(r)      { const l = this.all(); r.id = DB._id(); r.createdAt = new Date().toISOString(); r.status = 'pending'; l.unshift(r); this.save(l); return r; },
@@ -337,7 +476,16 @@ const DB = {
     },
     approve(id) { return this.update(id, { status: 'approved', approvedAt: new Date().toISOString() }); },
     reject(id)  { return this.update(id, { status: 'rejected' }); },
-    delete(id)  { this.save(this.all().filter(r => r.id !== id)); },
+    delete(id)  {
+      const r = this.get(id);
+      DB._addDeleted(DB.KEYS.deletedReviews, id);
+      if (r) {
+        if (r.clientName) DB._addDeleted(DB.KEYS.deletedReviews, 'name:' + r.clientName.toLowerCase().trim());
+        if (r.author) DB._addDeleted(DB.KEYS.deletedReviews, 'name:' + r.author.toLowerCase().trim());
+        if (r.projectId) DB._addDeleted(DB.KEYS.deletedReviews, 'proj:' + r.projectId);
+      }
+      this.save(this.all().filter(r => r.id !== id));
+    },
     pending()   { return this.all().filter(r => r.status === 'pending'); },
     approved()  { return this.all().filter(r => r.status === 'approved'); },
     stats() {
@@ -354,7 +502,11 @@ const DB = {
 
   // ── Inquiries CRUD ────────────────────────────────────────
   inquiries: {
-    all()       { return DB._get(DB.KEYS.inquiries) || []; },
+    all()       {
+      const list = DB._get(DB.KEYS.inquiries) || [];
+      const deleted = DB._getDeleted(DB.KEYS.deletedInquiries);
+      return list.filter(i => !deleted.includes(i.id));
+    },
     get(id)     { return this.all().find(i => i.id === id) || null; },
     save(list)  { DB._set(DB.KEYS.inquiries, list); },
     add(item)   { const l = this.all(); item.id = DB._id(); item.createdAt = new Date().toISOString(); item.status = 'new'; l.unshift(item); this.save(l); return item; },
@@ -365,7 +517,10 @@ const DB = {
       l[i] = { ...l[i], ...data };
       this.save(l); return l[i];
     },
-    delete(id)  { this.save(this.all().filter(i => i.id !== id)); },
+    delete(id)  {
+      DB._addDeleted(DB.KEYS.deletedInquiries, id);
+      this.save(this.all().filter(i => i.id !== id));
+    },
     byStatus(s) { return this.all().filter(i => i.status === s); },
     stats() {
       const all = this.all();
@@ -427,13 +582,28 @@ const DB = {
 
   // ── Remote Sync Engine (pulls GitHub JSON files for cross-admin sync) ──
   async loadRemoteData() {
+    const deletedProjects = DB._getDeleted(DB.KEYS.deletedProjects);
+    const deletedReviews = DB._getDeleted(DB.KEYS.deletedReviews);
+    const deletedInquiries = DB._getDeleted(DB.KEYS.deletedInquiries);
+
     try {
       // 1. Projects
       const projRes = await fetch('../js/admin-projects.json?t=' + Date.now());
       if (projRes.ok) {
         const remoteProjects = await projRes.json();
         if (Array.isArray(remoteProjects) && remoteProjects.length > 0) {
-          DB._set(DB.KEYS.projects, remoteProjects);
+          const local = DB._get(DB.KEYS.projects);
+          const filteredRemote = remoteProjects.filter(p => !deletedProjects.includes(p.id));
+          if (!local) {
+            DB._set(DB.KEYS.projects, filteredRemote);
+          } else {
+            const mergedMap = new Map();
+            local.filter(p => !deletedProjects.includes(p.id)).forEach(p => mergedMap.set(p.id, p));
+            filteredRemote.forEach(p => {
+              if (!mergedMap.has(p.id)) mergedMap.set(p.id, p);
+            });
+            DB._set(DB.KEYS.projects, Array.from(mergedMap.values()));
+          }
         }
       }
     } catch (e) {}
@@ -444,7 +614,18 @@ const DB = {
       if (revRes.ok) {
         const remoteReviews = await revRes.json();
         if (Array.isArray(remoteReviews) && remoteReviews.length > 0) {
-          DB._set(DB.KEYS.reviews, remoteReviews);
+          const local = DB._get(DB.KEYS.reviews);
+          const filteredRemote = remoteReviews.filter(r => !deletedReviews.includes(r.id));
+          if (!local) {
+            DB._set(DB.KEYS.reviews, filteredRemote);
+          } else {
+            const mergedMap = new Map();
+            local.filter(r => !deletedReviews.includes(r.id)).forEach(r => mergedMap.set(r.id, r));
+            filteredRemote.forEach(r => {
+              if (!mergedMap.has(r.id)) mergedMap.set(r.id, r);
+            });
+            DB._set(DB.KEYS.reviews, Array.from(mergedMap.values()));
+          }
         }
       }
     } catch (e) {}
@@ -455,13 +636,18 @@ const DB = {
       if (inqRes.ok) {
         const remoteInquiries = await inqRes.json();
         if (Array.isArray(remoteInquiries) && remoteInquiries.length > 0) {
-          const local = DB.inquiries.all();
-          const mergedMap = new Map();
-          remoteInquiries.forEach(i => mergedMap.set(i.id, i));
-          local.forEach(i => {
-            if (!mergedMap.has(i.id)) mergedMap.set(i.id, i);
-          });
-          DB._set(DB.KEYS.inquiries, Array.from(mergedMap.values()));
+          const local = DB._get(DB.KEYS.inquiries);
+          const filteredRemote = remoteInquiries.filter(i => !deletedInquiries.includes(i.id));
+          if (!local) {
+            DB._set(DB.KEYS.inquiries, filteredRemote);
+          } else {
+            const mergedMap = new Map();
+            local.filter(i => !deletedInquiries.includes(i.id)).forEach(i => mergedMap.set(i.id, i));
+            filteredRemote.forEach(i => {
+              if (!mergedMap.has(i.id)) mergedMap.set(i.id, i);
+            });
+            DB._set(DB.KEYS.inquiries, Array.from(mergedMap.values()));
+          }
         }
       }
     } catch (e) {}

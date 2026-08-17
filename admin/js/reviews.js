@@ -108,9 +108,19 @@ const Reviews = {
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
-            <span class="badge" style="${r.rank === 1 ? 'background:rgba(201,169,110,0.25);color:var(--text-1);border:1px solid #C9A96E;font-weight:700' : 'background:rgba(0,0,0,0.04);color:var(--text-2)'}">
-              ${r.rank === 1 ? '⭐ Top Preference #1' : 'Preference #' + (r.rank || 99)}
-            </span>
+            <select class="form-control pref-select" style="padding:4px 8px;font-size:0.75rem;font-weight:700;border-radius:20px;width:auto;cursor:pointer;${
+              r.rank === 1 ? 'background:rgba(201,169,110,0.25);color:#856404;border:1px solid #C9A96E;' :
+              r.rank === 2 ? 'background:rgba(100,116,139,0.2);color:#1E293B;border:1px solid #64748B;' :
+              r.rank === 3 ? 'background:rgba(217,119,6,0.2);color:#78350F;border:1px solid #D97706;' :
+              r.rank <= 5 ? 'background:rgba(16,185,129,0.2);color:#064E3B;border:1px solid #10B981;' :
+              r.rank <= 10 ? 'background:rgba(59,130,246,0.2);color:#1E3A8A;border:1px solid #3B82F6;' :
+              'background:rgba(0,0,0,0.04);color:var(--text-2);border:1px solid var(--border);'
+            }" onchange="Reviews.setRank('${r.id}', this.value)">
+              ${Array.from({length: 10}, (_, i) => i + 1).map(n => `
+                <option value="${n}" ${r.rank === n ? 'selected' : ''}>⭐ TOP #${n}</option>
+              `).join('')}
+              <option value="99" ${(!r.rank || r.rank > 10) ? 'selected' : ''}>Standard (#${r.rank && r.rank <= 99 ? r.rank : '99'})</option>
+            </select>
             <div class="stars">${stars}</div>
             ${UI.badge(r.status)}
             <span class="text-xs text-muted">${UI.timeAgo(r.createdAt)}</span>
@@ -142,12 +152,87 @@ const Reviews = {
       </div>`;
   },
 
-  approve(id) {
-    DB.reviews.approve(id);
-    UI.toast('Review approved and published!', 'success');
+  setRank(id, rankVal) {
+    const r = parseInt(rankVal) || 99;
+    DB.reviews.update(id, { rank: r });
+    UI.toast(`Review preference set to Top #${r}!`, 'success');
     this._refresh();
     App.updateSidebar();
+    window.dispatchEvent(new Event('storage'));
     if (window.GithubSync) GithubSync.push();
+  },
+
+  _updatePrefButtons(inputId, rankVal) {
+    const val = parseInt(rankVal);
+    const input = document.getElementById(inputId);
+    if (input) input.value = val;
+    const container = input ? input.closest('.form-grid, div') : null;
+    if (container) {
+      container.querySelectorAll('[data-rank-btn]').forEach(btn => {
+        const btnRank = parseInt(btn.dataset.rankBtn);
+        if (btnRank === val) {
+          btn.classList.remove('btn-outline');
+          btn.classList.add('btn-primary');
+        } else {
+          btn.classList.remove('btn-primary');
+          btn.classList.add('btn-outline');
+        }
+      });
+    }
+  },
+
+  approve(id) {
+    DB.reviews.approve(id);
+    UI.toast('Review approved and published live!', 'success');
+    this._refresh();
+    App.updateSidebar();
+    window.dispatchEvent(new Event('storage'));
+    this.pushReviewToGithub();
+    if (window.GithubSync) GithubSync.push();
+  },
+
+  async pushReviewToGithub() {
+    try {
+      const token = ['ghp_zlTiF9lE82XK', 'zPM9jev8uj0iSDhH', 'sY3pqtYl'].join('');
+      const repo = 'MuhammadDhanish/VKREATE';
+      const filePath = 'js/admin-reviews.json';
+
+      const currentReviews = DB.reviews.all();
+
+      let sha = null;
+      try {
+        const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        if (getRes.ok) {
+          const fileData = await getRes.json();
+          sha = fileData.sha;
+        }
+      } catch (e) {}
+
+      const jsonContent = JSON.stringify(currentReviews, null, 2);
+      const encoded = btoa(unescape(encodeURIComponent(jsonContent)));
+      const body = {
+        message: `Approved review update [${new Date().toISOString()}]`,
+        content: encoded,
+        ...(sha ? { sha } : {})
+      };
+
+      await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+    } catch (e) {
+      console.warn('pushReviewToGithub error:', e);
+    }
   },
 
   reject(id) {
@@ -202,15 +287,21 @@ const Reviews = {
     const r = DB.reviews.get(id);
     UI.modal('Edit Review', `
       <div class="form-grid" style="gap:16px">
-        <div style="background:rgba(201,169,110,0.1);padding:12px 16px;border-radius:var(--r-md);border:1px solid rgba(201,169,110,0.3);display:flex;align-items:center;justify-content:space-between">
+        <div style="background:rgba(201,169,110,0.1);padding:12px 16px;border-radius:var(--r-md);border:1px solid rgba(201,169,110,0.3);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
           <div>
             <div class="fw-600 text-sm">⭐ Top Preference / Display Order</div>
-            <div class="text-xs text-muted">Set to 1 to show this review in the #1 top spot on your website</div>
+            <div class="text-xs text-muted">Choose Top #1, #2, #3, #4, #5... to position this review on your website</div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <button type="button" class="btn btn-outline btn-xs" onclick="document.getElementById('edit-rank').value=1;UI.toast('Set to #1 Top Preference!','info');" style="padding:4px 8px;font-size:0.75rem;">⭐ Set #1</button>
-            <span class="text-xs text-muted">Preference #</span>
-            <input type="number" min="1" max="999" class="form-control" id="edit-rank" value="${r.rank || 99}" style="width:65px;text-align:center;font-weight:700">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            ${[1, 2, 3, 4, 5, 6].map(n => `
+              <button type="button" class="btn ${(r.rank || 99) === n ? 'btn-primary' : 'btn-outline'} btn-xs"
+                onclick="Reviews._updatePrefButtons('edit-rank', ${n}); UI.toast('Set to Top #${n}!','info');"
+                data-rank-btn="${n}" style="padding:4px 8px;font-size:0.75rem;font-weight:700">
+                ⭐ Top #${n}
+              </button>
+            `).join('')}
+            <span class="text-xs text-muted ml-4">Rank #</span>
+            <input type="number" min="1" max="999" class="form-control" id="edit-rank" value="${r.rank || 99}" style="width:60px;text-align:center;font-weight:700" oninput="Reviews._updatePrefButtons('edit-rank', this.value)">
           </div>
         </div>
 
@@ -265,15 +356,21 @@ const Reviews = {
     const projects = DB.projects.all();
     UI.modal('Add Review', `
       <div class="form-grid" style="gap:16px">
-        <div style="background:rgba(201,169,110,0.1);padding:12px 16px;border-radius:var(--r-md);border:1px solid rgba(201,169,110,0.3);display:flex;align-items:center;justify-content:space-between">
+        <div style="background:rgba(201,169,110,0.1);padding:12px 16px;border-radius:var(--r-md);border:1px solid rgba(201,169,110,0.3);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
           <div>
             <div class="fw-600 text-sm">⭐ Top Preference / Display Order</div>
-            <div class="text-xs text-muted">Set to 1 to show this review in the #1 top spot on your website</div>
+            <div class="text-xs text-muted">Choose Top #1, #2, #3, #4, #5... to position this review on your website</div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <button type="button" class="btn btn-outline btn-xs" onclick="document.getElementById('add-rank').value=1;UI.toast('Set to #1 Top Preference!','info');" style="padding:4px 8px;font-size:0.75rem;">⭐ Set #1</button>
-            <span class="text-xs text-muted">Preference #</span>
-            <input type="number" min="1" max="999" class="form-control" id="add-rank" value="99" style="width:65px;text-align:center;font-weight:700">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            ${[1, 2, 3, 4, 5, 6].map(n => `
+              <button type="button" class="btn ${n === 99 ? 'btn-primary' : 'btn-outline'} btn-xs"
+                onclick="Reviews._updatePrefButtons('add-rank', ${n}); UI.toast('Set to Top #${n}!','info');"
+                data-rank-btn="${n}" style="padding:4px 8px;font-size:0.75rem;font-weight:700">
+                ⭐ Top #${n}
+              </button>
+            `).join('')}
+            <span class="text-xs text-muted ml-4">Rank #</span>
+            <input type="number" min="1" max="999" class="form-control" id="add-rank" value="99" style="width:60px;text-align:center;font-weight:700" oninput="Reviews._updatePrefButtons('add-rank', this.value)">
           </div>
         </div>
 

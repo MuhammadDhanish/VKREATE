@@ -145,9 +145,19 @@ const Projects = {
                 : `<div class="td-thumb-placeholder">No img</div>`}
             </td>
             <td class="text-sm fw-600">
-              <span class="badge" style="${p.rank === 1 ? 'background:rgba(201,169,110,0.25);color:var(--text-1);border:1px solid #C9A96E;font-weight:700' : 'background:rgba(0,0,0,0.04);color:var(--text-2)'}">
-                ${p.rank === 1 ? '⭐ Top #1' : '#' + (p.rank || 99)}
-              </span>
+              <select class="form-control pref-select" style="padding:4px 8px;font-size:0.75rem;font-weight:700;border-radius:20px;width:auto;cursor:pointer;${
+                p.rank === 1 ? 'background:rgba(201,169,110,0.25);color:#856404;border:1px solid #C9A96E;' :
+                p.rank === 2 ? 'background:rgba(100,116,139,0.2);color:#1E293B;border:1px solid #64748B;' :
+                p.rank === 3 ? 'background:rgba(217,119,6,0.2);color:#78350F;border:1px solid #D97706;' :
+                p.rank <= 5 ? 'background:rgba(16,185,129,0.2);color:#064E3B;border:1px solid #10B981;' :
+                p.rank <= 10 ? 'background:rgba(59,130,246,0.2);color:#1E3A8A;border:1px solid #3B82F6;' :
+                'background:rgba(0,0,0,0.04);color:var(--text-2);border:1px solid var(--border);'
+              }" onchange="Projects.setRank('${p.id}', this.value)">
+                ${Array.from({length: 10}, (_, i) => i + 1).map(n => `
+                  <option value="${n}" ${p.rank === n ? 'selected' : ''}>⭐ TOP #${n}</option>
+                `).join('')}
+                <option value="99" ${(!p.rank || p.rank > 10) ? 'selected' : ''}>Standard (#${p.rank && p.rank <= 99 ? p.rank : '99'})</option>
+              </select>
             </td>
             <td class="td-name">${p.name || 'Untitled'}</td>
             <td><span class="text-sm text-muted">${p.industryLabel||p.industry||'Commercial'}</span></td>
@@ -182,6 +192,30 @@ const Projects = {
         }
       });
     }, 30);
+  },
+
+  setRank(id, rankVal) {
+    const r = parseInt(rankVal) || 99;
+    DB.projects.update(id, { rank: r });
+    UI.toast(`Project preference set to Top #${r}!`, 'success');
+    this._refreshTable();
+    if (window.App && App.updateSidebar) App.updateSidebar();
+    window.dispatchEvent(new Event('storage'));
+    if (window.GithubSync) GithubSync.push();
+  },
+
+  _updatePrefButtons(rankVal) {
+    const val = parseInt(rankVal);
+    document.querySelectorAll('#proj-form [data-rank-btn]').forEach(btn => {
+      const btnRank = parseInt(btn.dataset.rankBtn);
+      if (btnRank === val) {
+        btn.classList.remove('btn-outline');
+        btn.classList.add('btn-primary');
+      } else {
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-outline');
+      }
+    });
   },
 
   toggleStatus(id, published) {
@@ -237,15 +271,21 @@ const Projects = {
 
     UI.modal(`${id ? 'Edit' : 'Add'} Project`, `
       <form id="proj-form" class="form-grid" style="gap:20px" onsubmit="event.preventDefault(); Projects.submitDirect();">
-        <div style="background:rgba(201,169,110,0.1);padding:14px 18px;border-radius:var(--r-md);border:1px solid rgba(201,169,110,0.3);display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="background:rgba(201,169,110,0.1);padding:14px 18px;border-radius:var(--r-md);border:1px solid rgba(201,169,110,0.3);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
           <div>
             <div class="fw-600 text-sm" style="color:var(--text-1)">⭐ Top Preference / Display Order</div>
-            <div class="text-xs text-muted">Set to 1 to show this project in the #1 top spot on your website portfolio</div>
+            <div class="text-xs text-muted">Choose Top #1, #2, #3, #4, #5... to position this project on your live portfolio</div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <button type="button" class="btn btn-outline btn-xs" onclick="document.querySelector('#proj-form [name=rank]').value=1;UI.toast('Set to #1 Top Preference!','info');" style="padding:4px 8px;font-size:0.75rem;">⭐ Set #1</button>
-            <span class="text-xs text-muted">Preference #</span>
-            <input type="number" min="1" max="999" class="form-control" name="rank" value="${p?.rank || 99}" style="width:65px;text-align:center;font-weight:700">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            ${[1, 2, 3, 4, 5, 6].map(n => `
+              <button type="button" class="btn ${(p?.rank || 99) === n ? 'btn-primary' : 'btn-outline'} btn-xs" 
+                onclick="document.querySelector('#proj-form [name=rank]').value=${n}; Projects._updatePrefButtons(${n}); UI.toast('Set to Top #${n}!','info');"
+                data-rank-btn="${n}" style="padding:4px 8px;font-size:0.75rem;font-weight:700">
+                ⭐ Top #${n}
+              </button>
+            `).join('')}
+            <span class="text-xs text-muted ml-4">Rank #</span>
+            <input type="number" min="1" max="999" class="form-control" name="rank" value="${p?.rank || 99}" style="width:60px;text-align:center;font-weight:700" oninput="Projects._updatePrefButtons(this.value)">
           </div>
         </div>
 

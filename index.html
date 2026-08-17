@@ -139,6 +139,9 @@
         <div class="hero__actions">
           <a href="#portfolio" class="btn btn-primary btn-arrow" id="hero-view-work">View Our Work</a>
           <a href="#contact" class="btn btn-outline" id="hero-start-project">Start a Project</a>
+          <button type="button" class="btn btn-gold-outline open-review-modal-trigger" id="hero-add-review-btn" title="Write a Client Review">
+            <span>Write a Review ↗</span>
+          </button>
         </div>
 
         <!-- Stats strip inline -->
@@ -153,9 +156,9 @@
             <span class="hero__stat-label">Years</span>
           </div>
           <span class="hero__stat-sep" aria-hidden="true"></span>
-          <div class="hero__stat">
-            <span class="hero__stat-value">4.9★</span>
-            <span class="hero__stat-label">Rating</span>
+          <div class="hero__stat open-review-modal-trigger" style="cursor:pointer;" title="Click to view and write client reviews">
+            <span class="hero__stat-value" style="color:var(--gold,#C9A96E);">4.9★</span>
+            <span class="hero__stat-label">Client Rating</span>
           </div>
         </div>
       </div>
@@ -525,8 +528,17 @@
                   </svg>
                 </div>
                 <div>
-                  <div class="contact__detail-label">Studio</div>
-                  <div>Calicut, Kerala, India</div>
+                  <div class="contact__detail-label">Studio Address</div>
+                  <a href="https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw" target="_blank" rel="noopener noreferrer" style="display:block;text-decoration:none;color:inherit;" title="Open Studio Location on Google Maps">
+                    <div style="font-weight:600;color:var(--charcoal);">Vkreate Interior Architecture</div>
+                    <div style="font-size:0.875rem;line-height:1.5;color:var(--text-body);margin-top:2px;">
+                      LPOne Beyond, Venture Arcade<br />
+                      Thondayad, Kozhikode - 673016
+                    </div>
+                    <div style="display:inline-flex;align-items:center;gap:4px;color:var(--green-mid);font-size:0.8125rem;font-weight:600;margin-top:6px;">
+                      <span>View on Google Maps</span> ↗
+                    </div>
+                  </a>
                 </div>
               </div>
             </div>
@@ -534,21 +546,28 @@
             <div>
               <div class="contact__detail-label" style="margin-bottom:var(--space-sm)">Follow Our Work</div>
               <div class="contact__social">
-                <a class="contact__social-link" href="https://www.instagram.com/vkreate_interior_architecture" target="_blank" rel="noopener noreferrer" aria-label="Instagram" id="social-instagram">
+                <a class="contact__social-link" href="https://www.instagram.com/vkreate_interior_architecture" target="_blank" rel="noopener noreferrer" aria-label="Instagram" id="social-instagram" title="Follow us on Instagram">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
                   </svg>
                 </a>
-                <a class="contact__social-link" href="https://wa.me/919037161861?text=Hello%20VKREATE%20Studio.%20I%20would%20like%20to%20inquire%20about%20an%20architectural%20interior%20design%20project." target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" id="social-whatsapp">
+                <a class="contact__social-link" href="https://wa.me/919037161861?text=Hello%20VKREATE%20Studio.%20I%20would%20like%20to%20inquire%20about%20an%20architectural%20interior%20design%20project." target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" id="social-whatsapp" title="Chat on WhatsApp">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                     <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.848L0 24l6.335-1.521A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.819 9.819 0 01-5.003-1.371l-.359-.214-3.72.894.938-3.617-.234-.374A9.818 9.818 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182c5.43 0 9.818 4.388 9.818 9.818 0 5.431-4.388 9.818-9.818 9.818z"/>
+                  </svg>
+                </a>
+                <a class="contact__social-link" href="https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw" target="_blank" rel="noopener noreferrer" aria-label="Google Maps Studio Location" id="social-maps" title="Open Studio Location on Google Maps">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
                   </svg>
                 </a>
               </div>
             </div>
           </div>
         </div>
+      </div>
+    </section>
       </div>
     </section>
 
@@ -641,11 +660,16 @@
         </ul>
       </div>
       <div class="footer__col">
-        <div class="footer__col-title">Contact</div>
+        <div class="footer__col-title">Studio Location</div>
         <ul class="footer__links" role="list">
           <li><a class="footer__link" href="mailto:vkreatearchitecture@gmail.com">vkreatearchitecture@gmail.com</a></li>
           <li><a class="footer__link" href="tel:+919037161861">+91 90371 61861</a></li>
-          <li><span class="footer__link">Calicut, Kerala</span></li>
+          <li>
+            <a class="footer__link" href="https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw" target="_blank" rel="noopener noreferrer" title="Open Studio Location on Google Maps" style="text-decoration:none;display:block;">
+              <span style="font-weight:600;color:var(--white);display:block;transition:color 0.2s;">LPOne Beyond, Venture Arcade</span>
+              <span style="display:block;transition:color 0.2s;">Thondayad, Kozhikode - 673016 ↗</span>
+            </a>
+          </li>
           <li style="margin-top:var(--space-md)">
             <a href="#contact" class="btn btn-green" style="font-size:0.8125rem;padding:10px 20px" id="footer-cta">Start a Project</a>
           </li>
@@ -717,28 +741,7 @@
 
         <div class="form-group" style="margin-top:12px;">
           <label for="pub-review-text">Your Review *</label>
-          <textarea id="pub-review-text" name="reviewText" rows="4" placeholder="Tell us about the design quality, spatial flow, timeline, and overall experience..." required minlength="50" maxlength="500"></textarea>
-          <div class="char-count-wrap" id="pub-char-count">
-            <span>Minimum 50 characters required</span>
-            <span id="pub-char-num">0 / 500</span>
-          </div>
-        </div>
-
-        <!-- Optional Photo Upload -->
-        <div class="form-group" style="margin-top:16px;">
-          <label>Optional Photo (Profile or Project)</label>
-          <div class="photo-drop-zone" id="pub-photo-zone">
-            <div class="photo-drop-zone__text">📸 Click to upload a photo (JPG, PNG)</div>
-            <input type="file" id="pub-photo-input" accept="image/*" style="display:none" />
-          </div>
-          <div id="pub-photo-preview" style="margin-top:8px;display:none;"></div>
-        </div>
-
-        <div class="form-group" style="margin-top:16px;">
-          <label style="display:flex;align-items:center;gap:8px;font-size:0.8125rem;cursor:pointer;">
-            <input type="checkbox" id="pub-subscribe" name="subscribe" checked />
-            Keep me updated on VKREATE project showcases
-          </label>
+          <textarea id="pub-review-text" name="reviewText" rows="4" placeholder="Tell us about the design quality, spatial flow, timeline, and overall experience..." required></textarea>
         </div>
 
         <button type="submit" class="btn btn-green w-full" id="pub-review-submit-btn" style="margin-top:20px;width:100%;justify-content:center;">

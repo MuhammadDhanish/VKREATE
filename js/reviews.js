@@ -208,6 +208,33 @@
     }
   }
 
+  async function sendReviewEmailNotification(review) {
+    try {
+      const settings = JSON.parse(localStorage.getItem('vk_admin_settings')) || {};
+      const notif = settings.notifications || {};
+      if (notif.newReview === false) return;
+      const recipient = notif.notifEmail || 'dhanishdhanishkk@gmail.com';
+
+      const formData = new FormData();
+      formData.append('_subject', `⭐ New Client Review from ${review.clientName} (${review.rating} Stars) — VKREATE Studio`);
+      formData.append('_template', 'table');
+      formData.append('_captcha', 'false');
+      formData.append('Client Name', review.clientName);
+      formData.append('Email', review.clientEmail || 'Not provided');
+      formData.append('Role', review.clientRole || 'Client');
+      formData.append('Project', review.projectName || 'General Studio Review');
+      formData.append('Rating', `${review.rating} Stars (★)`);
+      formData.append('Review Text', review.reviewText || '');
+      formData.append('Status', 'Pending Admin Approval');
+
+      fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json' }
+      }).catch(e => console.warn('Review email dispatch warning:', e));
+    } catch(e) {}
+  }
+
   // 2. Review Submission Modal (runs on any page)
   function initReviewModal() {
     const closeModalBtn = document.getElementById('close-pub-review-btn');
@@ -218,11 +245,6 @@
     const ratingInput   = document.getElementById('pub-rating-val');
     const starLabel     = document.getElementById('pub-star-label');
     const reviewTextarea = document.getElementById('pub-review-text');
-    const charNum       = document.getElementById('pub-char-num');
-    const charWrap      = document.getElementById('pub-char-count');
-    const photoZone     = document.getElementById('pub-photo-zone');
-    const photoInput    = document.getElementById('pub-photo-input');
-    const photoPreview  = document.getElementById('pub-photo-preview');
     const modalBody     = document.getElementById('pub-review-modal-body');
 
     // Dynamic project dropdown populator (merges static + admin projects)
@@ -340,48 +362,6 @@
       });
     }
 
-    // Character Counter
-    if (reviewTextarea && charNum && charWrap) {
-      reviewTextarea.addEventListener('input', () => {
-        const len = reviewTextarea.value.length;
-        charNum.textContent = `${len} / 500`;
-        if (len < 50) {
-          charWrap.className = 'char-count-wrap invalid';
-        } else {
-          charWrap.className = 'char-count-wrap valid';
-        }
-      });
-    }
-
-    // Photo Upload Handler
-    if (photoZone && photoInput) {
-      photoZone.addEventListener('click', () => photoInput.click());
-      photoInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            uploadedPhoto = ev.target.result;
-            if (photoPreview) {
-              photoPreview.style.display = 'block';
-              photoPreview.innerHTML = `
-                <div style="display:flex;align-items:center;gap:12px;background:#FAF8F5;padding:8px 12px;border-radius:8px;border:1px solid #E5E7EB">
-                  <img src="${uploadedPhoto}" style="width:40px;height:40px;object-fit:cover;border-radius:6px" alt="Preview" />
-                  <span style="font-size:0.8125rem;color:var(--charcoal);flex:1">${file.name}</span>
-                  <button type="button" id="remove-photo-btn" style="background:none;border:none;color:#EF4444;cursor:pointer;font-size:0.9rem">✕</button>
-                </div>`;
-              document.getElementById('remove-photo-btn')?.addEventListener('click', () => {
-                uploadedPhoto = '';
-                photoInput.value = '';
-                photoPreview.style.display = 'none';
-              });
-            }
-          };
-          reader.readAsDataURL(file);
-        }
-      });
-    }
-
     // Form Submission
     if (form) {
       form.addEventListener('submit', (e) => {
@@ -399,8 +379,8 @@
         const projId = projectSel ? (projectSel.value || 'general') : 'general';
         const reviewText = reviewTextarea.value.trim();
 
-        if (reviewText.length < 50) {
-          alert('Your review must be at least 50 characters long.');
+        if (!reviewText) {
+          alert('Please write your review before submitting.');
           return;
         }
 
@@ -433,22 +413,66 @@
           let reviews = existingRaw ? JSON.parse(existingRaw) : [];
           reviews.unshift(newReview);
           localStorage.setItem('vk_admin_reviews', JSON.stringify(reviews));
+          sendReviewEmailNotification(newReview);
         } catch (err) {
           console.warn('Could not save review to localStorage:', err);
         }
 
-        // Render Success State in Modal
+        // Render Luxury Success State in Modal
         if (modalBody) {
+          const modalTitle = document.getElementById('modal-review-title');
+          const modalSub = document.querySelector('.review-modal__subtitle');
+          if (modalTitle) modalTitle.textContent = 'Submission Received';
+          if (modalSub) modalSub.textContent = 'Thank you for sharing your feedback with VKREATE';
+
           modalBody.innerHTML = `
-            <div class="review-success-state">
-              <div class="review-success-icon">✓</div>
-              <h3 class="t-h2" style="color:var(--charcoal);margin-bottom:8px">Thank You, ${clientName}!</h3>
-              <p class="t-body" style="color:var(--text-muted);max-width:440px;margin:0 auto 24px;line-height:1.6">
-                Your review for <strong>${projName}</strong> has been submitted and is currently pending admin approval. It will appear on our live site once verified!
+            <div class="review-success-state" style="padding:28px 20px 24px;text-align:center">
+              
+              <!-- Animated Glowing Badge -->
+              <div style="position:relative;width:80px;height:80px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center">
+                <div style="position:absolute;inset:-6px;border-radius:50%;background:rgba(201,169,110,0.18);animation:pulseGlow 2s infinite"></div>
+                <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#2E4A40,#1A2420);border:2px solid #C9A96E;color:#C9A96E;display:flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:700;box-shadow:0 10px 25px rgba(46,74,64,0.3);z-index:2;animation:popIn 0.5s cubic-bezier(0.22,1,0.36,1) both">
+                  ✓
+                </div>
+              </div>
+
+              <!-- Status Badge -->
+              <div style="display:inline-block;padding:5px 14px;border-radius:20px;background:rgba(201,169,110,0.12);border:1px solid rgba(201,169,110,0.4);color:#856404;font-size:0.7rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:14px">
+                ✦ Review Submitted Successfully ✦
+              </div>
+              
+              <h3 style="font-family:var(--font-serif,serif);font-size:1.85rem;color:var(--charcoal,#1A2420);margin:0 0 10px;line-height:1.2">
+                Thank You, <span style="color:var(--green-deep,#2E4A40);font-style:italic">${clientName}</span>!
+              </h3>
+              
+              <p style="font-size:0.925rem;color:var(--text-muted,#64748B);max-width:440px;margin:0 auto 20px;line-height:1.6">
+                Your review for <strong style="color:var(--charcoal,#1A2420);font-weight:600">${projName}</strong> has been received and is currently under review by our studio team.
               </p>
-              <button type="button" class="btn btn-green" id="close-success-modal-btn" style="margin:0 auto">
-                Close Window
+
+              <!-- Process Timeline Card -->
+              <div style="background:linear-gradient(135deg,rgba(250,250,247,0.95),rgba(240,253,244,0.7));border:1px solid rgba(201,169,110,0.3);border-radius:14px;padding:18px;margin:0 auto 24px;text-align:left;display:grid;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.03)">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:26px;height:26px;border-radius:50%;background:#16A34A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0">✓</div>
+                  <div>
+                    <div style="font-size:0.8125rem;font-weight:700;color:#1A2420">Step 1: Submission Received</div>
+                    <div style="font-size:0.75rem;color:#64748B">Saved securely to studio records</div>
+                  </div>
+                </div>
+                <div style="height:1px;background:rgba(0,0,0,0.06);margin:2px 0"></div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:26px;height:26px;border-radius:50%;background:rgba(201,169,110,0.2);border:1.5px solid #C9A96E;color:#856404;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0">⌛</div>
+                  <div>
+                    <div style="font-size:0.8125rem;font-weight:700;color:#1A2420">Step 2: Verification & Publishing</div>
+                    <div style="font-size:0.75rem;color:#64748B">Will appear live on vkreatearchitecture.com upon approval</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Close Button -->
+              <button type="button" class="btn btn-green" id="close-success-modal-btn" style="margin:0 auto;padding:12px 36px;font-size:0.85rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;border-radius:30px;background:linear-gradient(135deg,#2E4A40,#1A2420);border:1px solid #C9A96E;color:#fff;box-shadow:0 6px 20px rgba(26,36,32,0.3);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s">
+                ✦ Close Window ✦
               </button>
+
             </div>`;
 
           document.getElementById('close-success-modal-btn')?.addEventListener('click', closeModal);

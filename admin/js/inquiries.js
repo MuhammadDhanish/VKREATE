@@ -146,6 +146,8 @@ const Inquiries = {
       DB.inquiries.delete(id);
       UI.toast('Inquiry deleted.', 'success');
       this._refresh();
+      if (window.App && App.updateSidebar) App.updateSidebar();
+      if (window.GithubSync) GithubSync.push();
     }, true);
   },
 
@@ -166,7 +168,7 @@ const Inquiries = {
           </div>
           <div>
             <div class="text-xs text-muted mb-4">Email</div>
-            <a href="mailto:${i.email}" style="color:var(--info)">${i.email}</a>
+            <div class="fw-600">${i.email}</div>
           </div>
           <div>
             <div class="text-xs text-muted mb-4">Phone</div>
@@ -207,10 +209,6 @@ const Inquiries = {
         <div class="text-xs text-muted">Received ${UI.dateShort(i.createdAt)} · ${UI.timeAgo(i.createdAt)}</div>
       </div>
     `, `
-      <a href="mailto:${i.email}?subject=Re: Your Inquiry to VKREATE" class="btn btn-outline" style="text-decoration:none">
-        ✉️ Send Email
-      </a>
-      <span style="flex:1"></span>
       <button class="btn btn-outline" onclick="UI.closeModal()">Close</button>
       <button class="btn btn-primary" onclick="Inquiries._saveDetail('${id}')">
         ${UI.icon('check')} Save
