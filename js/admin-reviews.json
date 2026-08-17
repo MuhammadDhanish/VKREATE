@@ -26,12 +26,12 @@
     "rating": 4,
     "reviewText": "hello",
     "shortTestimonial": "hello",
-    "status": "pending",
+    "status": "approved",
     "studioResponse": "",
     "tags": [],
     "visibility": "public",
     "createdAt": "2026-08-17T05:43:21.110Z",
-    "approvedAt": null
+    "approvedAt": "2026-08-17T05:46:12.134Z"
   },
   {
     "id": "mswt3uf3p1kyn",
@@ -43,11 +43,11 @@
     "rating": 3,
     "reviewText": "hello",
     "shortTestimonial": "hello",
-    "status": "pending",
+    "status": "approved",
     "studioResponse": "",
     "tags": [],
     "visibility": "public",
     "createdAt": "2026-08-17T05:42:01.407Z",
-    "approvedAt": null
+    "approvedAt": "2026-08-17T05:46:13.725Z"
   }
 ]
