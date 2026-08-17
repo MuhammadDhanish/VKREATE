@@ -1,1 +1,19 @@
-[]
+[
+  {
+    "id": "mswsbhveu8t73",
+    "projectId": "luxury-salon",
+    "projectName": "Wings Luxury Beauty & Wellness",
+    "clientName": "DANISH",
+    "clientRole": "BEDROOM WORK",
+    "clientEmail": "dhanishdhanishkk@gmail.com",
+    "rating": 4,
+    "reviewText": "SAYED IS THE MAN",
+    "shortTestimonial": "SAYED IS THE MAN",
+    "status": "approved",
+    "studioResponse": "",
+    "tags": [],
+    "visibility": "public",
+    "createdAt": "2026-08-17T05:19:58.778Z",
+    "approvedAt": "2026-08-17T05:21:00.794Z"
+  }
+]
