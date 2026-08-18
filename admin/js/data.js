@@ -512,7 +512,7 @@ const DB = {
       const l = this.all();
       const i = l.findIndex(r => r && r.id === id);
       if (i < 0) return null;
-      l[i] = { ...l[i], ...data };
+      l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
       this.save(l);
       DB._syncFirebase('reviews', id, l[i], 'set');
       return l[i];
@@ -630,8 +630,14 @@ const DB = {
       remoteList.forEach(item => {
         if (item && item.id && !deletedIds.includes(item.id)) {
           const existing = itemMap.get(item.id);
-          if (!existing || item.status === 'approved' || (existing.status === 'pending' && item.status !== 'pending')) {
+          if (!existing) {
             itemMap.set(item.id, item);
+          } else {
+            const existingTime = new Date(existing.updatedAt || existing.approvedAt || existing.createdAt || 0).getTime();
+            const remoteTime = new Date(item.updatedAt || item.approvedAt || item.createdAt || 0).getTime();
+            if (remoteTime > existingTime + 5000) {
+              itemMap.set(item.id, item);
+            }
           }
         }
       });
