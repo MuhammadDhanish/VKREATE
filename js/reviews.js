@@ -285,7 +285,7 @@
 
         // Show success notification with WhatsApp direct alert link
         const waMsg = encodeURIComponent("🌟 *NEW CLIENT REVIEW SUBMITTED*\n\n*Name:* " + name + "\n*Role:* " + role + "\n*Rating:* " + rating + " Stars ⭐\n*Project:* " + projName + "\n*Review:* \"" + text + "\"\n\n*Status:* Pending Approval in Admin Panel.");
-        const waUrl = "https://wa.me/919037161861?text=" + waMsg;
+        const waUrl = "https://wa.me/916238274457?text=" + waMsg;
 
         const bodyEl = document.getElementById('pub-review-modal-body');
         if (bodyEl) {
