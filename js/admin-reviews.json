@@ -1,26 +1,5 @@
 [
   {
-    "id": "rev-cafe-08",
-    "projectId": "emerald-brew-cafe",
-    "projectName": "Emerald Brew Artisan Coffee Lounge",
-    "clientName": "Priya Ramakrishnan",
-    "clientRole": "Owner, Emerald Brew Cafe",
-    "clientEmail": "priya@emeraldbrew.in",
-    "rating": 5,
-    "rank": 8,
-    "reviewText": "An absolute delight to work with. The custom espresso bar, acoustic wood ceiling bays, and cozy seating created a buzzing community hotspot that customers rave about daily.",
-    "shortTestimonial": "An absolute delight to work with. Created a buzzing community hotspot.",
-    "status": "approved",
-    "studioResponse": "Cheers Priya! Wishing Emerald Brew continued success.",
-    "tags": [
-      "cafe",
-      "restaurant"
-    ],
-    "visibility": "public",
-    "createdAt": "2025-03-28T16:00:00Z",
-    "approvedAt": "2025-03-29T11:00:00Z"
-  },
-  {
     "id": "rev-msyyp5pd",
     "clientName": "Nasar mone",
     "clientRole": "Gsjsksvsgs",
