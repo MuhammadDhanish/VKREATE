@@ -102,37 +102,34 @@
 
   // 3. Client Review Submission Modal Handler
   function initReviewModal() {
-    const modalOverlay = document.getElementById('pub-review-overlay');
     const closeBtn = document.getElementById('close-pub-review-btn');
     const form = document.getElementById('pub-review-form');
     const starContainer = document.getElementById('pub-star-selector');
     const ratingInput = document.getElementById('pub-rating-val');
     const starLabel = document.getElementById('pub-star-label');
 
-    // Handle open triggers
+    // Handle open triggers via delegated click listener
     document.addEventListener('click', (e) => {
       const trigger = e.target.closest('#open-review-modal-btn, #open-review-modal-btn-proj, .open-review-modal-trigger');
-      if (trigger && modalOverlay) {
+      if (trigger) {
         e.preventDefault();
-        modalOverlay.classList.add('show');
-        document.body.style.overflow = 'hidden';
+        const modalOverlay = document.getElementById('pub-review-overlay');
+        if (modalOverlay) {
+          modalOverlay.classList.add('open', 'show');
+          document.body.style.overflow = 'hidden';
+        }
       }
     });
 
     // Handle close trigger
-    if (closeBtn && modalOverlay) {
-      closeBtn.addEventListener('click', () => {
-        modalOverlay.classList.remove('show');
+    document.addEventListener('click', (e) => {
+      const closeTrigger = e.target.closest('#close-pub-review-btn');
+      const modalOverlay = document.getElementById('pub-review-overlay');
+      if ((closeTrigger || e.target === modalOverlay) && modalOverlay) {
+        modalOverlay.classList.remove('open', 'show');
         document.body.style.overflow = '';
-      });
-
-      modalOverlay.addEventListener('click', (e) => {
-        if (e.target === modalOverlay) {
-          modalOverlay.classList.remove('show');
-          document.body.style.overflow = '';
-        }
-      });
-    }
+      }
+    });
 
     // Star selector interaction
     if (starContainer && ratingInput) {
@@ -205,7 +202,7 @@
               <p style="font-size:0.9rem;color:var(--text-body);line-height:1.6;max-width:380px;margin:0 auto 20px auto">
                 Your review has been submitted successfully and sent to our team for approval.
               </p>
-              <button class="btn btn-green" onclick="document.getElementById('pub-review-overlay').classList.remove('show');document.body.style.overflow=''">
+              <button class="btn btn-green" onclick="const o=document.getElementById('pub-review-overlay');if(o)o.classList.remove('open','show');document.body.style.overflow=''">
                 Close Window
               </button>
             </div>`;
@@ -225,11 +222,17 @@
       .replace(/"/g, '&quot;');
   }
 
-  // Boot & listen for updates
-  document.addEventListener('DOMContentLoaded', () => {
+  function boot() {
     renderReviewsGrid();
     initReviewModal();
-  });
+  }
+
+  // Boot immediately if DOM is ready, or on DOMContentLoaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
 
   window.addEventListener('vkreate:reviews-updated', () => {
     renderReviewsGrid();
