@@ -440,9 +440,22 @@ const DB = {
 
   // ── Reviews CRUD ──────────────────────────────────────────
   reviews: {
-    all()       {
+    all() {
       const list = DB._get(DB.KEYS.reviews) || [];
+      const defaults = DB._defaultReviews();
       const deleted = DB._getDeleted(DB.KEYS.deletedReviews);
+      let updated = false;
+
+      defaults.forEach(def => {
+        if (!deleted.includes(def.id) && !list.some(r => r.id === def.id)) {
+          list.push(def);
+          updated = true;
+        }
+      });
+
+      if (updated) {
+        DB._set(DB.KEYS.reviews, list);
+      }
       return list.filter(r => !deleted.includes(r.id) && r.id !== 'mswstn7iv0g7w' && (!r.clientName || !r.clientName.toLowerCase().includes('danish')));
     },
     get(id)     { return this.all().find(r => r.id === id) || null; },

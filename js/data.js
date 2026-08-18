@@ -773,24 +773,12 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
   const deletedIds = getDeletedReviewIds();
   const reviewsMap = new Map();
 
-  // Count how many approved entries are in the admin list
-  const approvedAdminCount = Array.isArray(adminReviews)
-    ? adminReviews.filter(r => r.status === 'approved').length
-    : 0;
-
-  const rawLocal = localStorage.getItem('vk_admin_reviews');
-  const isAdminOverridden = (rawLocal !== null) || hasAdminSource;
-
-  // Only suppress static defaults if admin HAS approved reviews.
-  // If admin list is empty (e.g. after a reset push that hasn't deployed yet,
-  // or a CDN-cached empty file), fall back to static defaults.
-  if (!isAdminOverridden || approvedAdminCount === 0) {
-    staticDefaultReviews.forEach(r => {
-      if (!isDeletedReview(r, deletedIds)) {
-        reviewsMap.set(r.id, r);
-      }
-    });
-  }
+  // Always seed static default showcase reviews first (unless deleted)
+  staticDefaultReviews.forEach(r => {
+    if (!isDeletedReview(r, deletedIds)) {
+      reviewsMap.set(r.id, r);
+    }
+  });
 
   if (Array.isArray(adminReviews)) {
     adminReviews.forEach(r => {
@@ -805,6 +793,9 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
           ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
           : (r.date || 'Recent');
 
+        // Unranked approved user reviews default to rank 0 so they appear at the top of the grid
+        const computedRank = typeof r.rank === 'number' ? r.rank : (parseInt(r.rank) === 0 ? 0 : (parseInt(r.rank) || 0));
+
         reviewsMap.set(r.id, {
           id: r.id,
           projectId: r.projectId || 'general',
@@ -812,7 +803,7 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
           role: r.clientRole || r.role || 'Client',
           industry: r.industry || industry,
           rating: r.rating || 5,
-          rank: typeof r.rank === 'number' ? r.rank : (parseInt(r.rank) || 99),
+          rank: computedRank,
           date: dateFormatted,
           text: r.reviewText || r.text || '',
           verified: true,
@@ -823,7 +814,7 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
   }
 
   const resultList = Array.from(reviewsMap.values());
-  resultList.sort((a, b) => (a.rank || 99) - (b.rank || 99));
+  resultList.sort((a, b) => (typeof a.rank === 'number' ? a.rank : 0) - (typeof b.rank === 'number' ? b.rank : 0));
   VKREATE_DATA.reviews = resultList;
 }
 
