@@ -305,6 +305,31 @@
     }
   }
 
+  function decodeBase64UTF8(str) {
+    try {
+      const clean = str.replace(/\s/g, '');
+      const bytes = Uint8Array.from(atob(clean), c => c.charCodeAt(0));
+      return new TextDecoder('utf-8').decode(bytes);
+    } catch (e) {
+      try {
+        return decodeURIComponent(escape(atob(str.replace(/\s/g, ''))));
+      } catch (err) {
+        return '';
+      }
+    }
+  }
+
+  function encodeBase64UTF8(str) {
+    try {
+      const bytes = new TextEncoder().encode(str);
+      let bin = '';
+      bytes.forEach(b => bin += String.fromCharCode(b));
+      return btoa(bin);
+    } catch (e) {
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+  }
+
   async function pushReviewToGithub(reviewItem) {
     try {
       const token = ['ghp_zlTiF9lE82XK', 'zPM9jev8uj0iSDhH', 'sY3pqtYl'].join('');
@@ -324,10 +349,16 @@
         if (getRes.ok) {
           const fileData = await getRes.json();
           sha = fileData.sha;
-          const decodedContent = decodeURIComponent(escape(atob(fileData.content.replace(/\s/g, ''))));
-          currentReviews = JSON.parse(decodedContent);
+          if (fileData.content) {
+            const text = decodeBase64UTF8(fileData.content);
+            if (text) {
+              currentReviews = JSON.parse(text);
+            }
+          }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Could not parse remote admin-reviews.json:', e);
+      }
 
       if (!Array.isArray(currentReviews)) currentReviews = [];
 
@@ -339,14 +370,14 @@
       }
 
       const jsonContent = JSON.stringify(currentReviews, null, 2);
-      const encoded = btoa(unescape(encodeURIComponent(jsonContent)));
+      const encoded = encodeBase64UTF8(jsonContent);
       const body = {
         message: `Client review submission: ${reviewItem.clientName} [${new Date().toISOString()}]`,
         content: encoded,
         ...(sha ? { sha } : {})
       };
 
-      await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+      const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
         method: 'PUT',
         headers: {
           'Authorization': `token ${token}`,
@@ -355,6 +386,11 @@
         },
         body: JSON.stringify(body)
       });
+      if (putRes.ok) {
+        console.log('✅ Successfully committed new client review to GitHub repo!');
+      } else {
+        console.warn('⚠️ GitHub API PUT status:', putRes.status);
+      }
     } catch (err) {
       console.warn('Review GitHub push error:', err);
     }

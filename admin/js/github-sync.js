@@ -91,7 +91,15 @@ const GithubSync = {
       }
 
       const jsonContent = JSON.stringify(processedData, null, 2);
-      const encoded = btoa(unescape(encodeURIComponent(jsonContent)));
+      let encoded = '';
+      try {
+        const bytes = new TextEncoder().encode(jsonContent);
+        let bin = '';
+        bytes.forEach(b => bin += String.fromCharCode(b));
+        encoded = btoa(bin);
+      } catch (e) {
+        encoded = btoa(unescape(encodeURIComponent(jsonContent)));
+      }
       const body = {
         message: `Admin sync: ${filePath} [${new Date().toISOString()}]`,
         content: encoded,
