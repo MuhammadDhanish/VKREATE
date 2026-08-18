@@ -238,7 +238,12 @@ const Reviews = {
         <div class="modal__body" style="padding:20px">
           <p class="text-sm text-muted mb-12">Write an official reply to <strong>${this._escapeHTML(r.clientName)}</strong>'s review. This will be displayed publicly under their testimonial.</p>
           <div class="form-group">
-            <label class="form-label">Studio Reply</label>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <label class="form-label" style="margin:0">Studio Reply</label>
+              <button type="button" class="btn btn-sm btn-outline" id="ai-generate-reply-btn" style="font-size:0.775rem;padding:4px 10px;border-color:var(--green-mid);color:var(--green-mid);">
+                ✨ Auto-Generate AI Reply
+              </button>
+            </div>
             <textarea class="form-control" id="reply-text" rows="4" placeholder="e.g. Thank you for your kind words! It was a pleasure designing your space.">${this._escapeHTML(r.studioResponse || '')}</textarea>
           </div>
         </div>
@@ -248,6 +253,25 @@ const Reviews = {
         </div>
       </div>`;
     document.body.appendChild(overlay);
+
+    overlay.querySelector('#ai-generate-reply-btn').onclick = () => {
+      const textarea = overlay.querySelector('#reply-text');
+      const name = r.clientName || r.author || 'Client';
+      const proj = r.projectName || 'space';
+      const rating = r.rating || 5;
+
+      let aiReply = '';
+      if (rating >= 5) {
+        aiReply = `Thank you so much, ${name}! It was an absolute privilege collaborating with you on ${proj}. Our team is delighted that the spatial flow, materials, and overall ambiance exceeded your expectations. Warm regards, VKREATE Design Studio.`;
+      } else if (rating === 4) {
+        aiReply = `Thank you, ${name}, for sharing your feedback! We're glad you love the design of ${proj} and appreciate your kind words. Best regards, VKREATE Studio Team.`;
+      } else {
+        aiReply = `Thank you, ${name}, for your review. We continuously strive for spatial excellence and will incorporate your insights to further refine our design process. Sincerely, VKREATE Studio.`;
+      }
+
+      textarea.value = aiReply;
+      if (typeof UI !== 'undefined' && UI.toast) UI.toast('✨ AI Studio response generated!', 'info');
+    };
 
     overlay.querySelector('#save-reply-btn').onclick = () => {
       const text = overlay.querySelector('#reply-text').value.trim();

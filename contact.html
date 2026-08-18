@@ -453,8 +453,12 @@
           if (getRes.ok) {
             const fileData = await getRes.json();
             sha = fileData.sha;
-            const decodedContent = decodeURIComponent(escape(atob(fileData.content.replace(/\s/g, ''))));
-            currentInquiries = JSON.parse(decodedContent);
+            if (fileData.content) {
+              const clean = fileData.content.replace(/\s/g, '');
+              const bytes = Uint8Array.from(atob(clean), c => c.charCodeAt(0));
+              const decodedContent = new TextDecoder('utf-8').decode(bytes);
+              currentInquiries = JSON.parse(decodedContent);
+            }
           }
         } catch (e) {
           console.warn('Could not fetch existing remote inquiries:', e);
@@ -489,7 +493,10 @@
         } catch (e) {}
 
         const jsonContent = JSON.stringify(currentInquiries, null, 2);
-        const encoded = btoa(unescape(encodeURIComponent(jsonContent)));
+        const bytes = new TextEncoder().encode(jsonContent);
+        let bin = '';
+        bytes.forEach(b => bin += String.fromCharCode(b));
+        const encoded = btoa(bin);
         const body = {
           message: `Client inquiry: ${newInquiry.name} [${new Date().toISOString()}]`,
           content: encoded,

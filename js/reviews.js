@@ -283,19 +283,27 @@
         console.log('[Reviews] Submitting new review to GitHub API repository...', newReview);
         await pushReviewToGithub(newReview);
 
-        // Show success notification
+        // Show success notification with WhatsApp direct alert link
+        const waMsg = encodeURIComponent("🌟 *NEW CLIENT REVIEW SUBMITTED*\n\n*Name:* " + name + "\n*Role:* " + role + "\n*Rating:* " + rating + " Stars ⭐\n*Project:* " + projName + "\n*Review:* \"" + text + "\"\n\n*Status:* Pending Approval in Admin Panel.");
+        const waUrl = "https://wa.me/919037161861?text=" + waMsg;
+
         const bodyEl = document.getElementById('pub-review-modal-body');
         if (bodyEl) {
           bodyEl.innerHTML = `
             <div style="text-align:center;padding:30px 15px">
               <div style="font-size:3rem;margin-bottom:12px">🎉</div>
               <h3 style="font-size:1.3rem;font-weight:700;color:var(--charcoal);margin-bottom:8px">Thank You, ${escapeHTML(name)}!</h3>
-              <p style="font-size:0.9rem;color:var(--text-body);line-height:1.6;max-width:380px;margin:0 auto 20px auto">
+              <p style="font-size:0.9rem;color:var(--text-body);line-height:1.6;max-width:380px;margin:0 auto 16px auto">
                 Your review has been submitted successfully and sent to our team for approval.
               </p>
-              <button class="btn btn-green" onclick="const o=document.getElementById('pub-review-overlay');if(o)o.classList.remove('open','show');document.body.style.overflow=''">
-                Close Window
-              </button>
+              <div style="display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:16px">
+                <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-green" style="padding:12px 24px;font-size:0.875rem;display:inline-flex;align-items:center;gap:8px;width:100%;max-width:320px;justify-content:center;text-decoration:none;">
+                  📲 Notify Studio via WhatsApp
+                </a>
+                <button class="btn btn-outline" style="padding:10px 24px;font-size:0.85rem;width:100%;max-width:320px;" onclick="const o=document.getElementById('pub-review-overlay');if(o)o.classList.remove('open','show');document.body.style.overflow=''">
+                  Close Window
+                </button>
+              </div>
             </div>`;
         }
 
