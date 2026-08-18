@@ -1,15 +1,58 @@
 [
   {
-    "id": "rev-msyyqeml",
+    "id": "rev-msyyp5pd",
     "clientName": "Nasar mone",
+    "clientRole": "Gsjsksvsgs",
+    "clientEmail": "sayedsinan788@gmail.com",
+    "rating": 5,
+    "projectName": "General Studio Review",
+    "projectId": "general",
+    "reviewText": "Weedfzsfjnvzs",
+    "status": "pending",
+    "createdAt": "2026-08-18T17:54:06.241Z"
+  },
+  {
+    "id": "rev-msyyb62l",
+    "clientName": "NASHWIN NASER",
+    "clientRole": "Videographer",
+    "clientEmail": "sayedsinan788@gmail.com",
+    "rating": 5,
+    "projectName": "General Studio Review",
+    "projectId": "general",
+    "reviewText": "Nasar mon",
+    "status": "approved",
+    "createdAt": "2026-08-18T17:43:13.533Z",
+    "approvedAt": "2026-08-18T23:22:00.000Z"
+  },
+  {
+    "id": "rev-msyy4v26",
+    "clientName": "Sayed",
     "clientRole": "Gsjsksvsgs",
     "clientEmail": "sayedsinan788@gmail.com",
     "rating": 3,
     "projectName": "General Studio Review",
     "projectId": "general",
-    "reviewText": "Hfshmvzz",
-    "status": "pending",
-    "createdAt": "2026-08-18T17:55:04.461Z"
+    "reviewText": "Danish is the man",
+    "status": "approved",
+    "createdAt": "2026-08-18T17:38:19.326Z",
+    "approvedAt": "2026-08-18T23:22:00.000Z"
+  },
+  {
+    "id": "msyi0ylujxun5",
+    "projectId": "lilaa-restaurant",
+    "projectName": "Lilaa — Malayali Cuisine",
+    "clientName": "sayed",
+    "clientRole": "ieufyrwiufrj",
+    "clientEmail": "sayedsinan788@gmail.com",
+    "rating": 3,
+    "reviewText": "lldiufrw8tg34tgu4",
+    "shortTestimonial": "lldiufrw8tg34tgu4",
+    "status": "approved",
+    "studioResponse": "",
+    "tags": [],
+    "visibility": "public",
+    "createdAt": "2026-08-18T10:07:23.442Z",
+    "approvedAt": "2026-08-18T23:22:00.000Z"
   },
   {
     "id": "rev-lilaa-01",
