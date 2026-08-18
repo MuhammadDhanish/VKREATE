@@ -1,26 +1,5 @@
 [
   {
-    "id": "rev-clinic-06",
-    "projectId": "aura-clinic",
-    "projectName": "Aura Dental & Wellness Clinic",
-    "clientName": "Dr. Vivek Kurup",
-    "clientRole": "Chief Surgeon, Aura Clinic",
-    "clientEmail": "drvivek@auraclinic.org",
-    "rating": 5,
-    "rank": 6,
-    "reviewText": "The clinical layout reduces patient anxiety while offering high-efficiency workflow for our medical staff. The sage green accent walls and acoustic partitions make a massive difference.",
-    "shortTestimonial": "The clinical layout reduces patient anxiety while offering high efficiency.",
-    "status": "approved",
-    "studioResponse": "Thank you Dr. Vivek! Designing a soothing medical environment was a great experience.",
-    "tags": [
-      "healthcare",
-      "clinic"
-    ],
-    "visibility": "public",
-    "createdAt": "2025-05-25T09:00:00Z",
-    "approvedAt": "2025-05-26T14:00:00Z"
-  },
-  {
     "id": "rev-hotel-07",
     "projectId": "grand-horizon-hotel",
     "projectName": "The Grand Horizon Boutique Hotel",
