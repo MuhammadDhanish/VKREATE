@@ -34,14 +34,12 @@ const GithubSync = {
         'Content-Type': 'application/json',
       };
 
-      // 1. Push projects
-      await this._pushFile('js/admin-projects.json', DB.projects.all(), headers);
-
-      // 2. Push reviews
-      await this._pushFile('js/admin-reviews.json', DB.reviews.all(), headers);
-
-      // 3. Push inquiries
-      await this._pushFile('js/admin-inquiries.json', DB.inquiries.all(), headers);
+      // Push all 3 files in parallel so reviews deployment is instant
+      await Promise.allSettled([
+        this._pushFile('js/admin-reviews.json', DB.reviews.all(), headers),
+        this._pushFile('js/admin-projects.json', DB.projects.all(), headers),
+        this._pushFile('js/admin-inquiries.json', DB.inquiries.all(), headers)
+      ]);
 
       UI.toast('✅ Live site deploying… changes visible in ~60s', 'success');
       return true;

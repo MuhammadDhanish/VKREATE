@@ -193,12 +193,15 @@ const Reviews = {
       </div>`;
   },
 
-  approve(id) {
+  async approve(id) {
     const updated = DB.reviews.approve(id);
     if (updated) {
-      UI.toast('✅ Review approved! It is now live on the website.', 'success');
-      this._notifyUpdate();
+      UI.toast('✅ Review approved! Deploying to live website...', 'success');
       this.render();
+      if (typeof GithubSync !== 'undefined' && GithubSync.push) {
+        await GithubSync.push();
+      }
+      this._notifyUpdate();
     }
   },
 
