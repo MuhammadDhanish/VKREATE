@@ -769,15 +769,20 @@ const staticDefaultReviews = [
   }
 ];
 
-function applyAdminReviews(adminReviews) {
+function applyAdminReviews(adminReviews, hasAdminSource = false) {
   const deletedIds = getDeletedReviewIds();
   const reviewsMap = new Map();
 
-  staticDefaultReviews.forEach(r => {
-    if (!isDeletedReview(r, deletedIds)) {
-      reviewsMap.set(r.id, r);
-    }
-  });
+  const rawLocal = localStorage.getItem('vk_admin_reviews');
+  const isAdminOverridden = (rawLocal !== null) || hasAdminSource;
+
+  if (!isAdminOverridden) {
+    staticDefaultReviews.forEach(r => {
+      if (!isDeletedReview(r, deletedIds)) {
+        reviewsMap.set(r.id, r);
+      }
+    });
+  }
 
   if (Array.isArray(adminReviews)) {
     adminReviews.forEach(r => {
@@ -833,31 +838,39 @@ function applyAdminReviews(adminReviews) {
 
 (async function loadRemoteAdminReviews() {
   let combinedAdmin = [];
+  let hasAdminSource = false;
 
-  try {
-    const rawLocal = localStorage.getItem('vk_admin_reviews');
-    if (rawLocal) {
+  const rawLocal = localStorage.getItem('vk_admin_reviews');
+  if (rawLocal !== null) {
+    hasAdminSource = true;
+    try {
       const parsed = JSON.parse(rawLocal);
       if (Array.isArray(parsed)) combinedAdmin = parsed;
-    }
-  } catch (e) {}
+    } catch (e) {}
+  }
 
   try {
     const res = await fetch('js/admin-reviews.json?t=' + Date.now());
     if (res.ok) {
       const remoteReviews = await res.json();
       if (Array.isArray(remoteReviews)) {
-        const map = new Map();
-        combinedAdmin.forEach(r => map.set(r.id, r));
-        remoteReviews.forEach(r => {
-          if (!map.has(r.id)) map.set(r.id, r);
-        });
-        combinedAdmin = Array.from(map.values());
+        hasAdminSource = true;
+        if (rawLocal === null) {
+          combinedAdmin = remoteReviews;
+        } else if (combinedAdmin.length > 0) {
+          const map = new Map();
+          combinedAdmin.forEach(r => map.set(r.id, r));
+          const deletedIds = getDeletedReviewIds();
+          remoteReviews.forEach(r => {
+            if (!map.has(r.id) && !isDeletedReview(r, deletedIds)) map.set(r.id, r);
+          });
+          combinedAdmin = Array.from(map.values());
+        }
       }
     }
   } catch (e) {}
 
-  applyAdminReviews(combinedAdmin);
+  applyAdminReviews(combinedAdmin, hasAdminSource);
   window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
 })();
 
@@ -865,10 +878,10 @@ window.addEventListener('storage', (e) => {
   if (!e || !e.key || e.key === 'vk_admin_reviews' || e.key === 'vk_admin_deleted_reviews') {
     try {
       const rawLocal = localStorage.getItem('vk_admin_reviews');
-      if (rawLocal) {
+      if (rawLocal !== null) {
         const parsed = JSON.parse(rawLocal);
         if (Array.isArray(parsed)) {
-          applyAdminReviews(parsed);
+          applyAdminReviews(parsed, true);
           window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
         }
       }

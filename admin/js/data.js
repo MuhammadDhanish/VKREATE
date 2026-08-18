@@ -462,7 +462,7 @@ const DB = {
     all()       {
       const list = DB._get(DB.KEYS.reviews) || [];
       const deleted = DB._getDeleted(DB.KEYS.deletedReviews);
-      return list.filter(r => !deleted.includes(r.id));
+      return list.filter(r => !deleted.includes(r.id) && r.id !== 'mswstn7iv0g7w' && (!r.clientName || !r.clientName.toLowerCase().includes('danish')));
     },
     get(id)     { return this.all().find(r => r.id === id) || null; },
     save(list)  { DB._set(DB.KEYS.reviews, list); },
@@ -613,7 +613,7 @@ const DB = {
       const revRes = await fetch('../js/admin-reviews.json?t=' + Date.now());
       if (revRes.ok) {
         const remoteReviews = await revRes.json();
-        if (Array.isArray(remoteReviews) && remoteReviews.length > 0) {
+        if (Array.isArray(remoteReviews)) {
           const local = DB._get(DB.KEYS.reviews);
           const filteredRemote = remoteReviews.filter(r => !deletedReviews.includes(r.id));
           if (!local) {
@@ -621,9 +621,11 @@ const DB = {
           } else {
             const mergedMap = new Map();
             local.filter(r => !deletedReviews.includes(r.id)).forEach(r => mergedMap.set(r.id, r));
-            filteredRemote.forEach(r => {
-              if (!mergedMap.has(r.id)) mergedMap.set(r.id, r);
-            });
+            if (local.length > 0) {
+              filteredRemote.forEach(r => {
+                if (!mergedMap.has(r.id)) mergedMap.set(r.id, r);
+              });
+            }
             DB._set(DB.KEYS.reviews, Array.from(mergedMap.values()));
           }
         }

@@ -19,6 +19,9 @@ const Dashboard = {
           <p class="page-subtitle">Welcome back, ${DB.auth.session.get()?.email?.split('@')[0] || 'Admin'} — here's what's happening</p>
         </div>
         <div class="page-actions">
+          <button class="btn btn-outline btn-sm" onclick="Settings.resetData()" title="Reset stale dashboard data">
+            🔄 Reset Dashboard
+          </button>
           <button class="btn btn-outline btn-sm" onclick="App.navigate('analytics')">
             ${UI.icon('chart')} View Analytics
           </button>

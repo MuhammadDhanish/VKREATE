@@ -479,7 +479,7 @@ const Settings = {
   },
 
   resetData() {
-    UI.confirm('Reset to Demo Data', 'This will erase ALL custom projects, reviews, inquiries, and local modifications, restoring original demo content. Are you sure?', '⚠️', async () => {
+    UI.confirm('Reset Dashboard & Data', 'This will erase all custom modifications, clear test reviews/activity, and restore default demo content. Are you sure?', '⚠️', async () => {
       [
         DB.KEYS.projects, DB.KEYS.reviews, DB.KEYS.inquiries, DB.KEYS.analytics,
         DB.KEYS.deletedProjects, DB.KEYS.deletedReviews, DB.KEYS.deletedInquiries
@@ -488,7 +488,11 @@ const Settings = {
         try { await ImageDB.clear(); } catch(e) {}
       }
       DB.seed();
-      UI.toast('Data reset to demo content!', 'success');
+      UI.toast('Dashboard data reset successfully!', 'success');
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+      window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
+      if (window.GithubSync) GithubSync.push();
       App.navigate('dashboard');
     }, true);
   },

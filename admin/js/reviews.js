@@ -187,51 +187,13 @@ const Reviews = {
     this._refresh();
     App.updateSidebar();
     window.dispatchEvent(new Event('storage'));
-    this.pushReviewToGithub();
+    window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
     if (window.GithubSync) GithubSync.push();
   },
 
   async pushReviewToGithub() {
-    try {
-      const token = ['ghp_zlTiF9lE82XK', 'zPM9jev8uj0iSDhH', 'sY3pqtYl'].join('');
-      const repo = 'MuhammadDhanish/VKREATE';
-      const filePath = 'js/admin-reviews.json';
-
-      const currentReviews = DB.reviews.all();
-
-      let sha = null;
-      try {
-        const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        });
-        if (getRes.ok) {
-          const fileData = await getRes.json();
-          sha = fileData.sha;
-        }
-      } catch (e) {}
-
-      const jsonContent = JSON.stringify(currentReviews, null, 2);
-      const encoded = btoa(unescape(encodeURIComponent(jsonContent)));
-      const body = {
-        message: `Approved review update [${new Date().toISOString()}]`,
-        content: encoded,
-        ...(sha ? { sha } : {})
-      };
-
-      await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      });
-    } catch (e) {
-      console.warn('pushReviewToGithub error:', e);
+    if (window.GithubSync) {
+      await GithubSync.push();
     }
   },
 
@@ -240,16 +202,20 @@ const Reviews = {
     UI.toast('Review rejected.', 'info');
     this._refresh();
     App.updateSidebar();
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
     if (window.GithubSync) GithubSync.push();
   },
 
   delete(id) {
     const r = DB.reviews.get(id);
-    UI.confirm('Delete Review', `Delete review by <strong>${r.clientName}</strong>? This cannot be undone.`, '🗑️', () => {
+    UI.confirm('Delete Review', `Delete review by <strong>${r ? r.clientName : 'Client'}</strong>? This cannot be undone.`, '🗑️', () => {
       DB.reviews.delete(id);
       UI.toast('Review deleted.', 'success');
       this._refresh();
       App.updateSidebar();
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
       if (window.GithubSync) GithubSync.push();
     }, true);
   },
