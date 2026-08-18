@@ -852,7 +852,12 @@ async function loadRemoteAdminReviews() {
         // a CDN-cached empty file wiping out real approved reviews.
         if (combinedAdmin.length > 0) {
           try {
-            localStorage.setItem('vk_admin_reviews', JSON.stringify(combinedAdmin));
+            let existingLocal = JSON.parse(localStorage.getItem('vk_admin_reviews')) || [];
+            const map = new Map();
+            staticDefaultReviews.forEach(r => map.set(r.id, r));
+            existingLocal.forEach(r => { if (r && r.id) map.set(r.id, r); });
+            combinedAdmin.forEach(r => { if (r && r.id) map.set(r.id, r); });
+            localStorage.setItem('vk_admin_reviews', JSON.stringify(Array.from(map.values())));
           } catch (e) {}
         }
       }

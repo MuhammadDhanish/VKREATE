@@ -116,8 +116,8 @@
     grid.innerHTML = '';
     reviews.forEach((r, idx) => {
       const card = document.createElement('article');
-      card.className = 'review-card reveal visible';
-      card.style.cssText = 'background:#ffffff;border:1px solid rgba(0,0,0,0.08);border-radius:16px;padding:26px 24px;box-shadow:0 4px 20px rgba(0,0,0,0.04);display:flex;flex-direction:column;justify-content:space-between;opacity:1;transform:none;transition:transform 0.25s ease,box-shadow 0.25s ease;animation-delay:' + (idx * 0.05) + 's;';
+      card.className = 'review-card';
+      card.style.cssText = 'background:#ffffff;border:1px solid rgba(0,0,0,0.08);border-radius:16px;padding:26px 24px;box-shadow:0 4px 20px rgba(0,0,0,0.04);display:flex;flex-direction:column;justify-content:space-between;opacity:1 !important;transform:none !important;margin-bottom:0;';
 
       const starsHTML = Array.from({ length: 5 }, (_, i) => 
         `<span class="star" style="color:${i < (r.rating || 5) ? '#f59e0b' : '#d1d5db'};font-size:1.1rem">★</span>`
