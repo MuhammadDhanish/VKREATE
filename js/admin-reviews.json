@@ -1,26 +1,5 @@
 [
   {
-    "id": "rev-salon-02",
-    "projectId": "luxury-salon",
-    "projectName": "Wings Luxury Beauty & Wellness",
-    "clientName": "Dr. Reshma Menon",
-    "clientRole": "Salon Director, Wings Wellness",
-    "clientEmail": "reshma@wingswellness.in",
-    "rating": 5,
-    "rank": 2,
-    "reviewText": "Our clients feel like they're stepping into a 5-star spa retreat. VKREATE's design elevated our entire brand perception. The private pedicure suite, illuminated vanity pods, and botanical murals are guest favorites!",
-    "shortTestimonial": "Our clients feel like they're stepping into a 5-star spa retreat.",
-    "status": "approved",
-    "studioResponse": "So glad to hear Dr. Reshma! Designing your spa sanctuary was a rewarding journey.",
-    "tags": [
-      "salon",
-      "spa"
-    ],
-    "visibility": "public",
-    "createdAt": "2025-04-15T11:00:00Z",
-    "approvedAt": "2025-04-16T08:00:00Z"
-  },
-  {
     "id": "rev-retail-03",
     "projectId": "retail-jewellery",
     "projectName": "Wings Jewellery & Retail Showroom",
