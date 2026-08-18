@@ -107,9 +107,21 @@ const Reviews = {
     container.innerHTML = `<div style="display:grid;gap:16px">${list.map(r => this._cardHTML(r)).join('')}</div>`;
   },
 
+  _escapeHTML(str) {
+    if (typeof UI !== 'undefined' && typeof UI.escapeHTML === 'function') {
+      return UI.escapeHTML(str);
+    }
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  },
+
   _cardHTML(r) {
     const stars = Array.from({ length: 5 }, (_, i) => 
-      `<span style="color:${i < r.rating ? '#f59e0b' : '#d1d5db'};font-size:1.1rem">★</span>`
+      `<span style="color:${i < (r.rating || 5) ? '#f59e0b' : '#d1d5db'};font-size:1.1rem">★</span>`
     ).join('');
 
     const statusBadge = r.status === 'approved' 
@@ -125,34 +137,34 @@ const Reviews = {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:12px">
           <div>
             <div style="display:flex;align-items:center;gap:10px">
-              <span class="fw-700 text-base">${UI.escapeHTML(r.clientName || 'Anonymous')}</span>
+              <span class="fw-700 text-base">${this._escapeHTML(r.clientName || 'Anonymous')}</span>
               ${statusBadge}
             </div>
             <div class="text-xs text-muted mt-2">
-              ${UI.escapeHTML(r.clientRole || 'Client')} ${r.clientEmail ? `· <a href="mailto:${r.clientEmail}" style="color:inherit">${UI.escapeHTML(r.clientEmail)}</a>` : ''} · ${dateStr}
+              ${this._escapeHTML(r.clientRole || 'Client')} ${r.clientEmail ? `· <a href="mailto:${r.clientEmail}" style="color:inherit">${this._escapeHTML(r.clientEmail)}</a>` : ''} · ${dateStr}
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             ${stars}
-            <span class="text-xs fw-600 ml-4" style="color:#f59e0b">${r.rating}/5</span>
+            <span class="text-xs fw-600 ml-4" style="color:#f59e0b">${r.rating || 5}/5</span>
           </div>
         </div>
 
         ${r.projectName ? `
           <div style="margin-bottom:10px">
             <span style="font-size:0.75rem;background:var(--bg);padding:4px 8px;border-radius:4px;color:var(--text-2);border:1px solid var(--border)">
-              🏷️ ${UI.escapeHTML(r.projectName)}
+              🏷️ ${this._escapeHTML(r.projectName)}
             </span>
           </div>` : ''}
 
         <blockquote style="margin:10px 0;padding:12px 16px;background:var(--bg);border-left:3px solid #16a34a;border-radius:0 var(--r-sm) var(--r-sm) 0;font-style:italic;color:var(--text-1);font-size:0.9rem;line-height:1.6">
-          "${UI.escapeHTML(r.reviewText || '')}"
+          "${this._escapeHTML(r.reviewText || r.shortTestimonial || '')}"
         </blockquote>
 
         ${r.studioResponse ? `
           <div style="margin-top:12px;padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--r-sm)">
             <div style="font-size:0.75rem;font-weight:700;color:#15803d;margin-bottom:4px">💬 Studio Response:</div>
-            <div style="font-size:0.85rem;color:#166534">${UI.escapeHTML(r.studioResponse)}</div>
+            <div style="font-size:0.85rem;color:#166534">${this._escapeHTML(r.studioResponse)}</div>
           </div>` : ''}
 
         <div style="display:flex;gap:8px;margin-top:16px;align-items:center;flex-wrap:wrap">
@@ -221,10 +233,10 @@ const Reviews = {
           <button class="modal__close" onclick="this.closest('.modal-overlay').remove()">✕</button>
         </div>
         <div class="modal__body" style="padding:20px">
-          <p class="text-sm text-muted mb-12">Write an official reply to <strong>${UI.escapeHTML(r.clientName)}</strong>'s review. This will be displayed publicly under their testimonial.</p>
+          <p class="text-sm text-muted mb-12">Write an official reply to <strong>${this._escapeHTML(r.clientName)}</strong>'s review. This will be displayed publicly under their testimonial.</p>
           <div class="form-group">
             <label class="form-label">Studio Reply</label>
-            <textarea class="form-control" id="reply-text" rows="4" placeholder="e.g. Thank you for your kind words! It was a pleasure designing your space.">${UI.escapeHTML(r.studioResponse || '')}</textarea>
+            <textarea class="form-control" id="reply-text" rows="4" placeholder="e.g. Thank you for your kind words! It was a pleasure designing your space.">${this._escapeHTML(r.studioResponse || '')}</textarea>
           </div>
         </div>
         <div class="modal__footer">
@@ -270,18 +282,18 @@ const Reviews = {
             <div class="form-grid form-grid-2">
               <div class="form-group">
                 <label class="form-label">Client Name *</label>
-                <input class="form-control" name="clientName" value="${UI.escapeHTML(existing?.clientName || '')}" required placeholder="e.g. Unnikrishnan Nair">
+                <input class="form-control" name="clientName" value="${this._escapeHTML(existing?.clientName || '')}" required placeholder="e.g. Unnikrishnan Nair">
               </div>
               <div class="form-group">
                 <label class="form-label">Client Role / Company *</label>
-                <input class="form-control" name="clientRole" value="${UI.escapeHTML(existing?.clientRole || '')}" required placeholder="e.g. Founder, Lilaa Hospitality">
+                <input class="form-control" name="clientRole" value="${this._escapeHTML(existing?.clientRole || '')}" required placeholder="e.g. Founder, Lilaa Hospitality">
               </div>
             </div>
 
             <div class="form-grid form-grid-2">
               <div class="form-group">
                 <label class="form-label">Client Email</label>
-                <input class="form-control" type="email" name="clientEmail" value="${UI.escapeHTML(existing?.clientEmail || '')}" placeholder="client@example.com">
+                <input class="form-control" type="email" name="clientEmail" value="${this._escapeHTML(existing?.clientEmail || '')}" placeholder="client@example.com">
               </div>
               <div class="form-group">
                 <label class="form-label">Star Rating (1 - 5) *</label>
@@ -300,14 +312,14 @@ const Reviews = {
               <select class="form-control" name="projectId">
                 <option value="">General Studio Review</option>
                 ${projects.map(p => `
-                  <option value="${p.id}" ${existing?.projectId === p.id ? 'selected' : ''}>${UI.escapeHTML(p.name)}</option>
+                  <option value="${p.id}" ${existing?.projectId === p.id ? 'selected' : ''}>${this._escapeHTML(p.name)}</option>
                 `).join('')}
               </select>
             </div>
 
             <div class="form-group">
               <label class="form-label">Review Text *</label>
-              <textarea class="form-control" name="reviewText" rows="4" required placeholder="Write client feedback details...">${UI.escapeHTML(existing?.reviewText || '')}</textarea>
+              <textarea class="form-control" name="reviewText" rows="4" required placeholder="Write client feedback details...">${this._escapeHTML(existing?.reviewText || '')}</textarea>
             </div>
 
             <div class="form-group">

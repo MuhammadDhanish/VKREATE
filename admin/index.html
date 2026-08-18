@@ -21,6 +21,16 @@
 <script>
 const UI = {
 
+  // ── HTML Escaping ─────────────────────────────────────────
+  escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  },
+
   // ── Toast notifications ───────────────────────────────────
   toast(message, type = 'info') {
     const tc = document.getElementById('toast-container');
