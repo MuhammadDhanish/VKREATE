@@ -41,6 +41,9 @@
       "dining",
       "premium"
     ],
+    "views": 1240,
+    "clicks": 387,
+    "leads": 12,
     "createdAt": "2025-06-15T10:00:00Z",
     "updatedAt": "2025-07-01T08:30:00Z"
   },
@@ -85,6 +88,9 @@
       "beauty",
       "wellness"
     ],
+    "views": 890,
+    "clicks": 241,
+    "leads": 8,
     "createdAt": "2025-04-10T09:00:00Z",
     "updatedAt": "2025-05-20T11:00:00Z"
   },
@@ -130,6 +136,9 @@
       "jewellery",
       "showroom"
     ],
+    "views": 760,
+    "clicks": 198,
+    "leads": 6,
     "createdAt": "2025-02-14T10:00:00Z",
     "updatedAt": "2025-03-01T09:00:00Z"
   },
@@ -175,6 +184,9 @@
       "corporate",
       "lounge"
     ],
+    "views": 620,
+    "clicks": 154,
+    "leads": 5,
     "createdAt": "2025-01-20T11:00:00Z",
     "updatedAt": "2025-02-05T14:00:00Z"
   },
