@@ -9,6 +9,10 @@
   // 1. Unified Helper to get ALL Approved Reviews (Static Defaults + Admin Approved)
   function getApprovedReviews() {
     const reviewsMap = new Map();
+    const staticIds = new Set([
+      "rev-lilaa-01", "rev-salon-02", "rev-retail-03", "rev-lounge-04",
+      "rev-villa-05", "rev-clinic-06", "rev-hotel-07", "rev-cafe-08"
+    ]);
 
     // A. Seed from static datasets if available
     const staticList = (window.VKREATE_DATA && Array.isArray(VKREATE_DATA.reviews)) ? VKREATE_DATA.reviews : [];
@@ -29,8 +33,8 @@
             if (r && r.id) {
               if (r.status === 'approved' || (!r.status && r.verified !== false)) {
                 reviewsMap.set(r.id, r);
-              } else if (r.status === 'pending' || r.status === 'rejected') {
-                // Exclude pending or rejected items from public view
+              } else if (!staticIds.has(r.id) && (r.status === 'pending' || r.status === 'rejected')) {
+                // Exclude user-submitted pending or rejected items from public view
                 reviewsMap.delete(r.id);
               }
             }
@@ -368,10 +372,7 @@
           list.forEach(r => { if (r && r.id) map.set(r.id, r); });
           remoteReviews.forEach(r => {
             if (r && r.id) {
-              const existing = map.get(r.id);
-              if (!existing || r.status === 'approved' || (existing.status === 'pending' && r.status !== 'pending')) {
-                map.set(r.id, r);
-              }
+              map.set(r.id, r);
             }
           });
           localStorage.setItem('vk_admin_reviews', JSON.stringify(Array.from(map.values())));
