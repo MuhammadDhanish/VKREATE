@@ -10,7 +10,32 @@
     "reviewText": "Weedfzsfjnvzs",
     "status": "approved",
     "createdAt": "2026-08-18T17:54:06.241Z",
-    "approvedAt": "2026-08-18T19:12:06.657Z",
-    "updatedAt": "2026-08-18T19:12:06.657Z"
+    "approvedAt": "2026-08-18T19:19:45.228Z",
+    "updatedAt": "2026-08-18T19:19:45.228Z"
+  },
+  {
+    "id": "rev-msz0f8gg",
+    "clientName": "Live Verified Client",
+    "clientRole": "Managing Director",
+    "clientEmail": "verify@vkreate.com",
+    "rating": 5,
+    "projectName": "General Studio Review",
+    "projectId": "general",
+    "reviewText": "Live deployment test review - verified round trip.",
+    "status": "approved",
+    "createdAt": "2026-08-18T18:42:22.480Z",
+    "approvedAt": "2026-08-18T18:43:44.265Z"
+  },
+  {
+    "id": "rev-msz0abyl",
+    "clientName": "Live Test Client",
+    "clientRole": "Design Director",
+    "clientEmail": "test@vkreate.com",
+    "rating": 5,
+    "projectName": "General Studio Review",
+    "projectId": "general",
+    "reviewText": "Automated test review for live site deployment verification.",
+    "status": "pending",
+    "createdAt": "2026-08-18T18:38:33.741Z"
   }
 ]
