@@ -1,28 +1,15 @@
 [
   {
-    "id": "rev-msz0f8gg",
     "clientName": "Live Verified Client",
     "clientRole": "Managing Director",
     "clientEmail": "verify@vkreate.com",
     "rating": 5,
+    "projectId": "",
     "projectName": "General Studio Review",
-    "projectId": "general",
     "reviewText": "Live deployment test review - verified round trip.",
-    "status": "approved",
-    "createdAt": "2026-08-18T18:42:22.480Z",
-    "approvedAt": "2026-08-18T18:43:44.265Z"
-  },
-  {
-    "id": "rev-msz0abyl",
-    "clientName": "Live Test Client",
-    "clientRole": "Design Director",
-    "clientEmail": "test@vkreate.com",
-    "rating": 5,
-    "projectName": "General Studio Review",
-    "projectId": "general",
-    "reviewText": "Automated test review for live site deployment verification.",
     "status": "pending",
-    "createdAt": "2026-08-18T18:38:33.741Z"
+    "id": "msz0u297l6901",
+    "createdAt": "2026-08-18T18:53:54.283Z"
   },
   {
     "id": "rev-msyyp5pd",
