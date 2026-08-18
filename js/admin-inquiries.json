@@ -1,6 +1,6 @@
 [
   {
-    "id": "msz1eg26qjxs3",
+    "id": "msz15wai6pk0o",
     "name": "Rajesh Kumar",
     "email": "rajesh@grandhotel.com",
     "phone": "+91 98765 43210",
@@ -14,7 +14,7 @@
     "respondedAt": null
   },
   {
-    "id": "msz1eg26uplsm",
+    "id": "msz15waiszs0z",
     "name": "Meera Thomas",
     "email": "meera@blossomcafe.in",
     "phone": "+91 94400 12345",
@@ -28,7 +28,7 @@
     "respondedAt": "2025-07-28T11:00:00Z"
   },
   {
-    "id": "msz1eg26wwp18",
+    "id": "msz15wail8848",
     "name": "Dr. Anil Sharma",
     "email": "dr.anil@skincare.com",
     "phone": "+91 90001 23456",
@@ -42,7 +42,7 @@
     "respondedAt": "2025-07-18T10:00:00Z"
   },
   {
-    "id": "msz1eg26i4z2w",
+    "id": "msz15waieigd1",
     "name": "Sanjay Pillai",
     "email": "sanjay@fashionretail.in",
     "phone": "+91 80000 98765",
@@ -99,62 +99,6 @@
   },
   {
     "id": "msyzta7gsh9p1",
-    "name": "Sanjay Pillai",
-    "email": "sanjay@fashionretail.in",
-    "phone": "+91 80000 98765",
-    "industry": "Retail",
-    "projectBudget": "₹35L – ₹45L",
-    "timeline": "5 months",
-    "brief": "High-end fashion boutique in Kochi. 3,000 sq ft with a focus on premium materials.",
-    "status": "won",
-    "notes": "Contract signed on 10 July. Kickoff meeting scheduled for Aug 1.",
-    "createdAt": "2025-07-01T15:00:00Z",
-    "respondedAt": "2025-07-05T09:00:00Z"
-  },
-  {
-    "id": "msz15wai6pk0o",
-    "name": "Rajesh Kumar",
-    "email": "rajesh@grandhotel.com",
-    "phone": "+91 98765 43210",
-    "industry": "Hospitality",
-    "projectBudget": "₹50L – ₹75L",
-    "timeline": "6 months",
-    "brief": "Looking to redesign our hotel lobby and 3 dining areas. 5-star property in Trivandrum.",
-    "status": "new",
-    "notes": "",
-    "createdAt": "2025-07-31T09:00:00Z",
-    "respondedAt": null
-  },
-  {
-    "id": "msz15waiszs0z",
-    "name": "Meera Thomas",
-    "email": "meera@blossomcafe.in",
-    "phone": "+91 94400 12345",
-    "industry": "Restaurants & Cafes",
-    "projectBudget": "₹15L – ₹25L",
-    "timeline": "3 months",
-    "brief": "Café design for a new 1,500 sq ft space in Kochi. Inspired by European café culture.",
-    "status": "contacted",
-    "notes": "Called on 28 July. Interested in a full concept presentation. Scheduled site visit for Aug 5.",
-    "createdAt": "2025-07-25T14:30:00Z",
-    "respondedAt": "2025-07-28T11:00:00Z"
-  },
-  {
-    "id": "msz15wail8848",
-    "name": "Dr. Anil Sharma",
-    "email": "dr.anil@skincare.com",
-    "phone": "+91 90001 23456",
-    "industry": "Beauty & Wellness",
-    "projectBudget": "₹20L – ₹30L",
-    "timeline": "4 months",
-    "brief": "Premium dermatology clinic in Bangalore. Need a modern clinical-yet-luxurious feel.",
-    "status": "quoted",
-    "notes": "Sent proposal on 20 July. Follow up scheduled for Aug 3.",
-    "createdAt": "2025-07-15T11:00:00Z",
-    "respondedAt": "2025-07-18T10:00:00Z"
-  },
-  {
-    "id": "msz15waieigd1",
     "name": "Sanjay Pillai",
     "email": "sanjay@fashionretail.in",
     "phone": "+91 80000 98765",
