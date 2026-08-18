@@ -1,26 +1,5 @@
 [
   {
-    "id": "rev-lilaa-01",
-    "projectId": "lilaa-restaurant",
-    "projectName": "Lilaa — Malayali Cuisine",
-    "clientName": "Unnikrishnan Nair",
-    "clientRole": "Founder & Owner, Lilaa Hospitality",
-    "clientEmail": "unnikrishnan@lilaa.com",
-    "rating": 5,
-    "rank": 1,
-    "reviewText": "VKREATE captured our brand's warmth and sophistication in every detail. The spatial flow, arched niches, warm lighting, and seating layout elevated our entire dining experience. The space speaks for itself and guest retention has been phenomenal.",
-    "shortTestimonial": "VKREATE captured our brand's warmth and sophistication in every detail.",
-    "status": "approved",
-    "studioResponse": "Thank you Unnikrishnan! It was an absolute pleasure bringing Lilaa's heritage vision to life.",
-    "tags": [
-      "restaurant",
-      "dining"
-    ],
-    "visibility": "public",
-    "createdAt": "2025-06-20T10:00:00Z",
-    "approvedAt": "2025-06-21T09:00:00Z"
-  },
-  {
     "id": "rev-salon-02",
     "projectId": "luxury-salon",
     "projectName": "Wings Luxury Beauty & Wellness",
