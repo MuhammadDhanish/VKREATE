@@ -629,7 +629,8 @@ const DB = {
     if (Array.isArray(remoteList)) {
       remoteList.forEach(item => {
         if (item && item.id && !deletedIds.includes(item.id)) {
-          if (!itemMap.has(item.id)) {
+          const existing = itemMap.get(item.id);
+          if (!existing || item.status === 'approved' || (existing.status === 'pending' && item.status !== 'pending')) {
             itemMap.set(item.id, item);
           }
         }

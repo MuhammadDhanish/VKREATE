@@ -363,7 +363,14 @@
           try { list = JSON.parse(localStorage.getItem('vk_admin_reviews')) || []; } catch (e) {}
           const map = new Map();
           list.forEach(r => { if (r && r.id) map.set(r.id, r); });
-          remoteReviews.forEach(r => { if (r && r.id && !map.has(r.id)) map.set(r.id, r); });
+          remoteReviews.forEach(r => {
+            if (r && r.id) {
+              const existing = map.get(r.id);
+              if (!existing || r.status === 'approved' || (existing.status === 'pending' && r.status !== 'pending')) {
+                map.set(r.id, r);
+              }
+            }
+          });
           localStorage.setItem('vk_admin_reviews', JSON.stringify(Array.from(map.values())));
           renderReviewsGrid();
         }
