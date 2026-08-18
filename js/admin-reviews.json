@@ -1,26 +1,5 @@
 [
   {
-    "id": "rev-retail-03",
-    "projectId": "retail-jewellery",
-    "projectName": "Wings Jewellery & Retail Showroom",
-    "clientName": "Faisal Rahman",
-    "clientRole": "Brand Manager, Wings Retail",
-    "clientEmail": "faisal@wingsretail.com",
-    "rating": 5,
-    "rank": 3,
-    "reviewText": "The interior design makes our jewellery display the hero. Corridor foot traffic increased by 40% immediately after handover, and the arched grid glass storefront gives us high visibility.",
-    "shortTestimonial": "The interior design makes our jewellery display the hero.",
-    "status": "approved",
-    "studioResponse": "Appreciate your trust Faisal! The custom display showcases turned out brilliant.",
-    "tags": [
-      "jewellery",
-      "retail"
-    ],
-    "visibility": "public",
-    "createdAt": "2025-02-20T12:00:00Z",
-    "approvedAt": "2025-02-21T10:00:00Z"
-  },
-  {
     "id": "rev-lounge-04",
     "projectId": "corporate-lounge",
     "projectName": "Corporate VIP Reception & Lounge",
