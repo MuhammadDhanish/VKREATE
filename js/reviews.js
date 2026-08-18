@@ -276,7 +276,8 @@
         }
 
         // 3. Push directly to GitHub repo js/admin-reviews.json so Admin on any device sees it
-        pushReviewToGithub(newReview);
+        console.log('[Reviews] Submitting new review to GitHub API repository...', newReview);
+        await pushReviewToGithub(newReview);
 
         // Show success notification
         const bodyEl = document.getElementById('pub-review-modal-body');
