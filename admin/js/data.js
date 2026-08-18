@@ -447,7 +447,7 @@ const DB = {
       let updated = false;
 
       defaults.forEach(def => {
-        if (!deleted.includes(def.id) && !list.some(r => r.id === def.id)) {
+        if (def && def.id && !deleted.includes(def.id) && !list.some(r => r && r.id === def.id)) {
           list.push(def);
           updated = true;
         }
@@ -456,14 +456,14 @@ const DB = {
       if (updated) {
         DB._set(DB.KEYS.reviews, list);
       }
-      return list.filter(r => !deleted.includes(r.id) && r.id !== 'mswstn7iv0g7w' && (!r.clientName || !r.clientName.toLowerCase().includes('danish')));
+      return list.filter(r => r && r.id && !deleted.includes(r.id) && r.id !== 'mswstn7iv0g7w' && (!r.clientName || !r.clientName.toLowerCase().includes('danish')));
     },
-    get(id)     { return this.all().find(r => r.id === id) || null; },
+    get(id)     { return this.all().find(r => r && r.id === id) || null; },
     save(list)  { DB._set(DB.KEYS.reviews, list); },
     add(r)      { const l = this.all(); r.id = DB._id(); r.createdAt = new Date().toISOString(); r.status = 'pending'; l.unshift(r); this.save(l); return r; },
     update(id, data) {
       const l = this.all();
-      const i = l.findIndex(r => r.id === id);
+      const i = l.findIndex(r => r && r.id === id);
       if (i < 0) return null;
       l[i] = { ...l[i], ...data };
       this.save(l); return l[i];
@@ -478,18 +478,18 @@ const DB = {
         if (r.author) DB._addDeleted(DB.KEYS.deletedReviews, 'name:' + r.author.toLowerCase().trim());
         if (r.projectId) DB._addDeleted(DB.KEYS.deletedReviews, 'proj:' + r.projectId);
       }
-      this.save(this.all().filter(r => r.id !== id));
+      this.save(this.all().filter(r => r && r.id !== id));
     },
-    pending()   { return this.all().filter(r => r.status === 'pending'); },
-    approved()  { return this.all().filter(r => r.status === 'approved'); },
+    pending()   { return this.all().filter(r => r && r.status === 'pending'); },
+    approved()  { return this.all().filter(r => r && r.status === 'approved'); },
     stats() {
       const all = this.all();
       return {
         total: all.length,
-        pending: all.filter(r => r.status === 'pending').length,
-        approved: all.filter(r => r.status === 'approved').length,
-        rejected: all.filter(r => r.status === 'rejected').length,
-        avgRating: all.length ? (all.reduce((s,r) => s + r.rating, 0) / all.length).toFixed(1) : 0,
+        pending: all.filter(r => r && r.status === 'pending').length,
+        approved: all.filter(r => r && r.status === 'approved').length,
+        rejected: all.filter(r => r && r.status === 'rejected').length,
+        avgRating: all.length ? (all.reduce((s,r) => s + (r.rating || 5), 0) / all.length).toFixed(1) : 0,
       };
     },
   },
