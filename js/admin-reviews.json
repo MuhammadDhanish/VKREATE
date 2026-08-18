@@ -20,7 +20,8 @@
     "projectName": "General Studio Review",
     "projectId": "general",
     "reviewText": "Automated test review for live site deployment verification.",
-    "status": "pending",
-    "createdAt": "2026-08-18T18:38:33.741Z"
+    "status": "approved",
+    "createdAt": "2026-08-18T18:38:33.741Z",
+    "approvedAt": "2026-08-18T18:58:13.736Z"
   }
 ]
