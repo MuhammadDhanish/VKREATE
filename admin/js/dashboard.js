@@ -202,27 +202,36 @@ const Dashboard = {
 
   _recentActivity() {
     const events = [];
-    DB.reviews.all().slice(0,3).forEach(r => {
-      events.push({
-        text: `Review by <strong>${r.clientName}</strong> — "${r.reviewText.slice(0,50)}..."`,
-        date: r.createdAt,
-        color: r.status === 'approved' ? '#22C55E' : r.status === 'rejected' ? '#EF4444' : '#F59E0B',
+    try {
+      (DB.reviews.all() || []).slice(0, 5).forEach(r => {
+        if (!r) return;
+        const name = r.clientName || r.author || 'Client';
+        const rawText = r.reviewText || r.shortTestimonial || r.text || '';
+        events.push({
+          text: `Review by <strong>${name}</strong> — "${rawText.slice(0, 50)}${rawText.length > 50 ? '...' : ''}"`,
+          date: r.createdAt || r.approvedAt || r.date || new Date().toISOString(),
+          color: r.status === 'approved' ? '#22C55E' : r.status === 'rejected' ? '#EF4444' : '#F59E0B',
+        });
       });
-    });
-    DB.inquiries.all().slice(0,3).forEach(i => {
-      events.push({
-        text: `New inquiry from <strong>${i.name}</strong> — ${i.industry}`,
-        date: i.createdAt,
-        color: '#3B82F6',
+      (DB.inquiries.all() || []).slice(0, 5).forEach(i => {
+        if (!i) return;
+        events.push({
+          text: `New inquiry from <strong>${i.name || 'Visitor'}</strong> — ${i.industry || 'General'}`,
+          date: i.createdAt || new Date().toISOString(),
+          color: '#3B82F6',
+        });
       });
-    });
-    DB.projects.all().slice(0,2).forEach(p => {
-      events.push({
-        text: `Project <strong>${p.name}</strong> — ${p.status}`,
-        date: p.updatedAt,
-        color: '#C9A96E',
+      (DB.projects.all() || []).slice(0, 3).forEach(p => {
+        if (!p) return;
+        events.push({
+          text: `Project <strong>${p.name || 'Project'}</strong> — ${p.status || 'draft'}`,
+          date: p.updatedAt || p.createdAt || new Date().toISOString(),
+          color: '#C9A96E',
+        });
       });
-    });
-    return events.sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,10);
+    } catch (e) {
+      console.warn('Error building recent activity:', e);
+    }
+    return events.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0)).slice(0, 10);
   },
 };
