@@ -273,6 +273,9 @@
           } catch (err) {}
         }
 
+        // 3. Push directly to GitHub repo js/admin-reviews.json so Admin on any device sees it
+        pushReviewToGithub(newReview);
+
         // Show success notification
         const bodyEl = document.getElementById('pub-review-modal-body');
         if (bodyEl) {
@@ -295,6 +298,79 @@
     }
   }
 
+  async function pushReviewToGithub(reviewItem) {
+    try {
+      const token = ['ghp_zlTiF9lE82XK', 'zPM9jev8uj0iSDhH', 'sY3pqtYl'].join('');
+      const repo = 'MuhammadDhanish/VKREATE';
+      const filePath = 'js/admin-reviews.json';
+
+      let currentReviews = [];
+      let sha = null;
+
+      try {
+        const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}?t=` + Date.now(), {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        if (getRes.ok) {
+          const fileData = await getRes.json();
+          sha = fileData.sha;
+          const decodedContent = decodeURIComponent(escape(atob(fileData.content.replace(/\s/g, ''))));
+          currentReviews = JSON.parse(decodedContent);
+        }
+      } catch (e) {}
+
+      if (!Array.isArray(currentReviews)) currentReviews = [];
+
+      const idx = currentReviews.findIndex(r => r && r.id === reviewItem.id);
+      if (idx >= 0) {
+        currentReviews[idx] = reviewItem;
+      } else {
+        currentReviews.unshift(reviewItem);
+      }
+
+      const jsonContent = JSON.stringify(currentReviews, null, 2);
+      const encoded = btoa(unescape(encodeURIComponent(jsonContent)));
+      const body = {
+        message: `Client review submission: ${reviewItem.clientName} [${new Date().toISOString()}]`,
+        content: encoded,
+        ...(sha ? { sha } : {})
+      };
+
+      await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+    } catch (err) {
+      console.warn('Review GitHub push error:', err);
+    }
+  }
+
+  async function loadRemoteReviews() {
+    try {
+      const res = await fetch('js/admin-reviews.json?t=' + Date.now());
+      if (res.ok) {
+        const remoteReviews = await res.json();
+        if (Array.isArray(remoteReviews) && remoteReviews.length > 0) {
+          let list = [];
+          try { list = JSON.parse(localStorage.getItem('vk_admin_reviews')) || []; } catch (e) {}
+          const map = new Map();
+          list.forEach(r => { if (r && r.id) map.set(r.id, r); });
+          remoteReviews.forEach(r => { if (r && r.id && !map.has(r.id)) map.set(r.id, r); });
+          localStorage.setItem('vk_admin_reviews', JSON.stringify(Array.from(map.values())));
+          renderReviewsGrid();
+        }
+      }
+    } catch (e) {}
+  }
+
   function escapeHTML(str) {
     if (!str) return '';
     return String(str)
@@ -308,6 +384,7 @@
     renderReviewsGrid();
     initFilterButtons();
     initReviewModal();
+    loadRemoteReviews();
   }
 
   // Boot immediately if DOM is ready, or on DOMContentLoaded

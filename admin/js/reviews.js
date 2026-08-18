@@ -400,5 +400,8 @@ const Reviews = {
     if (typeof App !== 'undefined' && App.updateSidebar) {
       App.updateSidebar();
     }
+    if (typeof GithubSync !== 'undefined' && GithubSync.push) {
+      GithubSync.push();
+    }
   }
 };
