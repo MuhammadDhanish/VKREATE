@@ -8,8 +8,9 @@
     "projectName": "General Studio Review",
     "projectId": "general",
     "reviewText": "Live deployment test review - verified round trip.",
-    "status": "pending",
-    "createdAt": "2026-08-18T18:42:22.480Z"
+    "status": "approved",
+    "createdAt": "2026-08-18T18:42:22.480Z",
+    "approvedAt": "2026-08-18T18:43:44.265Z"
   },
   {
     "id": "rev-msz0abyl",
