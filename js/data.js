@@ -773,10 +773,18 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
   const deletedIds = getDeletedReviewIds();
   const reviewsMap = new Map();
 
+  // Count how many approved entries are in the admin list
+  const approvedAdminCount = Array.isArray(adminReviews)
+    ? adminReviews.filter(r => r.status === 'approved').length
+    : 0;
+
   const rawLocal = localStorage.getItem('vk_admin_reviews');
   const isAdminOverridden = (rawLocal !== null) || hasAdminSource;
 
-  if (!isAdminOverridden) {
+  // Only suppress static defaults if admin HAS approved reviews.
+  // If admin list is empty (e.g. after a reset push that hasn't deployed yet,
+  // or a CDN-cached empty file), fall back to static defaults.
+  if (!isAdminOverridden || approvedAdminCount === 0) {
     staticDefaultReviews.forEach(r => {
       if (!isDeletedReview(r, deletedIds)) {
         reviewsMap.set(r.id, r);
@@ -848,20 +856,27 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
         hasAdminSource = true;
         const deletedIds = getDeletedReviewIds();
         combinedAdmin = remoteReviews.filter(r => !isDeletedReview(r, deletedIds));
-        try {
-          localStorage.setItem('vk_admin_reviews', JSON.stringify(combinedAdmin));
-        } catch (e) {}
+        // Only overwrite local cache when GitHub has content, to avoid
+        // a CDN-cached empty file wiping out real approved reviews.
+        if (combinedAdmin.length > 0) {
+          try {
+            localStorage.setItem('vk_admin_reviews', JSON.stringify(combinedAdmin));
+          } catch (e) {}
+        }
       }
     }
   } catch (e) {}
 
-  if (!hasAdminSource) {
+  // If GitHub gave us nothing (empty or network fail), try local cache
+  if (!hasAdminSource || combinedAdmin.length === 0) {
     const rawLocal = localStorage.getItem('vk_admin_reviews');
     if (rawLocal !== null) {
-      hasAdminSource = true;
       try {
         const parsed = JSON.parse(rawLocal);
-        if (Array.isArray(parsed)) combinedAdmin = parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          hasAdminSource = true;
+          combinedAdmin = parsed;
+        }
       } catch (e) {}
     }
   }

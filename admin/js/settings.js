@@ -487,12 +487,17 @@ const Settings = {
       if (typeof ImageDB !== 'undefined') {
         try { await ImageDB.clear(); } catch(e) {}
       }
+      // Force-seed: keys were removed so seed() will always write defaults
       DB.seed();
+      // Push the seeded data to GitHub so ALL devices get fresh defaults
+      // Wait briefly for seed to complete before pushing
+      setTimeout(async () => {
+        if (window.GithubSync) await GithubSync.push();
+      }, 300);
       UI.toast('Dashboard data reset successfully!', 'success');
       window.dispatchEvent(new Event('storage'));
       window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
       window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
-      if (window.GithubSync) GithubSync.push();
       App.navigate('dashboard');
     }, true);
   },
