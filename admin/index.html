@@ -196,29 +196,27 @@ const App = {
   _current: 'dashboard',
 
   async init() {
+    DB.seed();
+    if (!DB.auth.session.isValid()) {
+      Auth.renderLogin();
+      return;
+    }
     try {
-      DB.seed();
-      if (!DB.auth.session.isValid()) {
-        Auth.renderLogin();
-        return;
-      }
       if (typeof DB.loadRemoteData === 'function') {
         await DB.loadRemoteData();
       }
+    } catch (e) {}
+
+    try {
       this._renderShell();
       const hash = location.hash.slice(1) || 'dashboard';
       this.navigate(hash);
-      window.addEventListener('hashchange', () => this.navigate(location.hash.slice(1)));
     } catch (err) {
-      console.warn('App init cache recovery:', err);
-      try {
-        localStorage.clear();
-        DB.seed();
-        Auth.renderLogin();
-      } catch (e) {
-        console.error('Fatal admin render error:', e);
-      }
+      console.warn('Dashboard render recovery:', err);
+      localStorage.removeItem('vk_admin_session');
+      Auth.renderLogin();
     }
+    window.addEventListener('hashchange', () => this.navigate(location.hash.slice(1)));
   },
 
   _renderShell() {
