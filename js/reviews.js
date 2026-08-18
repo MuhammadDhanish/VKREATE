@@ -1,57 +1,115 @@
 /* ============================================================
-   VKREATE Architecture — Public Reviews Engine (Rebuilt)
+   VKREATE Architecture — Public Reviews Engine (Rebuilt & Robust)
    ============================================================ */
 
 (function () {
 
-  // 1. Helper to get all approved reviews
-  function getApprovedReviews() {
-    let reviews = [];
+  let activeFilter = 'all';
 
-    // 1. Try local storage (synced with admin & Firestore)
+  // 1. Unified Helper to get ALL Approved Reviews (Static Defaults + Admin Approved)
+  function getApprovedReviews() {
+    const reviewsMap = new Map();
+
+    // A. Seed from static datasets if available
+    const staticList = (window.VKREATE_DATA && Array.isArray(VKREATE_DATA.reviews)) ? VKREATE_DATA.reviews : [];
+    staticList.forEach(r => {
+      if (r && r.id) {
+        const isApp = r.status === 'approved' || !r.status;
+        if (isApp) reviewsMap.set(r.id, r);
+      }
+    });
+
+    // B. Merge / Override with localStorage (Admin DB & Client Submissions)
     try {
       const raw = localStorage.getItem('vk_admin_reviews');
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          reviews = parsed;
+        if (Array.isArray(parsed)) {
+          parsed.forEach(r => {
+            if (r && r.id) {
+              if (r.status === 'approved') {
+                reviewsMap.set(r.id, r);
+              } else if (r.status === 'pending' || r.status === 'rejected') {
+                // Exclude pending or rejected items from public view
+                reviewsMap.delete(r.id);
+              }
+            }
+          });
         }
       }
     } catch (e) {}
 
-    // 2. Fallback to static dataset if empty
-    if (!reviews.length && window.VKREATE_DATA && Array.isArray(VKREATE_DATA.reviews)) {
-      reviews = VKREATE_DATA.reviews;
-    }
+    // Check deleted review IDs blacklist
+    try {
+      const deletedIds = JSON.parse(localStorage.getItem('vk_admin_deleted_reviews')) || [];
+      if (Array.isArray(deletedIds) && deletedIds.length > 0) {
+        deletedIds.forEach(id => reviewsMap.delete(id));
+      }
+    } catch (e) {}
 
-    // Filter only approved reviews
-    return reviews.filter(r => r && (r.status === 'approved' || !r.status));
+    const list = Array.from(reviewsMap.values());
+
+    // Normalize property names & associate project names / industries
+    return list.map(r => {
+      let projName = r.projectName;
+      let ind = r.industry || 'general';
+
+      if (r.projectId && window.VKREATE_DATA && Array.isArray(VKREATE_DATA.projects)) {
+        const p = VKREATE_DATA.projects.find(pj => pj.id === r.projectId);
+        if (p) {
+          if (!projName) projName = p.name;
+          if (!ind || ind === 'general') ind = p.industry || 'general';
+        }
+      }
+
+      return {
+        id: r.id,
+        clientName: r.clientName || r.author || 'Client',
+        clientRole: r.clientRole || r.role || 'Client',
+        clientEmail: r.clientEmail || '',
+        rating: parseFloat(r.rating) || 5,
+        projectName: projName || r.projectName || '',
+        projectId: r.projectId || '',
+        industry: ind,
+        reviewText: r.reviewText || r.text || r.shortTestimonial || '',
+        studioResponse: r.studioResponse || '',
+        status: 'approved'
+      };
+    });
   }
 
-  // 2. Render Review Cards Grid
+  // 2. Render Review Cards Grid & Score Badges
   function renderReviewsGrid() {
     const grid = document.getElementById('reviews-grid');
     if (!grid) return;
 
-    const reviews = getApprovedReviews();
+    let reviews = getApprovedReviews();
+
+    // Calculate overall statistics across all approved reviews
+    const totalCount = reviews.length;
+    const avgRating = totalCount > 0 
+      ? (reviews.reduce((sum, r) => sum + (parseFloat(r.rating) || 5), 0) / totalCount).toFixed(1)
+      : '5.0';
+
+    // Update aggregate score card badges
+    const scoreVal = document.getElementById('agg-score-val');
+    const scoreCount = document.getElementById('agg-score-count');
+    if (scoreVal) scoreVal.textContent = avgRating;
+    if (scoreCount) scoreCount.textContent = `Based on ${totalCount} verified client review${totalCount !== 1 ? 's' : ''}`;
+
+    // Apply category industry filter
+    if (activeFilter !== 'all') {
+      reviews = reviews.filter(r => r.industry === activeFilter || r.industry?.includes(activeFilter));
+    }
 
     if (!reviews.length) {
       grid.innerHTML = `
         <div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--text-muted)">
-          <div style="font-size:2rem;margin-bottom:8px">⭐</div>
-          <p>No client reviews published yet.</p>
+          <div style="font-size:2.5rem;margin-bottom:8px">⭐</div>
+          <p style="font-size:1rem;color:var(--text-body)">No reviews published in this category yet.</p>
         </div>`;
       return;
     }
-
-    // Calculate score
-    const avgRating = (reviews.reduce((sum, r) => sum + (parseFloat(r.rating) || 5), 0) / reviews.length).toFixed(1);
-    
-    // Update score badge on page if present
-    const scoreVal = document.getElementById('agg-score-val');
-    const scoreCount = document.getElementById('agg-score-count');
-    if (scoreVal) scoreVal.textContent = avgRating;
-    if (scoreCount) scoreCount.textContent = `(${reviews.length} Client Review${reviews.length !== 1 ? 's' : ''})`;
 
     grid.innerHTML = '';
     reviews.forEach((r, idx) => {
@@ -60,7 +118,7 @@
       card.style.animationDelay = `${idx * 0.05}s`;
 
       const starsHTML = Array.from({ length: 5 }, (_, i) => 
-        `<span class="star" style="color:${i < (r.rating || 5) ? '#f59e0b' : '#d1d5db'}">★</span>`
+        `<span class="star" style="color:${i < (r.rating || 5) ? '#f59e0b' : '#d1d5db'};font-size:1.1rem">★</span>`
       ).join('');
 
       const initials = (r.clientName || 'C').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
@@ -71,8 +129,8 @@
             ${initials}
           </div>
           <div>
-            <h4 class="review-card__name" style="font-weight:700;margin:0">${escapeHTML(r.clientName || 'Anonymous Client')}</h4>
-            <div class="review-card__role" style="font-size:0.8rem;color:var(--text-body);margin-top:2px">${escapeHTML(r.clientRole || 'Client')}</div>
+            <h4 class="review-card__name" style="font-weight:700;margin:0;font-size:1.05rem;color:var(--charcoal)">${escapeHTML(r.clientName)}</h4>
+            <div class="review-card__role" style="font-size:0.8rem;color:var(--text-body);margin-top:2px">${escapeHTML(r.clientRole)}</div>
           </div>
         </div>
 
@@ -85,8 +143,8 @@
             🏷️ ${escapeHTML(r.projectName)}
           </div>` : ''}
 
-        <blockquote class="review-card__quote" style="font-size:0.925rem;line-height:1.6;color:var(--charcoal);margin:0 0 12px 0">
-          "${escapeHTML(r.reviewText || r.shortTestimonial || '')}"
+        <blockquote class="review-card__quote" style="font-size:0.925rem;line-height:1.6;color:var(--charcoal);margin:0 0 12px 0;font-style:italic">
+          "${escapeHTML(r.reviewText)}"
         </blockquote>
 
         ${r.studioResponse ? `
@@ -100,7 +158,28 @@
     });
   }
 
-  // 3. Client Review Submission Modal Handler
+  // 3. Category Filter Buttons Listener
+  function initFilterButtons() {
+    const filterBtns = document.querySelectorAll('#reviews-filters .filter-btn');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter || 'all';
+        renderReviewsGrid();
+      });
+    });
+
+    const mobileSelect = document.getElementById('reviews-filter-select');
+    if (mobileSelect) {
+      mobileSelect.addEventListener('change', (e) => {
+        activeFilter = e.target.value || 'all';
+        renderReviewsGrid();
+      });
+    }
+  }
+
+  // 4. Client Review Submission Modal Handler
   function initReviewModal() {
     const closeBtn = document.getElementById('close-pub-review-btn');
     const form = document.getElementById('pub-review-form');
@@ -224,6 +303,7 @@
 
   function boot() {
     renderReviewsGrid();
+    initFilterButtons();
     initReviewModal();
   }
 
