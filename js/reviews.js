@@ -114,7 +114,7 @@
     grid.innerHTML = '';
     reviews.forEach((r, idx) => {
       const card = document.createElement('article');
-      card.className = 'review-card reveal';
+      card.className = 'review-card reveal visible';
       card.style.animationDelay = `${idx * 0.05}s`;
 
       const starsHTML = Array.from({ length: 5 }, (_, i) => 
