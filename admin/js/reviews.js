@@ -29,7 +29,7 @@ const Reviews = {
         ${['all','pending','approved','rejected'].map(s => `
           <button class="btn ${this._filter.status===s ? 'btn-primary' : 'btn-ghost'} btn-sm"
             style="${this._filter.status===s ? '' : 'color:var(--text-3)'}"
-            onclick="Reviews._filter.status='${s}';Reviews._refresh()">
+            onclick="Reviews.setTab('${s}')">
             ${s.charAt(0).toUpperCase() + s.slice(1)}
             ${s === 'pending' && stats.pending ? `<span class="nav-item__badge" style="position:static;display:inline-block;margin-left:6px;background:#eab308;color:#000">${stats.pending}</span>` : ''}
           </button>`).join('')}
@@ -54,7 +54,7 @@ const Reviews = {
             <div class="text-xs" style="color:#a16207">Client reviews are held in pending status until you approve them for the live website.</div>
           </div>
           <button class="btn btn-warning btn-sm ml-auto" style="background:#eab308;color:#000;border:none;font-weight:600"
-            onclick="Reviews._filter.status='pending';Reviews._refresh()">Review Pending (${stats.pending})</button>
+            onclick="Reviews.setTab('pending')">Review Pending (${stats.pending})</button>
         </div>` : ''}
 
       <!-- Reviews Grid -->
@@ -62,6 +62,11 @@ const Reviews = {
     `;
 
     this._refresh();
+  },
+
+  setTab(s) {
+    this._filter.status = s;
+    this.render();
   },
 
   _filtered() {
