@@ -840,15 +840,6 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
   let combinedAdmin = [];
   let hasAdminSource = false;
 
-  const rawLocal = localStorage.getItem('vk_admin_reviews');
-  if (rawLocal !== null) {
-    hasAdminSource = true;
-    try {
-      const parsed = JSON.parse(rawLocal);
-      if (Array.isArray(parsed)) combinedAdmin = parsed;
-    } catch (e) {}
-  }
-
   try {
     const res = await fetch('js/admin-reviews.json?t=' + Date.now());
     if (res.ok) {
@@ -856,18 +847,24 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
       if (Array.isArray(remoteReviews)) {
         hasAdminSource = true;
         const deletedIds = getDeletedReviewIds();
-        const map = new Map();
-        // Priority to remote reviews from GitHub
-        remoteReviews.forEach(r => {
-          if (!isDeletedReview(r, deletedIds)) map.set(r.id, r);
-        });
-        combinedAdmin.forEach(r => {
-          if (!map.has(r.id) && !isDeletedReview(r, deletedIds)) map.set(r.id, r);
-        });
-        combinedAdmin = Array.from(map.values());
+        combinedAdmin = remoteReviews.filter(r => !isDeletedReview(r, deletedIds));
+        try {
+          localStorage.setItem('vk_admin_reviews', JSON.stringify(combinedAdmin));
+        } catch (e) {}
       }
     }
   } catch (e) {}
+
+  if (!hasAdminSource) {
+    const rawLocal = localStorage.getItem('vk_admin_reviews');
+    if (rawLocal !== null) {
+      hasAdminSource = true;
+      try {
+        const parsed = JSON.parse(rawLocal);
+        if (Array.isArray(parsed)) combinedAdmin = parsed;
+      } catch (e) {}
+    }
+  }
 
   applyAdminReviews(combinedAdmin, hasAdminSource);
   window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));

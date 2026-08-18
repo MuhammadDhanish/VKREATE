@@ -132,9 +132,7 @@
     // Initial render
     const doInitialRender = () => {
       const list = getReviewsData();
-      if (list && list.length) {
-        renderReviews(list);
-      }
+      renderReviews(list || []);
     };
 
     doInitialRender();

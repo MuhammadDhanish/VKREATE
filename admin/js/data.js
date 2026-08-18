@@ -593,16 +593,9 @@ const DB = {
       const projRes = await fetch('../js/admin-projects.json?t=' + Date.now());
       if (projRes.ok) {
         const remoteProjects = await projRes.json();
-        if (Array.isArray(remoteProjects) && remoteProjects.length > 0) {
-          const local = DB._get(DB.KEYS.projects) || [];
+        if (Array.isArray(remoteProjects)) {
           const filteredRemote = remoteProjects.filter(p => !deletedProjects.includes(p.id));
-          const mergedMap = new Map();
-          // Remote GitHub data takes priority over stale local items
-          filteredRemote.forEach(p => mergedMap.set(p.id, p));
-          local.filter(p => !deletedProjects.includes(p.id)).forEach(p => {
-            if (!mergedMap.has(p.id)) mergedMap.set(p.id, p);
-          });
-          DB._set(DB.KEYS.projects, Array.from(mergedMap.values()));
+          DB._set(DB.KEYS.projects, filteredRemote);
           updated = true;
         }
       }
@@ -614,15 +607,8 @@ const DB = {
       if (revRes.ok) {
         const remoteReviews = await revRes.json();
         if (Array.isArray(remoteReviews)) {
-          const local = DB._get(DB.KEYS.reviews) || [];
           const filteredRemote = remoteReviews.filter(r => !deletedReviews.includes(r.id));
-          const mergedMap = new Map();
-          // Remote GitHub reviews take priority
-          filteredRemote.forEach(r => mergedMap.set(r.id, r));
-          local.filter(r => !deletedReviews.includes(r.id)).forEach(r => {
-            if (!mergedMap.has(r.id)) mergedMap.set(r.id, r);
-          });
-          DB._set(DB.KEYS.reviews, Array.from(mergedMap.values()));
+          DB._set(DB.KEYS.reviews, filteredRemote);
           updated = true;
         }
       }
@@ -634,15 +620,8 @@ const DB = {
       if (inqRes.ok) {
         const remoteInquiries = await inqRes.json();
         if (Array.isArray(remoteInquiries)) {
-          const local = DB._get(DB.KEYS.inquiries) || [];
           const filteredRemote = remoteInquiries.filter(i => !deletedInquiries.includes(i.id));
-          const mergedMap = new Map();
-          // Remote GitHub inquiries take priority
-          filteredRemote.forEach(i => mergedMap.set(i.id, i));
-          local.filter(i => !deletedInquiries.includes(i.id)).forEach(i => {
-            if (!mergedMap.has(i.id)) mergedMap.set(i.id, i);
-          });
-          DB._set(DB.KEYS.inquiries, Array.from(mergedMap.values()));
+          DB._set(DB.KEYS.inquiries, filteredRemote);
           updated = true;
         }
       }
