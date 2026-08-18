@@ -8,7 +8,6 @@ const Dashboard = {
     const projects  = DB.projects.all();
     const revStats  = DB.reviews.stats();
     const inqStats  = DB.inquiries.stats();
-    const analytics = DB.analytics.summary();
     const recent    = this._recentActivity();
 
     const content = document.getElementById('main-content');
@@ -22,9 +21,6 @@ const Dashboard = {
           <button class="btn btn-outline btn-sm" onclick="Settings.resetData()" title="Reset stale dashboard data">
             🔄 Reset Dashboard
           </button>
-          <button class="btn btn-outline btn-sm" onclick="App.navigate('analytics')">
-            ${UI.icon('chart')} View Analytics
-          </button>
           <button class="btn btn-primary btn-sm" onclick="App.navigate('projects-add')">
             ${UI.icon('plus')} New Project
           </button>
@@ -35,7 +31,6 @@ const Dashboard = {
       <div class="stats-grid">
         ${this._statCard('Total Projects', projects.length, '🏗️', '#EFF6FF', revStats.total > 0 ? '+' + projects.length + ' total' : '', 'neutral', 'Projects in portfolio')}
         ${this._statCard('Pending Reviews', revStats.pending, '⏳', '#FFFBEB', revStats.pending > 0 ? 'Action needed' : 'All clear', revStats.pending > 0 ? 'down' : 'up', 'Awaiting your approval')}
-        ${this._statCard('Monthly Visitors', analytics.visitors30.toLocaleString(), '👁', '#F0FDF4', '+12% vs last month', 'up', 'Unique website visitors')}
         ${this._statCard('Open Inquiries', inqStats.new + inqStats.contacted, '📬', '#FFF7ED', inqStats.won + ' won this month', 'up', 'Leads in pipeline')}
       </div>
 
@@ -46,7 +41,6 @@ const Dashboard = {
           ${this._quickCard('➕', 'Add Project', 'Upload a new portfolio project', 'projects-add', '#EFF6FF')}
           ${this._quickCard('⭐', 'Review Queue', revStats.pending + ' pending approval', 'reviews', '#FFFBEB')}
           ${this._quickCard('📬', 'Inquiries', inqStats.new + ' new messages', 'inquiries', '#F0FDF4')}
-          ${this._quickCard('📊', 'Analytics', 'View traffic & engagement', 'analytics', '#FFF7ED')}
         </div>
       </div>
 
@@ -93,15 +87,13 @@ const Dashboard = {
           <div class="table-wrap">
             <table>
               <thead><tr>
-                <th>Project</th><th>Status</th><th>Views</th><th>Leads</th>
+                <th>Project</th><th>Status</th>
               </tr></thead>
               <tbody>
                 ${projects.slice(0,5).map(p => `
                   <tr>
                     <td class="td-name">${p.name}</td>
                     <td>${UI.badge(p.status)}</td>
-                    <td>${(p.views||0).toLocaleString()}</td>
-                    <td>${p.leads||0}</td>
                   </tr>`).join('')}
               </tbody>
             </table>

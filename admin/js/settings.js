@@ -481,7 +481,7 @@ const Settings = {
   resetData() {
     UI.confirm('Reset Dashboard & Data', 'This will erase all custom modifications, clear test reviews/activity, and restore default demo content. Are you sure?', '⚠️', async () => {
       [
-        DB.KEYS.projects, DB.KEYS.reviews, DB.KEYS.inquiries, DB.KEYS.analytics,
+        DB.KEYS.projects, DB.KEYS.reviews, DB.KEYS.inquiries,
         DB.KEYS.deletedProjects, DB.KEYS.deletedReviews, DB.KEYS.deletedInquiries
       ].forEach(k => localStorage.removeItem(k));
       if (typeof ImageDB !== 'undefined') {

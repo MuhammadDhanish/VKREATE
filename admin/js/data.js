@@ -10,7 +10,6 @@ const DB = {
     reviews:           'vk_admin_reviews',
     inquiries:         'vk_admin_inquiries',
     settings:          'vk_admin_settings',
-    analytics:         'vk_admin_analytics',
     session:           'vk_admin_session',
     deletedProjects:   'vk_admin_deleted_projects',
     deletedReviews:    'vk_admin_deleted_reviews',
@@ -67,7 +66,6 @@ const DB = {
         testimonial: { author: 'Unnikrishnan Nair', role: 'Founder & Owner, Lilaa Hospitality', text: 'VKREATE captured our brand\'s warmth and sophistication in every detail.', rating: 5 },
         metrics: { sqft: '2500', seatingCapacity: 85, timeline: '4 months' },
         tags: ['restaurant','dining','premium'],
-        views: 1240, clicks: 387, leads: 12,
         createdAt: '2025-06-15T10:00:00Z',
         updatedAt: '2025-07-01T08:30:00Z',
       },
@@ -91,7 +89,6 @@ const DB = {
         testimonial: { author: 'Dr. Reshma Menon', role: 'Salon Director, Wings Wellness', text: 'Our clients feel like they\'re stepping into a 5-star spa retreat.', rating: 5 },
         metrics: { sqft: '2200', pods: 6, timeline: '3 months' },
         tags: ['salon','beauty','wellness'],
-        views: 890, clicks: 241, leads: 8,
         createdAt: '2025-04-10T09:00:00Z',
         updatedAt: '2025-05-20T11:00:00Z',
       },
@@ -115,7 +112,6 @@ const DB = {
         testimonial: { author: 'Faisal Rahman', role: 'Brand Manager, Wings Retail', text: 'The design makes our jewellery the hero.', rating: 5 },
         metrics: { sqft: '1800', footTraffic: '+40%', timeline: '2 months' },
         tags: ['retail','jewellery','showroom'],
-        views: 760, clicks: 198, leads: 6,
         createdAt: '2025-02-14T10:00:00Z',
         updatedAt: '2025-03-01T09:00:00Z',
       },
@@ -139,7 +135,6 @@ const DB = {
         testimonial: { author: 'Sameer Varma', role: 'Corporate Director, Apex Zenith', text: 'First impressions matter immensely in corporate business.', rating: 5 },
         metrics: { sqft: '2900', satisfaction: '98%', timeline: '2.5 months' },
         tags: ['office','corporate','lounge'],
-        views: 620, clicks: 154, leads: 5,
         createdAt: '2025-01-20T11:00:00Z',
         updatedAt: '2025-02-05T14:00:00Z',
       },
@@ -387,20 +382,6 @@ const DB = {
         passwordHash: 'Admin@123', // plain for demo
       }
     });
-
-    // Analytics (mock time-series)
-    const days = [];
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      days.push({
-        date: d.toISOString().split('T')[0],
-        visitors: Math.floor(40 + Math.random() * 80),
-        pageViews: Math.floor(100 + Math.random() * 200),
-        inquiries: Math.floor(Math.random() * 4),
-      });
-    }
-    this._set(this.KEYS.analytics, { days });
   },
 
   // ── Projects CRUD ─────────────────────────────────────────
@@ -539,25 +520,6 @@ const DB = {
     get()       { return DB._get(DB.KEYS.settings) || {}; },
     save(data)  { DB._set(DB.KEYS.settings, data); },
     update(key, val) { const s = this.get(); s[key] = { ...s[key], ...val }; this.save(s); },
-  },
-
-  // ── Analytics ─────────────────────────────────────────────
-  analytics: {
-    get() { return DB._get(DB.KEYS.analytics) || { days: [] }; },
-    last(n) {
-      const days = this.get().days;
-      return days.slice(-n);
-    },
-    summary() {
-      const days30 = this.last(30);
-      const days7  = this.last(7);
-      return {
-        visitors30: days30.reduce((s,d) => s + d.visitors, 0),
-        visitors7:  days7.reduce((s,d) => s + d.visitors, 0),
-        pageViews30: days30.reduce((s,d) => s + d.pageViews, 0),
-        inquiries30: days30.reduce((s,d) => s + d.inquiries, 0),
-      };
-    },
   },
 
   // ── Auth ─────────────────────────────────────────────────

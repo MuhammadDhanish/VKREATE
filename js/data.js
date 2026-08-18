@@ -844,7 +844,8 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
   }
 })();
 
-(async function loadRemoteAdminReviews() {
+// ── Named re-fetchable remote reviews loader ─────────────────
+async function loadRemoteAdminReviews() {
   let combinedAdmin = [];
   let hasAdminSource = false;
 
@@ -883,20 +884,41 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
 
   applyAdminReviews(combinedAdmin, hasAdminSource);
   window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+}
+
+// Initial load on page start
+loadRemoteAdminReviews();
+
+// ── Re-fetch on tab focus / visibility (fixes desktop not updating after admin approval) ──
+(function setupReviewsRefresh() {
+  let _refreshTimer = null;
+
+  function _scheduleRefresh() {
+    if (_refreshTimer) clearTimeout(_refreshTimer);
+    _refreshTimer = setTimeout(function () {
+      loadRemoteAdminReviews();
+      _refreshTimer = null;
+    }, 300); // debounce rapid focus events
+  }
+
+  // Re-fetch whenever the browser tab/window becomes visible again
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') {
+      _scheduleRefresh();
+    }
+  });
+
+  // Re-fetch when the window gets focus (e.g. user switches back from admin panel)
+  window.addEventListener('focus', _scheduleRefresh);
+
+  // Periodic poll every 90 seconds so reviews stay fresh even if the tab stays open
+  setInterval(loadRemoteAdminReviews, 90000);
 })();
 
-window.addEventListener('storage', (e) => {
+window.addEventListener('storage', function (e) {
   if (!e || !e.key || e.key === 'vk_admin_reviews' || e.key === 'vk_admin_deleted_reviews') {
-    try {
-      const rawLocal = localStorage.getItem('vk_admin_reviews');
-      if (rawLocal !== null) {
-        const parsed = JSON.parse(rawLocal);
-        if (Array.isArray(parsed)) {
-          applyAdminReviews(parsed, true);
-          window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
-        }
-      }
-    } catch (err) {}
+    // Re-fetch from GitHub first so we always have the latest approved status
+    loadRemoteAdminReviews();
   }
 });
 

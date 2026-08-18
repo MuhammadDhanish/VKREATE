@@ -397,6 +397,15 @@
     align-items: center;
     justify-content: center;
   }
+  /* Hide text logo on mobile — only show the image logo to avoid duplication */
+  .nav__logo-text-wrap,
+  .nav__logo > div:not(.nav__logo-text-wrap) {
+    display: none !important;
+  }
+  .nav__logo-name,
+  .nav__logo-tagline {
+    display: none !important;
+  }
   .nav__mobile {
     display: flex;
     position: fixed;

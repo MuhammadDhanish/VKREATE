@@ -146,8 +146,10 @@
 
     // Dynamic re-render listeners for approved reviews & window resize
     window.addEventListener('resize', () => renderReviews(getReviewsData()));
+    // vkreate:reviews-updated fires after data.js async-fetches latest reviews from GitHub
+    // (do NOT use the raw storage event here — it fires before the async fetch completes,
+    //  so VKREATE_DATA.reviews would still be stale at that point)
     window.addEventListener('vkreate:reviews-updated', () => renderReviews(getReviewsData()));
-    window.addEventListener('storage', () => renderReviews(getReviewsData()));
 
     // Filter (Desktop buttons)
     filterBtns.forEach(btn => {
