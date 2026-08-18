@@ -354,6 +354,10 @@
     </div>
   </main>
 
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
   <script>
     let currentPane = 1;
 
@@ -475,6 +479,10 @@
         };
 
         currentInquiries.unshift(newInquiry);
+
+        if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
+          FirebaseDB.db.collection('inquiries').doc(newInquiry.id).set(newInquiry).catch(e => console.warn('Inquiry Firestore sync error:', e));
+        }
 
         try {
           localStorage.setItem('vk_admin_inquiries', JSON.stringify(currentInquiries));

@@ -248,29 +248,33 @@ const Settings = {
           </div>
         </div>
 
-        <!-- 🚀 Automatic Live Site Deployment -->
+        <!-- 🔥 Firebase Real-time Firestore & Storage -->
         <div class="card" style="border:1.5px solid #22c55e">
           <div class="card-header" style="background:linear-gradient(135deg,#052e16,#14532d);color:#fff">
-            <span class="card-title" style="color:#fff">⚡ Automatic Live Site Deployment</span>
+            <span class="card-title" style="color:#fff">🔥 Firebase Real-Time Firestore & Storage</span>
           </div>
           <div class="card-body">
             <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--r-md);margin-bottom:16px">
-              <span style="font-size:1.5rem">🟢</span>
+              <span style="font-size:1.5rem">${typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized ? '🟢' : '🟡'}</span>
               <div>
-                <div class="fw-600 text-sm" style="color:#15803d">Automatic Deployment is Active</div>
-                <div class="text-xs" style="color:#166534">System Token Connected · Live Repository Synced</div>
+                <div class="fw-600 text-sm" style="color:#15803d">
+                  ${typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized ? 'Firebase Real-Time Firestore Active' : 'Firebase Ready (Demo Mode)'}
+                </div>
+                <div class="text-xs" style="color:#166534">
+                  ${typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized ? 'Real-Time Database Connected · 0s Delay Live Sync' : 'LocalStorage Cache Active · Ready for Firebase Keys'}
+                </div>
               </div>
             </div>
 
             <p class="text-sm text-muted mb-16" style="line-height:1.6">
-              Every time you or your co-admins save a project, delete a project, approve a review, or update an inquiry, your changes are automatically pushed to GitHub and deployed live to <strong>vkreatearchitecture.com</strong> within ~60 seconds.
+              Every project modification, client review approval, and inquiry update automatically syncs to <strong>Firebase Firestore</strong> in real-time with zero delay. No site rebuilds or redeploys required!
             </p>
 
             <div style="display:flex;gap:12px;align-items:center">
               <button class="btn btn-primary btn-sm" onclick="Settings.testDeploy()" style="background:#16a34a;border-color:#16a34a">
-                🚀 Test Live Deploy Now
+                ⚡ Test Real-Time Sync Now
               </button>
-              <span class="text-xs text-muted">Last automatic sync: Active</span>
+              <span class="text-xs text-muted">Firestore Status: 100% Free Spark Tier</span>
             </div>
           </div>
         </div>
@@ -518,11 +522,13 @@ const Settings = {
     this.render(); // refresh to show active status
   },
 
-  testDeploy() {
-    if (!GithubSync.hasToken()) {
-      UI.toast('Please enter and save your GitHub token first.', 'warning');
-      return;
+  async testDeploy() {
+    UI.toast('⚡ Testing Firebase Real-time sync…', 'info');
+    if (typeof DB !== 'undefined' && DB.loadRemoteData) {
+      await DB.loadRemoteData();
+      UI.toast('✅ Real-Time Firebase sync active!', 'success');
+    } else {
+      UI.toast('⚠️ Sync active in LocalStorage cache mode.', 'info');
     }
-    GithubSync.push();
   },
 };

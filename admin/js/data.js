@@ -388,6 +388,37 @@ const DB = {
     });
   },
 
+  // ── Firebase Integration Helpers ───────────────────────────
+  _syncFirebase(collection, docId, data, action = 'set') {
+    if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
+      try {
+        const ref = FirebaseDB.db.collection(collection).doc(docId);
+        if (action === 'delete') {
+          ref.delete().catch(err => console.warn('Firebase delete error:', err));
+        } else {
+          ref.set(data, { merge: true }).catch(err => console.warn('Firebase sync error:', err));
+        }
+      } catch (e) {
+        console.warn('Firebase operation error:', e);
+      }
+    }
+  },
+
+  async uploadImage(file) {
+    if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.storage) {
+      try {
+        const filename = `projects/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const ref = FirebaseDB.storage.ref(filename);
+        const snapshot = await ref.put(file);
+        const url = await snapshot.ref.getDownloadURL();
+        return url;
+      } catch (e) {
+        console.error('Firebase Storage upload failed:', e);
+      }
+    }
+    return null;
+  },
+
   // ── Projects CRUD ─────────────────────────────────────────
   projects: {
     all() {
@@ -421,6 +452,7 @@ const DB = {
       l.unshift(p);
       const ok = DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
       if (!ok) return null;
+      DB._syncFirebase('projects', p.id, p, 'set');
       return p;
     },
     update(id, data) {
@@ -430,6 +462,7 @@ const DB = {
       l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
       const ok = DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
       if (!ok) return null;
+      DB._syncFirebase('projects', id, l[i], 'set');
       return l[i];
     },
     delete(id)  {
@@ -437,6 +470,7 @@ const DB = {
       DB._addDeleted(DB.KEYS.deletedProjects, id);
       if (p && p.name) DB._addDeleted(DB.KEYS.deletedProjects, 'name:' + p.name.toLowerCase().trim());
       this.save(this.all().filter(p => p && p.id !== id));
+      DB._syncFirebase('projects', id, null, 'delete');
     },
     published() { return this.all().filter(p => p && p.status === 'published'); },
     drafts()    { return this.all().filter(p => p && p.status === 'draft'); },
@@ -464,13 +498,24 @@ const DB = {
     },
     get(id)     { return this.all().find(r => r && r.id === id) || null; },
     save(list)  { DB._set(DB.KEYS.reviews, list); },
-    add(r)      { const l = this.all(); r.id = DB._id(); r.createdAt = new Date().toISOString(); r.status = 'pending'; l.unshift(r); this.save(l); return r; },
+    add(r)      {
+      const l = this.all();
+      r.id = DB._id();
+      r.createdAt = new Date().toISOString();
+      r.status = 'pending';
+      l.unshift(r);
+      this.save(l);
+      DB._syncFirebase('reviews', r.id, r, 'set');
+      return r;
+    },
     update(id, data) {
       const l = this.all();
       const i = l.findIndex(r => r && r.id === id);
       if (i < 0) return null;
       l[i] = { ...l[i], ...data };
-      this.save(l); return l[i];
+      this.save(l);
+      DB._syncFirebase('reviews', id, l[i], 'set');
+      return l[i];
     },
     approve(id) { return this.update(id, { status: 'approved', approvedAt: new Date().toISOString() }); },
     reject(id)  { return this.update(id, { status: 'rejected' }); },
@@ -483,6 +528,7 @@ const DB = {
         if (r.projectId) DB._addDeleted(DB.KEYS.deletedReviews, 'proj:' + r.projectId);
       }
       this.save(this.all().filter(r => r && r.id !== id));
+      DB._syncFirebase('reviews', id, null, 'delete');
     },
     pending()   { return this.all().filter(r => r && r.status === 'pending'); },
     approved()  { return this.all().filter(r => r && r.status === 'approved'); },
@@ -507,17 +553,29 @@ const DB = {
     },
     get(id)     { return this.all().find(i => i.id === id) || null; },
     save(list)  { DB._set(DB.KEYS.inquiries, list); },
-    add(item)   { const l = this.all(); item.id = DB._id(); item.createdAt = new Date().toISOString(); item.status = 'new'; l.unshift(item); this.save(l); return item; },
+    add(item)   {
+      const l = this.all();
+      item.id = DB._id();
+      item.createdAt = new Date().toISOString();
+      item.status = 'new';
+      l.unshift(item);
+      this.save(l);
+      DB._syncFirebase('inquiries', item.id, item, 'set');
+      return item;
+    },
     update(id, data) {
       const l = this.all();
       const i = l.findIndex(x => x.id === id);
       if (i < 0) return null;
       l[i] = { ...l[i], ...data };
-      this.save(l); return l[i];
+      this.save(l);
+      DB._syncFirebase('inquiries', id, l[i], 'set');
+      return l[i];
     },
     delete(id)  {
       DB._addDeleted(DB.KEYS.deletedInquiries, id);
       this.save(this.all().filter(i => i.id !== id));
+      DB._syncFirebase('inquiries', id, null, 'delete');
     },
     byStatus(s) { return this.all().filter(i => i.status === s); },
     stats() {
@@ -559,7 +617,7 @@ const DB = {
     },
   },
 
-  // ── Remote Sync Engine (pulls GitHub JSON files for cross-admin sync) ──
+  // ── Remote Sync Engine (Firebase Firestore & JSON Fallback) ──
   async loadRemoteData() {
     const deletedProjects = DB._getDeleted(DB.KEYS.deletedProjects);
     const deletedReviews = DB._getDeleted(DB.KEYS.deletedReviews);
@@ -567,6 +625,47 @@ const DB = {
 
     let updated = false;
 
+    // 1. Try fetching from Firebase Firestore first if active
+    if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
+      try {
+        const projSnap = await FirebaseDB.db.collection('projects').get();
+        if (!projSnap.empty) {
+          const remoteProjects = [];
+          projSnap.forEach(doc => remoteProjects.push(doc.data()));
+          const filteredRemote = remoteProjects.filter(p => p && p.id && !deletedProjects.includes(p.id));
+          if (filteredRemote.length > 0) {
+            DB._set(DB.KEYS.projects, filteredRemote);
+            updated = true;
+          }
+        }
+      } catch (e) {
+        console.warn("Firestore fetch error for projects:", e);
+      }
+
+      try {
+        const revSnap = await FirebaseDB.db.collection('reviews').get();
+        if (!revSnap.empty) {
+          const remoteReviews = [];
+          revSnap.forEach(doc => remoteReviews.push(doc.data()));
+          const filteredRemote = remoteReviews.filter(r => r && r.id && !deletedReviews.includes(r.id));
+          if (filteredRemote.length > 0) {
+            DB._set(DB.KEYS.reviews, filteredRemote);
+            updated = true;
+          }
+        }
+      } catch (e) {
+        console.warn("Firestore fetch error for reviews:", e);
+      }
+
+      if (updated) {
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+        window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
+        return;
+      }
+    }
+
+    // 2. Fallback to static JSON files
     try {
       // 1. Projects
       const projRes = await fetch('../js/admin-projects.json?t=' + Date.now());
