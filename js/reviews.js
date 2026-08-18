@@ -27,7 +27,7 @@
         if (Array.isArray(parsed)) {
           parsed.forEach(r => {
             if (r && r.id) {
-              if (r.status === 'approved') {
+              if (r.status === 'approved' || (!r.status && r.verified !== false)) {
                 reviewsMap.set(r.id, r);
               } else if (r.status === 'pending' || r.status === 'rejected') {
                 // Exclude pending or rejected items from public view
