@@ -586,24 +586,24 @@ const DB = {
     const deletedReviews = DB._getDeleted(DB.KEYS.deletedReviews);
     const deletedInquiries = DB._getDeleted(DB.KEYS.deletedInquiries);
 
+    let updated = false;
+
     try {
       // 1. Projects
       const projRes = await fetch('../js/admin-projects.json?t=' + Date.now());
       if (projRes.ok) {
         const remoteProjects = await projRes.json();
         if (Array.isArray(remoteProjects) && remoteProjects.length > 0) {
-          const local = DB._get(DB.KEYS.projects);
+          const local = DB._get(DB.KEYS.projects) || [];
           const filteredRemote = remoteProjects.filter(p => !deletedProjects.includes(p.id));
-          if (!local) {
-            DB._set(DB.KEYS.projects, filteredRemote);
-          } else {
-            const mergedMap = new Map();
-            local.filter(p => !deletedProjects.includes(p.id)).forEach(p => mergedMap.set(p.id, p));
-            filteredRemote.forEach(p => {
-              if (!mergedMap.has(p.id)) mergedMap.set(p.id, p);
-            });
-            DB._set(DB.KEYS.projects, Array.from(mergedMap.values()));
-          }
+          const mergedMap = new Map();
+          // Remote GitHub data takes priority over stale local items
+          filteredRemote.forEach(p => mergedMap.set(p.id, p));
+          local.filter(p => !deletedProjects.includes(p.id)).forEach(p => {
+            if (!mergedMap.has(p.id)) mergedMap.set(p.id, p);
+          });
+          DB._set(DB.KEYS.projects, Array.from(mergedMap.values()));
+          updated = true;
         }
       }
     } catch (e) {}
@@ -614,20 +614,16 @@ const DB = {
       if (revRes.ok) {
         const remoteReviews = await revRes.json();
         if (Array.isArray(remoteReviews)) {
-          const local = DB._get(DB.KEYS.reviews);
+          const local = DB._get(DB.KEYS.reviews) || [];
           const filteredRemote = remoteReviews.filter(r => !deletedReviews.includes(r.id));
-          if (!local) {
-            DB._set(DB.KEYS.reviews, filteredRemote);
-          } else {
-            const mergedMap = new Map();
-            local.filter(r => !deletedReviews.includes(r.id)).forEach(r => mergedMap.set(r.id, r));
-            if (local.length > 0) {
-              filteredRemote.forEach(r => {
-                if (!mergedMap.has(r.id)) mergedMap.set(r.id, r);
-              });
-            }
-            DB._set(DB.KEYS.reviews, Array.from(mergedMap.values()));
-          }
+          const mergedMap = new Map();
+          // Remote GitHub reviews take priority
+          filteredRemote.forEach(r => mergedMap.set(r.id, r));
+          local.filter(r => !deletedReviews.includes(r.id)).forEach(r => {
+            if (!mergedMap.has(r.id)) mergedMap.set(r.id, r);
+          });
+          DB._set(DB.KEYS.reviews, Array.from(mergedMap.values()));
+          updated = true;
         }
       }
     } catch (e) {}
@@ -637,22 +633,26 @@ const DB = {
       const inqRes = await fetch('../js/admin-inquiries.json?t=' + Date.now());
       if (inqRes.ok) {
         const remoteInquiries = await inqRes.json();
-        if (Array.isArray(remoteInquiries) && remoteInquiries.length > 0) {
-          const local = DB._get(DB.KEYS.inquiries);
+        if (Array.isArray(remoteInquiries)) {
+          const local = DB._get(DB.KEYS.inquiries) || [];
           const filteredRemote = remoteInquiries.filter(i => !deletedInquiries.includes(i.id));
-          if (!local) {
-            DB._set(DB.KEYS.inquiries, filteredRemote);
-          } else {
-            const mergedMap = new Map();
-            local.filter(i => !deletedInquiries.includes(i.id)).forEach(i => mergedMap.set(i.id, i));
-            filteredRemote.forEach(i => {
-              if (!mergedMap.has(i.id)) mergedMap.set(i.id, i);
-            });
-            DB._set(DB.KEYS.inquiries, Array.from(mergedMap.values()));
-          }
+          const mergedMap = new Map();
+          // Remote GitHub inquiries take priority
+          filteredRemote.forEach(i => mergedMap.set(i.id, i));
+          local.filter(i => !deletedInquiries.includes(i.id)).forEach(i => {
+            if (!mergedMap.has(i.id)) mergedMap.set(i.id, i);
+          });
+          DB._set(DB.KEYS.inquiries, Array.from(mergedMap.values()));
+          updated = true;
         }
       }
     } catch (e) {}
+
+    if (updated) {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+      window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
+    }
   },
 };
 
@@ -660,4 +660,19 @@ const DB = {
   if (typeof DB !== 'undefined' && DB.loadRemoteData) {
     await DB.loadRemoteData();
   }
+
+  // Refresh when window/tab is focused or shown on phone/desktop
+  const handleFocus = async () => {
+    if (typeof DB !== 'undefined' && DB.loadRemoteData) {
+      await DB.loadRemoteData();
+      if (typeof App !== 'undefined' && App._refreshCurrentView) {
+        App._refreshCurrentView();
+      }
+    }
+  };
+
+  window.addEventListener('focus', handleFocus);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') handleFocus();
+  });
 })();

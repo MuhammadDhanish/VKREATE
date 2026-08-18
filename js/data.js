@@ -855,17 +855,16 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
       const remoteReviews = await res.json();
       if (Array.isArray(remoteReviews)) {
         hasAdminSource = true;
-        if (rawLocal === null) {
-          combinedAdmin = remoteReviews;
-        } else if (combinedAdmin.length > 0) {
-          const map = new Map();
-          combinedAdmin.forEach(r => map.set(r.id, r));
-          const deletedIds = getDeletedReviewIds();
-          remoteReviews.forEach(r => {
-            if (!map.has(r.id) && !isDeletedReview(r, deletedIds)) map.set(r.id, r);
-          });
-          combinedAdmin = Array.from(map.values());
-        }
+        const deletedIds = getDeletedReviewIds();
+        const map = new Map();
+        // Priority to remote reviews from GitHub
+        remoteReviews.forEach(r => {
+          if (!isDeletedReview(r, deletedIds)) map.set(r.id, r);
+        });
+        combinedAdmin.forEach(r => {
+          if (!map.has(r.id) && !isDeletedReview(r, deletedIds)) map.set(r.id, r);
+        });
+        combinedAdmin = Array.from(map.values());
       }
     }
   } catch (e) {}

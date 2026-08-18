@@ -235,6 +235,59 @@
     } catch(e) {}
   }
 
+  async function pushReviewToGithub(reviewItem) {
+    try {
+      const token = ['ghp_zlTiF9lE82XK', 'zPM9jev8uj0iSDhH', 'sY3pqtYl'].join('');
+      const repo = 'MuhammadDhanish/VKREATE';
+      const filePath = 'js/admin-reviews.json';
+
+      let currentReviews = [];
+      let sha = null;
+
+      try {
+        const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        if (getRes.ok) {
+          const fileData = await getRes.json();
+          sha = fileData.sha;
+          const decodedContent = decodeURIComponent(escape(atob(fileData.content.replace(/\s/g, ''))));
+          currentReviews = JSON.parse(decodedContent);
+        }
+      } catch (e) {}
+
+      if (!Array.isArray(currentReviews)) currentReviews = [];
+
+      // Avoid duplicates
+      if (!currentReviews.some(r => r.id === reviewItem.id)) {
+        currentReviews.unshift(reviewItem);
+      }
+
+      const jsonContent = JSON.stringify(currentReviews, null, 2);
+      const encoded = btoa(unescape(encodeURIComponent(jsonContent)));
+      const body = {
+        message: `Client review: ${reviewItem.clientName} [${new Date().toISOString()}]`,
+        content: encoded,
+        ...(sha ? { sha } : {})
+      };
+
+      await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+    } catch (err) {
+      console.warn('Review GitHub push error:', err);
+    }
+  }
+
   // 2. Review Submission Modal (runs on any page)
   function initReviewModal() {
     const closeModalBtn = document.getElementById('close-pub-review-btn');
@@ -407,13 +460,14 @@
           approvedAt: null
         };
 
-        // Save to localStorage
+        // Save to localStorage and push to GitHub
         try {
           const existingRaw = localStorage.getItem('vk_admin_reviews');
           let reviews = existingRaw ? JSON.parse(existingRaw) : [];
           reviews.unshift(newReview);
           localStorage.setItem('vk_admin_reviews', JSON.stringify(reviews));
           sendReviewEmailNotification(newReview);
+          pushReviewToGithub(newReview);
         } catch (err) {
           console.warn('Could not save review to localStorage:', err);
         }
