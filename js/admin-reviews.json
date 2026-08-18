@@ -1,18 +1,5 @@
 [
   {
-    "id": "rev-msz0f8gg",
-    "clientName": "Live Verified Client",
-    "clientRole": "Managing Director",
-    "clientEmail": "verify@vkreate.com",
-    "rating": 5,
-    "projectName": "General Studio Review",
-    "projectId": "general",
-    "reviewText": "Live deployment test review - verified round trip.",
-    "status": "approved",
-    "createdAt": "2026-08-18T18:42:22.480Z",
-    "approvedAt": "2026-08-18T18:43:44.265Z"
-  },
-  {
     "id": "rev-msz0abyl",
     "clientName": "Live Test Client",
     "clientRole": "Design Director",
@@ -35,19 +22,6 @@
     "reviewText": "Weedfzsfjnvzs",
     "status": "pending",
     "createdAt": "2026-08-18T17:54:06.241Z"
-  },
-  {
-    "id": "rev-msyyb62l",
-    "clientName": "NASHWIN NASER",
-    "clientRole": "Videographer",
-    "clientEmail": "sayedsinan788@gmail.com",
-    "rating": 5,
-    "projectName": "General Studio Review",
-    "projectId": "general",
-    "reviewText": "Nasar mon",
-    "status": "approved",
-    "createdAt": "2026-08-18T17:43:13.533Z",
-    "approvedAt": "2026-08-18T23:22:00.000Z"
   },
   {
     "id": "rev-msyy4v26",
