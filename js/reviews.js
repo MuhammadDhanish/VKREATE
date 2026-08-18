@@ -260,8 +260,10 @@
         // 1. Save to LocalStorage
         try {
           let list = JSON.parse(localStorage.getItem('vk_admin_reviews')) || [];
-          list.unshift(newReview);
-          localStorage.setItem('vk_admin_reviews', JSON.stringify(list));
+          if (!list.some(r => r && r.id === newReview.id)) {
+            list.unshift(newReview);
+            localStorage.setItem('vk_admin_reviews', JSON.stringify(list));
+          }
         } catch (err) {}
 
         // 2. Sync to Firebase Firestore if available
@@ -287,6 +289,7 @@
             </div>`;
         }
 
+        window.dispatchEvent(new Event('storage'));
         window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
       });
     }

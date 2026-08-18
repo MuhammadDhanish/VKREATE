@@ -617,6 +617,27 @@ const DB = {
     },
   },
 
+  _mergeItems(existingList, remoteList, deletedIds = []) {
+    const itemMap = new Map();
+    if (Array.isArray(existingList)) {
+      existingList.forEach(item => {
+        if (item && item.id && !deletedIds.includes(item.id)) {
+          itemMap.set(item.id, item);
+        }
+      });
+    }
+    if (Array.isArray(remoteList)) {
+      remoteList.forEach(item => {
+        if (item && item.id && !deletedIds.includes(item.id)) {
+          if (!itemMap.has(item.id)) {
+            itemMap.set(item.id, item);
+          }
+        }
+      });
+    }
+    return Array.from(itemMap.values());
+  },
+
   // ── Remote Sync Engine (Firebase Firestore & JSON Fallback) ──
   async loadRemoteData() {
     const deletedProjects = DB._getDeleted(DB.KEYS.deletedProjects);
@@ -632,11 +653,10 @@ const DB = {
         if (!projSnap.empty) {
           const remoteProjects = [];
           projSnap.forEach(doc => remoteProjects.push(doc.data()));
-          const filteredRemote = remoteProjects.filter(p => p && p.id && !deletedProjects.includes(p.id));
-          if (filteredRemote.length > 0) {
-            DB._set(DB.KEYS.projects, filteredRemote);
-            updated = true;
-          }
+          const existing = DB._get(DB.KEYS.projects) || [];
+          const merged = this._mergeItems(existing, remoteProjects, deletedProjects);
+          DB._set(DB.KEYS.projects, merged);
+          updated = true;
         }
       } catch (e) {
         console.warn("Firestore fetch error for projects:", e);
@@ -647,63 +667,55 @@ const DB = {
         if (!revSnap.empty) {
           const remoteReviews = [];
           revSnap.forEach(doc => remoteReviews.push(doc.data()));
-          const filteredRemote = remoteReviews.filter(r => r && r.id && !deletedReviews.includes(r.id));
-          if (filteredRemote.length > 0) {
-            DB._set(DB.KEYS.reviews, filteredRemote);
-            updated = true;
-          }
+          const existing = DB._get(DB.KEYS.reviews) || [];
+          const merged = this._mergeItems(existing, remoteReviews, deletedReviews);
+          DB._set(DB.KEYS.reviews, merged);
+          updated = true;
         }
       } catch (e) {
         console.warn("Firestore fetch error for reviews:", e);
       }
+    } else {
+      // 2. Fallback to static JSON files (Merging without wiping local submissions)
+      try {
+        const projRes = await fetch('../js/admin-projects.json?t=' + Date.now());
+        if (projRes.ok) {
+          const remoteProjects = await projRes.json();
+          if (Array.isArray(remoteProjects)) {
+            const existing = DB._get(DB.KEYS.projects) || [];
+            const merged = this._mergeItems(existing, remoteProjects, deletedProjects);
+            DB._set(DB.KEYS.projects, merged);
+            updated = true;
+          }
+        }
+      } catch (e) {}
 
-      if (updated) {
-        window.dispatchEvent(new Event('storage'));
-        window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
-        window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
-        return;
-      }
+      try {
+        const revRes = await fetch('../js/admin-reviews.json?t=' + Date.now());
+        if (revRes.ok) {
+          const remoteReviews = await revRes.json();
+          if (Array.isArray(remoteReviews)) {
+            const existing = DB._get(DB.KEYS.reviews) || [];
+            const merged = this._mergeItems(existing, remoteReviews, deletedReviews);
+            DB._set(DB.KEYS.reviews, merged);
+            updated = true;
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const inqRes = await fetch('../js/admin-inquiries.json?t=' + Date.now());
+        if (inqRes.ok) {
+          const remoteInquiries = await inqRes.json();
+          if (Array.isArray(remoteInquiries)) {
+            const existing = DB._get(DB.KEYS.inquiries) || [];
+            const merged = this._mergeItems(existing, remoteInquiries, deletedInquiries);
+            DB._set(DB.KEYS.inquiries, merged);
+            updated = true;
+          }
+        }
+      } catch (e) {}
     }
-
-    // 2. Fallback to static JSON files
-    try {
-      // 1. Projects
-      const projRes = await fetch('../js/admin-projects.json?t=' + Date.now());
-      if (projRes.ok) {
-        const remoteProjects = await projRes.json();
-        if (Array.isArray(remoteProjects)) {
-          const filteredRemote = remoteProjects.filter(p => !deletedProjects.includes(p.id));
-          DB._set(DB.KEYS.projects, filteredRemote);
-          updated = true;
-        }
-      }
-    } catch (e) {}
-
-    try {
-      // 2. Reviews
-      const revRes = await fetch('../js/admin-reviews.json?t=' + Date.now());
-      if (revRes.ok) {
-        const remoteReviews = await revRes.json();
-        if (Array.isArray(remoteReviews)) {
-          const filteredRemote = remoteReviews.filter(r => !deletedReviews.includes(r.id));
-          DB._set(DB.KEYS.reviews, filteredRemote);
-          updated = true;
-        }
-      }
-    } catch (e) {}
-
-    try {
-      // 3. Inquiries
-      const inqRes = await fetch('../js/admin-inquiries.json?t=' + Date.now());
-      if (inqRes.ok) {
-        const remoteInquiries = await inqRes.json();
-        if (Array.isArray(remoteInquiries)) {
-          const filteredRemote = remoteInquiries.filter(i => !deletedInquiries.includes(i.id));
-          DB._set(DB.KEYS.inquiries, filteredRemote);
-          updated = true;
-        }
-      }
-    } catch (e) {}
 
     if (updated) {
       window.dispatchEvent(new Event('storage'));
