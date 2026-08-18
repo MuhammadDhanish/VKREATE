@@ -9,7 +9,7 @@
     "duration": "4 months",
     "completionDate": "2025-06-15",
     "budgetRange": "₹25L – ₹35L",
-    "rank": 1,
+    "rank": 8,
     "status": "published",
     "thumbnail": "../assets/images/project_lilaa_1.jpg",
     "images": [
@@ -46,7 +46,7 @@
     "clicks": 0,
     "leads": 0,
     "createdAt": "2025-06-15T10:00:00Z",
-    "updatedAt": "2026-08-17T04:42:25.781Z",
+    "updatedAt": "2026-08-15T10:47:11.695Z",
     "afterImage": "../assets/images/project_lilaa_1.jpg",
     "beforeImage": "../assets/images/project_lilaa_2.png"
   },
@@ -92,13 +92,11 @@
       "beauty",
       "wellness"
     ],
-    "views": 0,
-    "clicks": 0,
-    "leads": 0,
+    "views": 890,
+    "clicks": 241,
+    "leads": 8,
     "createdAt": "2025-04-10T09:00:00Z",
-    "updatedAt": "2026-08-17T04:49:05.794Z",
-    "afterImage": "../assets/images/project_salon_3.png",
-    "beforeImage": "../assets/images/project_salon_3.png"
+    "updatedAt": "2025-05-20T11:00:00Z"
   },
   {
     "id": "retail-jewellery",
@@ -202,13 +200,13 @@
     "id": "serene-villa",
     "name": "Serene Heights Luxury Villa",
     "industry": "residential",
-    "industryLabel": "Residential & Villas",
+    "industryLabel": "Villas & Residential",
     "location": "Wayanad, Kerala",
     "area": "4,200 sq ft",
     "duration": "5 months",
     "completionDate": "2025-07-20",
     "budgetRange": "₹35L – ₹50L",
-    "rank": 2,
+    "rank": 5,
     "status": "published",
     "thumbnail": "../assets/images/project_lilaa_3.png",
     "images": [
@@ -241,13 +239,11 @@
       "residential",
       "luxury"
     ],
-    "views": 0,
-    "clicks": 0,
-    "leads": 0,
+    "views": 510,
+    "clicks": 142,
+    "leads": 4,
     "createdAt": "2025-07-20T11:00:00Z",
-    "updatedAt": "2026-08-17T04:42:47.919Z",
-    "afterImage": "../assets/images/project_lilaa_3.png",
-    "beforeImage": "../assets/images/project_lilaa_4.jpg"
+    "updatedAt": "2025-07-25T14:00:00Z"
   },
   {
     "id": "aura-clinic",
@@ -357,7 +353,7 @@
     "duration": "2 months",
     "completionDate": "2025-03-25",
     "budgetRange": "₹15L – ₹22L",
-    "rank": 5,
+    "rank": 1,
     "status": "published",
     "thumbnail": "../assets/images/project_lilaa_6.jpg",
     "images": [
@@ -394,7 +390,7 @@
     "clicks": 0,
     "leads": 0,
     "createdAt": "2025-03-25T10:00:00Z",
-    "updatedAt": "2026-08-17T04:49:11.914Z",
+    "updatedAt": "2026-08-15T10:40:41.173Z",
     "afterImage": "../assets/images/project_lilaa_6.jpg",
     "beforeImage": "../assets/images/project_lilaa_2.png"
   }
