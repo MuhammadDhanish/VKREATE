@@ -12,19 +12,6 @@
     "createdAt": "2026-08-18T17:54:06.241Z"
   },
   {
-    "id": "rev-msz0f8gg",
-    "clientName": "Live Verified Client",
-    "clientRole": "Managing Director",
-    "clientEmail": "verify@vkreate.com",
-    "rating": 5,
-    "projectName": "General Studio Review",
-    "projectId": "general",
-    "reviewText": "Live deployment test review - verified round trip.",
-    "status": "approved",
-    "createdAt": "2026-08-18T18:42:22.480Z",
-    "approvedAt": "2026-08-18T18:43:44.265Z"
-  },
-  {
     "id": "rev-msz0abyl",
     "clientName": "Live Test Client",
     "clientRole": "Design Director",
