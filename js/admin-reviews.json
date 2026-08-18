@@ -1,47 +1,5 @@
 [
   {
-    "id": "rev-clinic-06",
-    "projectId": "aura-clinic",
-    "projectName": "Aura Dental & Wellness Clinic",
-    "clientName": "Dr. Vivek Kurup",
-    "clientRole": "Chief Surgeon, Aura Clinic",
-    "clientEmail": "drvivek@auraclinic.org",
-    "rating": 5,
-    "rank": 6,
-    "reviewText": "The clinical layout reduces patient anxiety while offering high-efficiency workflow for our medical staff. The sage green accent walls and acoustic partitions make a massive difference.",
-    "shortTestimonial": "The clinical layout reduces patient anxiety while offering high efficiency.",
-    "status": "approved",
-    "studioResponse": "Thank you Dr. Vivek! Designing a soothing medical environment was a great experience.",
-    "tags": [
-      "healthcare",
-      "clinic"
-    ],
-    "visibility": "public",
-    "createdAt": "2025-05-25T09:00:00Z",
-    "approvedAt": "2025-05-26T14:00:00Z"
-  },
-  {
-    "id": "rev-hotel-07",
-    "projectId": "grand-horizon-hotel",
-    "projectName": "The Grand Horizon Boutique Hotel",
-    "clientName": "Mathew Joseph",
-    "clientRole": "GM, Grand Horizon Hotel",
-    "clientEmail": "gm@grandhorizonresort.com",
-    "rating": 5,
-    "rank": 7,
-    "reviewText": "The lobby redesign surpassed expectations. Turnkey execution was completed 2 weeks ahead of our festival launch, and our guest satisfaction scores have reached an all-time high.",
-    "shortTestimonial": "The lobby redesign surpassed expectations. Completed 2 weeks ahead of schedule.",
-    "status": "approved",
-    "studioResponse": "Thank you Mathew! Congratulations on the successful resort reopening.",
-    "tags": [
-      "hotel",
-      "hospitality"
-    ],
-    "visibility": "public",
-    "createdAt": "2025-08-05T15:00:00Z",
-    "approvedAt": "2025-08-06T10:00:00Z"
-  },
-  {
     "id": "rev-cafe-08",
     "projectId": "emerald-brew-cafe",
     "projectName": "Emerald Brew Artisan Coffee Lounge",
