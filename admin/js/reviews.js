@@ -40,17 +40,17 @@ const Reviews = {
 
         <!-- Filter Tabs -->
         <div class="tabs-nav mb-24">
-          <button class="tab-btn ${this._filter === 'all' ? 'active' : ''}" onclick="Reviews.setFilter('all')">
-            All Reviews (${stats.total || 0})
+          <button type="button" class="tab-btn ${this._filter === 'all' ? 'active' : ''}" onclick="Reviews.setFilter('all')">
+            All Reviews <span class="badge ${this._filter === 'all' ? 'badge-gold' : 'badge-gray'}">${stats.total || 0}</span>
           </button>
-          <button class="tab-btn ${this._filter === 'pending' ? 'active' : ''}" onclick="Reviews.setFilter('pending')">
-            Pending Approval ${stats.pending ? `<span class="badge badge-warning ml-6">${stats.pending}</span>` : ''}
+          <button type="button" class="tab-btn ${this._filter === 'pending' ? 'active' : ''}" onclick="Reviews.setFilter('pending')">
+            ⏳ Pending Approval ${stats.pending ? `<span class="badge badge-warning">${stats.pending}</span>` : '<span class="badge badge-gray">0</span>'}
           </button>
-          <button class="tab-btn ${this._filter === 'approved' ? 'active' : ''}" onclick="Reviews.setFilter('approved')">
-            Approved (${stats.approved || 0})
+          <button type="button" class="tab-btn ${this._filter === 'approved' ? 'active' : ''}" onclick="Reviews.setFilter('approved')">
+            ✅ Approved <span class="badge ${this._filter === 'approved' ? 'badge-success' : 'badge-gray'}">${stats.approved || 0}</span>
           </button>
-          <button class="tab-btn ${this._filter === 'rejected' ? 'active' : ''}" onclick="Reviews.setFilter('rejected')">
-            Rejected (${stats.rejected || 0})
+          <button type="button" class="tab-btn ${this._filter === 'rejected' ? 'active' : ''}" onclick="Reviews.setFilter('rejected')">
+            🚫 Rejected <span class="badge ${this._filter === 'rejected' ? 'badge-danger' : 'badge-gray'}">${stats.rejected || 0}</span>
           </button>
         </div>
 
