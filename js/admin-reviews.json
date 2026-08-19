@@ -1,5 +1,17 @@
 [
   {
+    "id": "rev-pending-03",
+    "clientName": "Suresh Menon",
+    "clientRole": "Commercial Property Owner",
+    "clientEmail": "suresh.menon@menongroup.com",
+    "projectId": "corporate-lounge",
+    "rating": 5,
+    "reviewText": "Outstanding craftsmanship on our executive workspace lounge in Calicut. The lighting accents and wood ribbing created an extraordinary corporate environment for our executive guests.",
+    "status": "pending",
+    "createdAt": "2025-08-18T18:20:00Z",
+    "studioResponse": ""
+  },
+  {
     "id": "rev-wings-02",
     "clientName": "Dr. Priya Nair",
     "clientRole": "Managing Director, Wings Salon & Spa",
