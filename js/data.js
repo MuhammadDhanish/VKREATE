@@ -697,87 +697,34 @@ async function loadRemoteAdminProjects() {
 }
 
 async function loadRemoteAdminReviews() {
-  const reviewsMap = new Map();
-
-  // 1. Seed static default showcase reviews
-  if (window.VKREATE_DATA && Array.isArray(staticDefaultReviews)) {
-    staticDefaultReviews.forEach(r => {
-      if (r && r.id) reviewsMap.set(r.id, r);
-    });
-  }
-
-  // 2. Fetch remote reviews from API or GitHub admin-reviews.json
+  let remoteReviews = null;
   try {
-    let remoteReviews = null;
+    const res = await fetch('/api/reviews?t=' + Date.now());
+    if (res.ok) remoteReviews = await res.json();
+  } catch (e) {}
+
+  if (!remoteReviews) {
     try {
-      const res = await fetch('/api/reviews?t=' + Date.now());
+      const res = await fetch('js/admin-reviews.json?t=' + Date.now());
       if (res.ok) remoteReviews = await res.json();
     } catch (e) {}
+  }
 
-    if (!remoteReviews) {
-      try {
-        const res = await fetch('js/admin-reviews.json?t=' + Date.now());
-        if (res.ok) remoteReviews = await res.json();
-      } catch (e) {}
-    }
+  if (Array.isArray(remoteReviews)) {
+    // Authoritative update from server/database — overwrite stale local cache
+    try {
+      localStorage.setItem('vk_admin_reviews', JSON.stringify(remoteReviews));
+      localStorage.setItem('vk_reviews', JSON.stringify(remoteReviews));
+    } catch (e) {}
 
-    if (Array.isArray(remoteReviews)) {
-      remoteReviews.forEach(r => {
-        if (r && r.id) {
-          const existing = reviewsMap.get(r.id);
-          reviewsMap.set(r.id, { ...existing, ...r });
-        }
-      });
-    }
-  } catch (e) {}
-
-  // 3. Merge items from localStorage vk_admin_reviews
-  try {
-    const rawLocal = localStorage.getItem('vk_admin_reviews');
-    if (rawLocal) {
-      const parsed = JSON.parse(rawLocal);
-      if (Array.isArray(parsed)) {
-        parsed.forEach(r => {
-          if (r && r.id) {
-            const existing = reviewsMap.get(r.id) || {};
-            const status = (existing.status === 'approved' || existing.status === 'rejected') ? existing.status : (r.status || 'pending');
-            const studioResponse = r.studioResponse || existing.studioResponse || '';
-            reviewsMap.set(r.id, { ...existing, ...r, status, studioResponse });
-          }
-        });
-      }
-    }
-  } catch (e) {}
-
-  // 4. Also check localStorage vk_reviews fallback
-  try {
-    const rawLive = localStorage.getItem('vk_reviews');
-    if (rawLive) {
-      const parsed = JSON.parse(rawLive);
-      if (Array.isArray(parsed)) {
-        parsed.forEach(r => {
-          if (r && r.id) {
-            const existing = reviewsMap.get(r.id);
-            if (!existing) {
-              reviewsMap.set(r.id, r);
-            } else {
-              const status = (existing.status === 'approved' || existing.status === 'rejected') ? existing.status : (r.status || existing.status || 'pending');
-              const studioResponse = existing.studioResponse || r.studioResponse || '';
-              reviewsMap.set(r.id, { ...r, ...existing, status, studioResponse });
-            }
-          }
-        });
-      }
-    }
-  } catch (e) {}
-
-  // Filter approved reviews for live site display
-  const allMerged = Array.from(reviewsMap.values());
-  VKREATE_DATA.reviews = allMerged.filter(r => {
-    if (!r) return false;
-    const isApproved = r.status === 'approved' || r.verified === true || (!r.status && r.rating);
-    return isApproved && r.id !== 'mswstn7iv0g7w';
-  });
+    VKREATE_DATA.reviews = remoteReviews.filter(r => {
+      if (!r) return false;
+      const isApproved = r.status === 'approved' || r.verified === true;
+      return isApproved && r.id !== 'mswstn7iv0g7w';
+    });
+  } else {
+    VKREATE_DATA.reviews = [];
+  }
 
   window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
 }

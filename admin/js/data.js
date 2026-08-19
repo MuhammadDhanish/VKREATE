@@ -640,9 +640,8 @@ const DB = {
       if (rRes.status === 'fulfilled' && rRes.value.ok) {
         const remoteReviews = await rRes.value.json();
         if (Array.isArray(remoteReviews)) {
-          const existing = DB._get(DB.KEYS.reviews) || [];
-          const merged = this._mergeItems(existing, remoteReviews, deletedReviews);
-          DB._set(DB.KEYS.reviews, merged);
+          DB._set(DB.KEYS.reviews, remoteReviews);
+          try { localStorage.setItem('vk_reviews', JSON.stringify(remoteReviews)); } catch (e) {}
           updated = true;
         }
       }
