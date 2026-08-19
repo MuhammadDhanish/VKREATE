@@ -734,11 +734,11 @@ DB.seed();
   // Initial load
   DB.loadRemoteData();
 
-  // Handle tab visibility change & focus
+  // Handle tab visibility change & focus (sync memory data silently without destroying DOM)
   const handleFocus = async () => {
     await DB.loadRemoteData();
-    if (typeof App !== 'undefined' && App._refreshCurrentView) {
-      App._refreshCurrentView();
+    if (typeof App !== 'undefined' && App.updateSidebar) {
+      App.updateSidebar();
     }
   };
 

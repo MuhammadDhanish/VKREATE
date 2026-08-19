@@ -388,6 +388,12 @@ const App = {
     this.updateSidebar();
     const page = this._current || 'dashboard';
 
+    // NEVER auto-wipe & re-render Settings on background sync/focus events!
+    // Re-rendering Settings while viewing destroys form inputs, focus, and causes layout shaking.
+    if (page === 'settings') {
+      return;
+    }
+
     // Prevent view re-rendering while user is actively filling forms or typing in inputs
     if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
       return;
