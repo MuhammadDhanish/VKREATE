@@ -81,42 +81,6 @@
     "studioResponse": ""
   },
   {
-    "id": "rev-salon-02",
-    "projectId": "luxury-salon",
-    "projectName": "Wings Luxury Beauty & Wellness",
-    "clientName": "Dr. Reshma Menon",
-    "clientRole": "Salon Director, Wings Wellness",
-    "clientEmail": "reshma@wingswellness.com",
-    "rating": 5,
-    "rank": 2,
-    "reviewText": "Our clients feel like they're stepping into a 5-star spa retreat. VKREATE's design elevated our entire brand perception. The private pedicure suite, illuminated vanity pods, and botanical murals are guest favorites!",
-    "shortTestimonial": "Our clients feel like they're stepping into a 5-star spa retreat.",
-    "status": "approved",
-    "studioResponse": "Warmest thanks Dr. Reshma! Designing a serene sanctuary for Wings Wellness was a fantastic journey.",
-    "tags": [
-      "beauty",
-      "wellness"
-    ],
-    "visibility": "public",
-    "createdAt": "2025-04-15T11:00:00Z",
-    "approvedAt": "2025-04-16T10:00:00Z"
-  },
-  {
-    "id": "rev-cafe-08",
-    "clientName": "Priya Ramakrishnan",
-    "clientRole": "Owner, Emerald Brew Cafe",
-    "clientEmail": "priya@emeraldbrew.com",
-    "rating": 5,
-    "projectName": "Emerald Brew Cafe",
-    "projectId": "emerald-brew-cafe",
-    "industry": "restaurant",
-    "reviewText": "An absolute delight to work with. The custom espresso bar, acoustic wood ceiling bays, and cozy seating created a buzzing community hotspot that customers rave about daily.",
-    "status": "approved",
-    "createdAt": "2025-03-01T10:00:00.000Z",
-    "approvedAt": "2025-03-01T10:00:00.000Z",
-    "studioResponse": ""
-  },
-  {
     "id": "rev-lounge-04",
     "projectId": "corporate-lounge",
     "projectName": "Corporate VIP Reception & Lounge",
