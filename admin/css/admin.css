@@ -443,25 +443,59 @@ td.td-name { font-weight: 600; color: var(--text-1); }
 .form-label span { color: var(--danger); margin-left: 2px; }
 .form-control {
   width: 100%;
-  padding: 10px 14px;
+  height: 42px;
+  padding: 0 14px;
   border: 1px solid var(--border-md);
   border-radius: var(--r-md);
   font-size: 0.875rem;
-  line-height: 1.4;
+  line-height: 40px;
   color: var(--text-1);
   background: var(--card);
   transition: border-color var(--dur), box-shadow var(--dur);
   outline: none;
+  box-sizing: border-box;
   transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
 .form-control:focus { border-color: var(--green-mid); box-shadow: 0 0 0 3px rgba(61,92,80,0.12); }
 .form-control.error { border-color: var(--danger); }
-textarea.form-control { min-height: 110px; resize: vertical; }
+textarea.form-control { height: auto; min-height: 110px; padding: 10px 14px; line-height: 1.4; resize: vertical; }
 select.form-control { cursor: pointer; }
 .form-hint { font-size: 0.75rem; color: var(--text-4); }
 .form-error { font-size: 0.75rem; color: var(--danger); display: flex; align-items: center; gap: 4px; }
+
+/* Password input wrapper & non-shaking toggle button */
+.pw-wrap {
+  position: relative;
+  width: 100%;
+  height: 42px;
+}
+.pw-wrap .form-control {
+  height: 42px;
+  padding-right: 44px;
+}
+.pw-toggle {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  z-index: 2;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.pw-toggle:hover {
+  color: var(--text-1);
+  background: rgba(0, 0, 0, 0.05);
+}
 
 /* Toggle */
 .toggle { position: relative; display: inline-block; width: 44px; height: 24px; }

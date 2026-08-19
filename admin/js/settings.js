@@ -126,24 +126,30 @@ const Settings = {
               </div>
               <div class="form-group">
                 <label class="form-label">Current Password</label>
-                <div style="position:relative">
-                  <input class="form-control" id="settings-cur-pw" name="currentPw" type="password" placeholder="Enter current password" required autocomplete="current-password" style="padding-right:44px">
-                  <button type="button" onclick="Settings.togglePwVisibility('settings-cur-pw')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:1rem;background:none;border:none;cursor:pointer;" title="Show/hide password">👁</button>
+                <div class="pw-wrap">
+                  <input class="form-control" id="settings-cur-pw" name="currentPw" type="password" placeholder="Enter current password" required autocomplete="current-password">
+                  <button type="button" class="pw-toggle" onclick="Settings.togglePwVisibility('settings-cur-pw')" title="Show/hide password" aria-label="Toggle password visibility">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
                 </div>
               </div>
               <div class="form-grid form-grid-2">
                 <div class="form-group">
                   <label class="form-label">New Password</label>
-                  <div style="position:relative">
-                    <input class="form-control" id="settings-new-pw" name="newPw" type="password" placeholder="Minimum 8 characters" autocomplete="new-password" style="padding-right:44px">
-                    <button type="button" onclick="Settings.togglePwVisibility('settings-new-pw')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:1rem;background:none;border:none;cursor:pointer;" title="Show/hide password">👁</button>
+                  <div class="pw-wrap">
+                    <input class="form-control" id="settings-new-pw" name="newPw" type="password" placeholder="Minimum 8 characters" autocomplete="new-password">
+                    <button type="button" class="pw-toggle" onclick="Settings.togglePwVisibility('settings-new-pw')" title="Show/hide password" aria-label="Toggle password visibility">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
                   </div>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Confirm New Password</label>
-                  <div style="position:relative">
-                    <input class="form-control" id="settings-cfm-pw" name="confirmPw" type="password" placeholder="Repeat new password" autocomplete="new-password" style="padding-right:44px">
-                    <button type="button" onclick="Settings.togglePwVisibility('settings-cfm-pw')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:1rem;background:none;border:none;cursor:pointer;" title="Show/hide password">👁</button>
+                  <div class="pw-wrap">
+                    <input class="form-control" id="settings-cfm-pw" name="confirmPw" type="password" placeholder="Repeat new password" autocomplete="new-password">
+                    <button type="button" class="pw-toggle" onclick="Settings.togglePwVisibility('settings-cfm-pw')" title="Show/hide password" aria-label="Toggle password visibility">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
                   </div>
                 </div>
               </div>
