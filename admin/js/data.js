@@ -522,10 +522,14 @@ const DB = {
           if (!existing) {
             itemMap.set(item.id, item);
           } else {
+            const status = (existing.status === 'approved' || existing.status === 'rejected') ? existing.status : (item.status || existing.status);
+            const studioResponse = existing.studioResponse || item.studioResponse || '';
             const existingTime = new Date(existing.updatedAt || existing.approvedAt || existing.createdAt || 0).getTime();
             const remoteTime = new Date(item.updatedAt || item.approvedAt || item.createdAt || 0).getTime();
             if (remoteTime > existingTime + 5000) {
-              itemMap.set(item.id, item);
+              itemMap.set(item.id, { ...existing, ...item, status, studioResponse });
+            } else {
+              itemMap.set(item.id, { ...item, ...existing, status, studioResponse });
             }
           }
         }
@@ -574,7 +578,8 @@ const DB = {
     } else {
       // 2. Fallback to static JSON files (Merging without wiping local submissions)
       try {
-        const projRes = await fetch('../js/admin-projects.json?t=' + Date.now());
+        let projRes = await fetch('../js/admin-projects.json?t=' + Date.now());
+        if (!projRes.ok) projRes = await fetch('js/admin-projects.json?t=' + Date.now());
         if (projRes.ok) {
           const remoteProjects = await projRes.json();
           if (Array.isArray(remoteProjects)) {
@@ -587,7 +592,8 @@ const DB = {
       } catch (e) {}
 
       try {
-        const revRes = await fetch('../js/admin-reviews.json?t=' + Date.now());
+        let revRes = await fetch('../js/admin-reviews.json?t=' + Date.now());
+        if (!revRes.ok) revRes = await fetch('js/admin-reviews.json?t=' + Date.now());
         if (revRes.ok) {
           const remoteReviews = await revRes.json();
           if (Array.isArray(remoteReviews)) {

@@ -29,8 +29,8 @@ const Reviews = {
             <p class="page-subtitle">Manage, approve, reject, and respond to client reviews</p>
           </div>
           <div class="page-actions">
-            <button class="btn btn-outline btn-sm" onclick="Reviews.refreshSync()" title="Force merge sync from localStorage, JSON, and Firestore">
-              🔄 Refresh &amp; Sync
+            <button class="btn btn-outline btn-sm" onclick="Reviews.refreshSync(this)" title="Force merge sync from localStorage, JSON, and Firestore">
+              <span class="refresh-icon" style="display:inline-block;transition:transform 0.5s ease;">🔄</span> Refresh &amp; Sync
             </button>
             <button class="btn btn-primary btn-sm" onclick="Reviews.deployLive()" title="Sync approved reviews & studio responses to production live site">
               🚀 Deploy to Live Site
@@ -207,14 +207,25 @@ const Reviews = {
     }
   },
 
-  async refreshSync() {
-    UI.toast('🔄 Synchronizing reviews...', 'info');
-    if (typeof DB.loadRemoteData === 'function') {
-      await DB.loadRemoteData();
-    }
-    if (typeof App !== 'undefined') App.updateSidebar();
+  async refreshSync(btn) {
+    const icon = btn ? btn.querySelector('.refresh-icon') : null;
+    if (btn) btn.disabled = true;
+    if (icon) icon.style.transform = 'rotate(360deg)';
+
+    try {
+      if (typeof DB.loadRemoteData === 'function') {
+        await DB.loadRemoteData();
+      }
+    } catch (e) {}
+
+    if (typeof App !== 'undefined' && App.updateSidebar) App.updateSidebar();
     this.render();
-    UI.toast('✓ Reviews synchronized successfully', 'success');
+
+    const all = DB.reviews.all() || [];
+    const pendingCount = all.filter(r => r && r.status === 'pending').length;
+    const approvedCount = all.filter(r => r && r.status === 'approved').length;
+
+    UI.toast(`✓ Synced successfully! (${pendingCount} pending, ${approvedCount} approved)`, 'success');
   }
 };
 
