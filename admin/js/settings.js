@@ -74,30 +74,35 @@ const Settings = {
             <span class="card-title">🔔 Notifications</span>
           </div>
           <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:16px">
               <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg);border-radius:var(--r-md)">
                 <div>
                   <div class="fw-600 text-sm">New Review Alert</div>
                   <div class="text-xs text-muted">Get notified when a new client review is submitted</div>
                 </div>
                 <label class="toggle">
-                  <input type="checkbox" id="notif-review" ${notif.newReview?'checked':''} onchange="Settings.saveNotif()">
+                  <input type="checkbox" id="notif-review" ${notif.newReview !== false ? 'checked' : ''} onchange="Settings.saveNotif()">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg);border-radius:var(--r-md)">
                 <div>
                   <div class="fw-600 text-sm">New Inquiry Alert</div>
                   <div class="text-xs text-muted">Get notified when a contact form is submitted</div>
                 </div>
                 <label class="toggle">
-                  <input type="checkbox" id="notif-inquiry" ${notif.newInquiry?'checked':''} onchange="Settings.saveNotif()">
+                  <input type="checkbox" id="notif-inquiry" ${notif.newInquiry !== false ? 'checked' : ''} onchange="Settings.saveNotif()">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
+
               <div class="form-group">
                 <label class="form-label">Notification Email</label>
-                <input class="form-control" id="notif-email" type="email" value="${notif.notifEmail||'dhanishdhanishkk@gmail.com'}" placeholder="dhanishdhanishkk@gmail.com">
+                <input class="form-control" id="notif-email" type="email" value="${UI.escapeHTML(notif.notifEmail || 'dhanishdhanishkk@gmail.com')}" placeholder="dhanishdhanishkk@gmail.com">
                 <div class="form-hint" style="color:#16a34a">✓ Instant email delivery active — new inquiries and reviews are automatically sent to this address.</div>
               </div>
+
               <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
                 <button class="btn btn-outline btn-sm" onclick="Settings.saveNotif()">Save Notification Settings</button>
                 <button class="btn btn-primary btn-sm" onclick="Settings.testEmailNotif()" style="background:#16a34a;border-color:#16a34a">
@@ -348,6 +353,8 @@ const Settings = {
       address: f.address.value.trim(),
       instagram: f.instagram.value.trim(), website: f.website.value.trim(),
     });
+    if (window.GithubSync) GithubSync.push();
+    window.dispatchEvent(new Event('storage'));
     UI.toast('Studio information saved!', 'success');
   },
 
@@ -357,6 +364,8 @@ const Settings = {
       newInquiry: document.getElementById('notif-inquiry')?.checked,
       notifEmail: document.getElementById('notif-email')?.value.trim(),
     });
+    if (window.GithubSync) GithubSync.push();
+    window.dispatchEvent(new Event('storage'));
     UI.toast('Notification settings saved!', 'success');
   },
 
@@ -391,17 +400,21 @@ const Settings = {
   saveCredentials(e) {
     e.preventDefault();
     const f = e.target;
-    const s = DB.settings.get();
-    if (f.currentPw.value !== s.credentials.passwordHash) {
+    const s = DB.settings.get() || {};
+    const creds = s.credentials || {};
+    const currentPwHash = creds.passwordHash || 'admin123';
+
+    if (f.currentPw.value !== currentPwHash) {
       return UI.toast('Current password is incorrect.', 'error');
     }
-    const update = { email: f.email.value.trim(), passwordHash: s.credentials.passwordHash };
+    const update = { email: f.email.value.trim(), passwordHash: currentPwHash };
     if (f.newPw.value) {
       if (f.newPw.value !== f.confirmPw.value) return UI.toast('New passwords do not match.', 'error');
       if (f.newPw.value.length < 8) return UI.toast('Password must be at least 8 characters.', 'error');
       update.passwordHash = f.newPw.value;
     }
     DB.settings.update('credentials', update);
+    if (window.GithubSync) GithubSync.push();
     UI.toast('Credentials updated successfully!', 'success');
     f.currentPw.value = f.newPw.value = f.confirmPw.value = '';
   },
