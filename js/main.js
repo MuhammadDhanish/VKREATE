@@ -335,9 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         window.dispatchEvent(new Event('storage'));
 
-        if (typeof pushInquiryToGithub === 'function') {
-          try { pushInquiryToGithub(newInquiry); } catch (e) {}
-        }
         if (typeof sendInquiryEmailNotification === 'function') {
           try { sendInquiryEmailNotification(newInquiry); } catch (e) {}
         }
@@ -423,55 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch(e) {}
   }
 
-  async function pushInquiryToGithub(inquiryItem) {
-    try {
-      const token = ['ghp_zlTiF9lE82XK', 'zPM9jev8uj0iSDhH', 'sY3pqtYl'].join('');
-      const repo = 'MuhammadDhanish/VKREATE';
-      const filePath = 'js/admin-inquiries.json';
 
-      let currentInquiries = [];
-      let sha = null;
-
-      try {
-        const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        });
-        if (getRes.ok) {
-          const fileData = await getRes.json();
-          sha = fileData.sha;
-          const decodedContent = decodeURIComponent(escape(atob(fileData.content.replace(/\s/g, ''))));
-          currentInquiries = JSON.parse(decodedContent);
-        }
-      } catch (e) {}
-
-      if (!Array.isArray(currentInquiries)) currentInquiries = [];
-
-      currentInquiries.unshift(inquiryItem);
-
-      const jsonContent = JSON.stringify(currentInquiries, null, 2);
-      const encoded = btoa(unescape(encodeURIComponent(jsonContent)));
-      const body = {
-        message: `Client inquiry: ${inquiryItem.name} [${new Date().toISOString()}]`,
-        content: encoded,
-        ...(sha ? { sha } : {})
-      };
-
-      await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      });
-    } catch (e) {
-      console.warn('pushInquiryToGithub error:', e);
-    }
-  }
 
   // ── Scroll to top button ──────────────────────────────────
   const scrollTopBtn = document.getElementById('scroll-top');
