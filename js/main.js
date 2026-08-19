@@ -155,23 +155,63 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { threshold: 0.35 });
   sections.forEach(s => sectionObserver.observe(s));
 
-  // ── Mobile nav ────────────────────────────────────────────
-  const hamburger = document.getElementById('hamburger');
-  const mobileNav = document.getElementById('mobile-nav');
-  hamburger?.addEventListener('click', () => {
+  // ── Global Mobile Nav Toggle System ────────────────────────
+  window.toggleMobileNav = function (e) {
+    if (e) {
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+    }
+    const hamburger = document.getElementById('hamburger') || document.querySelector('.nav__hamburger');
+    const mobileNav = document.getElementById('mobile-nav') || document.querySelector('.nav__mobile');
+    if (!hamburger || !mobileNav) return;
+
     const isOpen = hamburger.classList.toggle('open');
-    mobileNav.classList.toggle('open', isOpen);
-    document.body.classList.toggle('nav-open', isOpen);
-    hamburger.setAttribute('aria-expanded', isOpen);
-  });
-  mobileNav?.querySelectorAll('a').forEach(a => {
-    a.addEventListener('click', () => {
-      hamburger.classList.remove('open');
+    if (isOpen) {
+      mobileNav.classList.add('open');
+      mobileNav.style.display = 'flex';
+      mobileNav.style.opacity = '1';
+      mobileNav.style.pointerEvents = 'all';
+      document.body.classList.add('nav-open');
+      document.body.style.overflow = 'hidden';
+      hamburger.setAttribute('aria-expanded', 'true');
+    } else {
       mobileNav.classList.remove('open');
+      mobileNav.style.display = '';
+      mobileNav.style.opacity = '';
+      mobileNav.style.pointerEvents = '';
       document.body.classList.remove('nav-open');
-      hamburger.setAttribute('aria-expanded', false);
+      document.body.style.overflow = '';
+      hamburger.setAttribute('aria-expanded', 'false');
+    }
+  };
+
+  const hamburger = document.getElementById('hamburger') || document.querySelector('.nav__hamburger');
+  const mobileNav = document.getElementById('mobile-nav') || document.querySelector('.nav__mobile');
+
+  if (hamburger) {
+    hamburger.addEventListener('click', window.toggleMobileNav);
+    hamburger.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      window.toggleMobileNav(e);
+    }, { passive: false });
+  }
+
+  if (mobileNav) {
+    mobileNav.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', () => {
+        if (hamburger) {
+          hamburger.classList.remove('open');
+          hamburger.setAttribute('aria-expanded', 'false');
+        }
+        mobileNav.classList.remove('open');
+        mobileNav.style.display = '';
+        mobileNav.style.opacity = '';
+        mobileNav.style.pointerEvents = '';
+        document.body.classList.remove('nav-open');
+        document.body.style.overflow = '';
+      });
     });
-  });
+  }
 
   // ── Smooth scroll for nav links ───────────────────────────
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
