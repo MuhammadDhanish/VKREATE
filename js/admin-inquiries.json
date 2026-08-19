@@ -1,19 +1,5 @@
 [
   {
-    "id": "mszons8ujlc0i",
-    "name": "Rajesh Kumar",
-    "email": "rajesh@grandhotel.com",
-    "phone": "+91 98765 43210",
-    "industry": "Hospitality",
-    "projectBudget": "₹50L – ₹75L",
-    "timeline": "6 months",
-    "brief": "Looking to redesign our hotel lobby and 3 dining areas. 5-star property in Trivandrum.",
-    "status": "new",
-    "notes": "",
-    "createdAt": "2025-07-31T09:00:00Z",
-    "respondedAt": null
-  },
-  {
     "id": "mszons8u1yp1i",
     "name": "Meera Thomas",
     "email": "meera@blossomcafe.in",
