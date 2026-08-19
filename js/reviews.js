@@ -464,7 +464,7 @@
             <p class="t-body" style="color:var(--text-muted);font-size:0.9375rem;line-height:1.6;max-width:380px;margin:0 auto 24px auto;">
               Your review has been submitted to the VKREATE Studio Admin team for verification and approval.
             </p>
-            <button class="btn btn-green" onclick="document.getElementById('pub-review-overlay').classList.remove('active');document.body.style.overflow='';" style="padding:10px 24px;">Close</button>
+            <button type="button" class="btn btn-green" onclick="window.closeReviewModal()" style="padding:10px 24px;cursor:pointer;">Close</button>
           </div>
         `;
       }
