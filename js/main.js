@@ -160,23 +160,42 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { threshold: 0.35 });
   sections.forEach(s => sectionObserver.observe(s));
 
-  // ── Mobile nav ────────────────────────────────────────────
-  const hamburger = document.getElementById('hamburger');
-  const mobileNav = document.getElementById('mobile-nav');
-  hamburger?.addEventListener('click', () => {
+  // ── Mobile Nav Toggle (Inline Onclick & Touch Support) ────
+  window.toggleMobileNav = function (e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const hamburger = document.getElementById('hamburger');
+    const mobileNav = document.getElementById('mobile-nav');
+    if (!hamburger || !mobileNav) return;
+
     const isOpen = hamburger.classList.toggle('open');
     mobileNav.classList.toggle('open', isOpen);
     document.body.classList.toggle('nav-open', isOpen);
-    hamburger.setAttribute('aria-expanded', isOpen);
-  });
-  mobileNav?.querySelectorAll('a').forEach(a => {
-    a.addEventListener('click', () => {
-      hamburger.classList.remove('open');
-      mobileNav.classList.remove('open');
-      document.body.classList.remove('nav-open');
-      hamburger.setAttribute('aria-expanded', false);
+    hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  };
+
+  const hamburger = document.getElementById('hamburger');
+  const mobileNav = document.getElementById('mobile-nav');
+
+  if (hamburger) {
+    hamburger.addEventListener('click', window.toggleMobileNav);
+    hamburger.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      window.toggleMobileNav(e);
+    }, { passive: false });
+  }
+
+  if (mobileNav) {
+    mobileNav.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', () => {
+        if (hamburger) {
+          hamburger.classList.remove('open');
+          hamburger.setAttribute('aria-expanded', 'false');
+        }
+        mobileNav.classList.remove('open');
+        document.body.classList.remove('nav-open');
+      });
     });
-  });
+  }
 
   // ── Smooth scroll for nav links ───────────────────────────
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
