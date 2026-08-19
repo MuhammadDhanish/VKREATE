@@ -630,9 +630,7 @@ const DB = {
       if (pRes.status === 'fulfilled' && pRes.value.ok) {
         const remoteProjects = await pRes.value.json();
         if (Array.isArray(remoteProjects)) {
-          const existing = DB._get(DB.KEYS.projects) || [];
-          const merged = this._mergeItems(existing, remoteProjects, deletedProjects);
-          DB._set(DB.KEYS.projects, merged);
+          DB._set(DB.KEYS.projects, remoteProjects);
           updated = true;
         }
       }
@@ -649,9 +647,7 @@ const DB = {
       if (iRes.status === 'fulfilled' && iRes.value.ok) {
         const remoteInquiries = await iRes.value.json();
         if (Array.isArray(remoteInquiries)) {
-          const existing = DB._get(DB.KEYS.inquiries) || [];
-          const merged = this._mergeItems(existing, remoteInquiries, deletedInquiries);
-          DB._set(DB.KEYS.inquiries, merged);
+          DB._set(DB.KEYS.inquiries, remoteInquiries);
           updated = true;
         }
       }
@@ -673,9 +669,7 @@ const DB = {
         if (projRes.ok) {
           const remoteProjects = await projRes.json();
           if (Array.isArray(remoteProjects)) {
-            const existing = DB._get(DB.KEYS.projects) || [];
-            const merged = this._mergeItems(existing, remoteProjects, deletedProjects);
-            DB._set(DB.KEYS.projects, merged);
+            DB._set(DB.KEYS.projects, remoteProjects);
             updated = true;
           }
         }
@@ -687,9 +681,8 @@ const DB = {
         if (revRes.ok) {
           const remoteReviews = await revRes.json();
           if (Array.isArray(remoteReviews)) {
-            const existing = DB._get(DB.KEYS.reviews) || [];
-            const merged = this._mergeItems(existing, remoteReviews, deletedReviews);
-            DB._set(DB.KEYS.reviews, merged);
+            DB._set(DB.KEYS.reviews, remoteReviews);
+            try { localStorage.setItem('vk_reviews', JSON.stringify(remoteReviews)); } catch (e) {}
             updated = true;
           }
         }
@@ -701,9 +694,7 @@ const DB = {
         if (inqRes.ok) {
           const remoteInquiries = await inqRes.json();
           if (Array.isArray(remoteInquiries)) {
-            const existing = DB._get(DB.KEYS.inquiries) || [];
-            const merged = this._mergeItems(existing, remoteInquiries, deletedInquiries);
-            DB._set(DB.KEYS.inquiries, merged);
+            DB._set(DB.KEYS.inquiries, remoteInquiries);
             updated = true;
           }
         }

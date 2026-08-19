@@ -689,7 +689,8 @@ async function loadRemoteAdminProjects() {
       } catch (e) {}
     }
 
-    if (Array.isArray(remoteProjects) && remoteProjects.length > 0) {
+    if (Array.isArray(remoteProjects)) {
+      try { localStorage.setItem('vk_admin_projects', JSON.stringify(remoteProjects)); } catch (e) {}
       applyAdminProjects(remoteProjects);
       window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
     }
