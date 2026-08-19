@@ -1,7 +1,7 @@
 [
   {
     "id": "lilaa-restaurant",
-    "name": "Lilaa - Malayali Cuisine Edited",
+    "name": "Lilaa — Malayali Cuisine",
     "industry": "restaurant",
     "industryLabel": "Restaurants & Cafes",
     "location": "Calicut, Kerala",
@@ -42,14 +42,14 @@
       "premium"
     ],
     "createdAt": "2025-06-15T10:00:00Z",
-    "updatedAt": "2026-08-19T08:56:37.673Z",
-    "studioResponse": "",
-    "rank": 99,
-    "afterImage": "../assets/images/project_lilaa_1.jpg",
-    "beforeImage": "../assets/images/project_lilaa_2.png",
+    "updatedAt": "2026-08-15T10:47:11.695Z",
+    "rank": 8,
     "views": 0,
     "clicks": 0,
-    "leads": 0
+    "leads": 0,
+    "afterImage": "../assets/images/project_lilaa_1.jpg",
+    "beforeImage": "../assets/images/project_lilaa_2.png",
+    "studioResponse": ""
   },
   {
     "id": "luxury-salon",
@@ -93,7 +93,12 @@
       "wellness"
     ],
     "createdAt": "2025-04-10T09:00:00Z",
-    "updatedAt": "2025-05-20T11:00:00Z"
+    "updatedAt": "2025-05-20T11:00:00Z",
+    "rank": 2,
+    "views": 890,
+    "clicks": 241,
+    "leads": 8,
+    "studioResponse": ""
   },
   {
     "id": "retail-jewellery",
@@ -138,7 +143,12 @@
       "showroom"
     ],
     "createdAt": "2025-02-14T10:00:00Z",
-    "updatedAt": "2025-03-01T09:00:00Z"
+    "updatedAt": "2025-03-01T09:00:00Z",
+    "rank": 3,
+    "views": 760,
+    "clicks": 198,
+    "leads": 6,
+    "studioResponse": ""
   },
   {
     "id": "corporate-lounge",
@@ -183,7 +193,12 @@
       "lounge"
     ],
     "createdAt": "2025-01-20T11:00:00Z",
-    "updatedAt": "2025-02-05T14:00:00Z"
+    "updatedAt": "2025-02-05T14:00:00Z",
+    "rank": 4,
+    "views": 620,
+    "clicks": 154,
+    "leads": 5,
+    "studioResponse": ""
   },
   {
     "id": "serene-villa",
@@ -234,7 +249,8 @@
     "createdAt": "2025-07-20T11:00:00Z",
     "updatedAt": "2026-08-17T04:42:47.919Z",
     "afterImage": "../assets/images/project_lilaa_3.png",
-    "beforeImage": "../assets/images/project_lilaa_4.jpg"
+    "beforeImage": "../assets/images/project_lilaa_4.jpg",
+    "studioResponse": ""
   },
   {
     "id": "aura-clinic",
@@ -283,7 +299,8 @@
     "clicks": 110,
     "leads": 3,
     "createdAt": "2025-05-18T08:00:00Z",
-    "updatedAt": "2025-06-01T10:00:00Z"
+    "updatedAt": "2025-06-01T10:00:00Z",
+    "studioResponse": ""
   },
   {
     "id": "grand-horizon-hotel",
@@ -332,7 +349,8 @@
     "clicks": 310,
     "leads": 11,
     "createdAt": "2025-08-01T09:00:00Z",
-    "updatedAt": "2025-08-10T12:00:00Z"
+    "updatedAt": "2025-08-10T12:00:00Z",
+    "studioResponse": ""
   },
   {
     "id": "emerald-brew-cafe",
@@ -383,6 +401,7 @@
     "createdAt": "2025-03-25T10:00:00Z",
     "updatedAt": "2026-08-17T04:49:11.914Z",
     "afterImage": "../assets/images/project_lilaa_6.jpg",
-    "beforeImage": "../assets/images/project_lilaa_2.png"
+    "beforeImage": "../assets/images/project_lilaa_2.png",
+    "studioResponse": ""
   }
 ]
