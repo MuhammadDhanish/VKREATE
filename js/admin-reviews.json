@@ -15,21 +15,6 @@
     "studioResponse": ""
   },
   {
-    "id": "rev-villa-05",
-    "clientName": "Anjali & Vikram Rao",
-    "clientRole": "Homeowners, Serene Heights",
-    "clientEmail": "rao.family@gmail.com",
-    "rating": 5,
-    "projectName": "Serene Heights Residence",
-    "projectId": "serene-villa",
-    "industry": "residential",
-    "reviewText": "Our villa interior is breathtaking. VKREATE blended teak wood warmth with clean minimalist lines seamlessly. Waking up to natural light streaming through the custom double-height void is pure magic.",
-    "status": "approved",
-    "createdAt": "2025-07-01T10:00:00.000Z",
-    "approvedAt": "2025-07-01T10:00:00.000Z",
-    "studioResponse": ""
-  },
-  {
     "id": "rev-lilaa-01",
     "projectId": "lilaa-restaurant",
     "projectName": "Lilaa — Malayali Cuisine",
