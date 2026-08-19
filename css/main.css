@@ -383,7 +383,7 @@
   display: none;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .nav {
     top: 12px;
     width: calc(100% - 24px);

@@ -1,6 +1,32 @@
-// ============================================================
-// VKREATE — Main JS (Nav, Scroll, Reveal, FAQ, Services, Form)
-// ============================================================
+// ── Global Mobile Nav Toggle System (Instant Top-level Execution) ────
+window.toggleMobileNav = function (e) {
+  if (e) {
+    if (e.preventDefault) e.preventDefault();
+    if (e.stopPropagation) e.stopPropagation();
+  }
+  const hamburger = document.getElementById('hamburger') || document.querySelector('.nav__hamburger');
+  const mobileNav = document.getElementById('mobile-nav') || document.querySelector('.nav__mobile');
+  if (!hamburger || !mobileNav) return;
+
+  const isOpen = hamburger.classList.toggle('open');
+  if (isOpen) {
+    mobileNav.classList.add('open');
+    mobileNav.style.display = 'flex';
+    mobileNav.style.opacity = '1';
+    mobileNav.style.pointerEvents = 'all';
+    document.body.classList.add('nav-open');
+    document.body.style.overflow = 'hidden';
+    hamburger.setAttribute('aria-expanded', 'true');
+  } else {
+    mobileNav.classList.remove('open');
+    mobileNav.style.display = '';
+    mobileNav.style.opacity = '';
+    mobileNav.style.pointerEvents = '';
+    document.body.classList.remove('nav-open');
+    document.body.style.overflow = '';
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
 
