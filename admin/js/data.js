@@ -45,6 +45,13 @@ const DB = {
       return false;
     }
   },
+  _broadcast(type, data) {
+    if (syncChannel) {
+      try { syncChannel.postMessage({ type, data }); } catch (e) {}
+    }
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new CustomEvent(`vkreate:${type}`));
+  },
   _getDeleted(key) {
     try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
   },
@@ -709,12 +716,15 @@ DB.seed();
   if (typeof EventSource !== 'undefined') {
     try {
       const evtSource = new EventSource('/api/events');
-      evtSource.onmessage = (e) => {
+      evtSource.onmessage = async (e) => {
         try {
           const msg = JSON.parse(e.data);
           if (msg.type && msg.type !== 'connected') {
-            DB.loadRemoteData();
+            await DB.loadRemoteData();
             window.dispatchEvent(new CustomEvent(`vkreate:${msg.type}`));
+            if (typeof App !== 'undefined' && App._refreshCurrentView) {
+              App._refreshCurrentView();
+            }
           }
         } catch (err) {}
       };

@@ -17,22 +17,51 @@
     return html;
   }
 
-  // Get all approved reviews from localStorage and VKREATE_DATA
+  let cachedApiReviews = null;
+
+  // Fetch live reviews from Express backend API
+  async function fetchLiveReviews() {
+    try {
+      const res = await fetch('/api/reviews');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          cachedApiReviews = data;
+          try {
+            localStorage.setItem('vk_admin_reviews', JSON.stringify(data));
+          } catch (e) {}
+          renderReviews();
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Live API fetch skipped/failed, using local fallback:', err);
+    }
+  }
+
+  // Get all approved reviews from API cache, localStorage, or VKREATE_DATA
   function getApprovedReviews() {
     let allReviews = [];
 
-    // First check localStorage vk_admin_reviews
-    try {
-      const raw = localStorage.getItem('vk_admin_reviews');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          allReviews = parsed;
-        }
-      }
-    } catch (e) {}
+    // 1. Check fetched API memory cache
+    if (Array.isArray(cachedApiReviews) && cachedApiReviews.length > 0) {
+      allReviews = cachedApiReviews;
+    }
 
-    // Fallback to static VKREATE_DATA.reviews if localStorage is empty
+    // 2. Check localStorage vk_admin_reviews / vk_reviews if API cache is empty
+    if (allReviews.length === 0) {
+      try {
+        const raw = localStorage.getItem('vk_admin_reviews') || localStorage.getItem('vk_reviews');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            allReviews = parsed;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 3. Fallback to static VKREATE_DATA.reviews if localStorage is empty
     if (allReviews.length === 0 && window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.reviews)) {
       allReviews = window.VKREATE_DATA.reviews;
     }
@@ -95,6 +124,10 @@
       });
     }
 
+    let showAllMobileReviews = window.VKREATE_SHOW_ALL_REVIEWS || false;
+    const isMobile = window.innerWidth <= 768;
+    const displayList = (isMobile && !showAllMobileReviews) ? filtered.slice(0, 3) : filtered;
+
     grid.innerHTML = '';
 
     if (filtered.length === 0) {
@@ -112,7 +145,7 @@
       return;
     }
 
-    filtered.forEach((r, idx) => {
+    displayList.forEach((r, idx) => {
       const card = document.createElement('article');
       card.className = 'review-card reveal';
       card.style.transitionDelay = `${(idx % 3) * 0.1}s`;
@@ -147,6 +180,30 @@
 
       grid.appendChild(card);
     });
+
+    // Add Mobile "Show All Reviews" Toggle Button if list > 3 items
+    let moreBtnWrap = document.getElementById('reviews-mobile-more-wrap');
+    if (isMobile && filtered.length > 3) {
+      if (!moreBtnWrap) {
+        moreBtnWrap = document.createElement('div');
+        moreBtnWrap.id = 'reviews-mobile-more-wrap';
+        moreBtnWrap.style.cssText = 'grid-column:1/-1;text-align:center;margin-top:24px;';
+        grid.parentNode.insertBefore(moreBtnWrap, grid.nextSibling);
+      }
+      moreBtnWrap.style.display = 'block';
+      moreBtnWrap.innerHTML = `
+        <button type="button" class="btn btn-outline" id="reviews-toggle-more-btn" style="min-height:48px;padding:12px 24px;width:100%;justify-content:center;">
+          ${showAllMobileReviews ? 'Show Fewer Reviews ▲' : `Show All Verified Reviews (${filtered.length}) ▼`}
+        </button>
+      `;
+
+      document.getElementById('reviews-toggle-more-btn')?.addEventListener('click', () => {
+        window.VKREATE_SHOW_ALL_REVIEWS = !showAllMobileReviews;
+        renderReviews();
+      });
+    } else if (moreBtnWrap) {
+      moreBtnWrap.style.display = 'none';
+    }
 
     // Trigger reveal animations
     setTimeout(() => {
@@ -263,27 +320,88 @@
     });
   }
 
+  // Live Character Counter for Review Textarea
+  function setupCharCounter() {
+    const textarea = document.getElementById('pub-review-text');
+    const counter = document.getElementById('pub-char-counter');
+    if (!textarea || !counter) return;
+
+    textarea.addEventListener('input', () => {
+      const len = textarea.value.length;
+      counter.textContent = `${len} / 500 characters (min 20)`;
+      if (len < 20) {
+        counter.style.color = '#Eab308'; // Amber warning
+      } else {
+        counter.style.color = 'var(--text-muted)';
+      }
+    });
+  }
+
   // Review Form Submit Handler
   function setupFormSubmit() {
     const form = document.getElementById('pub-review-form');
     const overlay = document.getElementById('pub-review-overlay');
     const modalBody = document.getElementById('pub-review-modal-body');
+    const errorBanner = document.getElementById('pub-form-error');
     if (!form) return;
+
+    setupCharCounter();
+
+    function showError(msg) {
+      if (errorBanner) {
+        errorBanner.textContent = '⚠️ ' + msg;
+        errorBanner.style.display = 'block';
+      } else {
+        alert(msg);
+      }
+    }
+
+    function clearError() {
+      if (errorBanner) {
+        errorBanner.textContent = '';
+        errorBanner.style.display = 'none';
+      }
+    }
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
+      clearError();
 
       const ratingVal = parseInt(document.getElementById('pub-rating-val')?.value || '0', 10);
       if (!ratingVal || ratingVal < 1) {
-        alert('Please select a star rating between 1 and 5 stars.');
+        showError('Please select a star rating between 1 and 5 stars.');
         return;
       }
 
       const clientName = (document.getElementById('pub-client-name')?.value || '').trim();
+      if (!clientName || clientName.length < 2) {
+        showError('Please enter your full name (at least 2 characters).');
+        return;
+      }
+
       const clientRole = (document.getElementById('pub-client-role')?.value || '').trim();
+      if (!clientRole) {
+        showError('Please enter your role or title (e.g. Homeowner, Business Owner).');
+        return;
+      }
+
       const clientEmail = (document.getElementById('pub-client-email')?.value || '').trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!clientEmail || !emailRegex.test(clientEmail)) {
+        showError('Please enter a valid email address.');
+        return;
+      }
+
       const projectId = document.getElementById('pub-project-sel')?.value || 'general';
       const reviewText = (document.getElementById('pub-review-text')?.value || '').trim();
+      if (!reviewText || reviewText.length < 20) {
+        showError('Please write a review of at least 20 characters.');
+        return;
+      }
+      if (reviewText.length > 500) {
+        showError('Review must not exceed 500 characters.');
+        return;
+      }
 
       const newReview = {
         id: 'rev-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -352,6 +470,28 @@
     });
   }
 
+  // Setup SSE Real-time EventSource listener
+  function setupSseListener() {
+    if (typeof EventSource === 'undefined') return;
+    try {
+      const evtSource = new EventSource('/api/events');
+      evtSource.onmessage = function (event) {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload && payload.type === 'reviews-updated' && Array.isArray(payload.data)) {
+            cachedApiReviews = payload.data;
+            try {
+              localStorage.setItem('vk_admin_reviews', JSON.stringify(payload.data));
+            } catch (e) {}
+            renderReviews();
+          }
+        } catch (err) {}
+      };
+    } catch (e) {
+      console.warn('SSE connection skipped/failed:', e);
+    }
+  }
+
   // Init Engine
   function initEngine() {
     populateProjectDropdown();
@@ -360,6 +500,8 @@
     setupStarSelector();
     setupModalControls();
     setupFormSubmit();
+    fetchLiveReviews();
+    setupSseListener();
   }
 
   if (document.readyState === 'loading') {

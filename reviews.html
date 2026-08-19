@@ -252,9 +252,14 @@
           </div>
 
           <div class="form-group" style="margin-top:12px;">
-            <label for="pub-review-text">Your Review *</label>
-            <textarea id="pub-review-text" name="reviewText" rows="4" placeholder="Tell us about the design quality, spatial flow, timeline, and overall experience..." required></textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <label for="pub-review-text">Your Review *</label>
+              <span id="pub-char-counter" style="font-size:0.8125rem;color:var(--text-muted);">0 / 500 characters (min 20)</span>
+            </div>
+            <textarea id="pub-review-text" name="reviewText" rows="4" placeholder="Tell us about the design quality, spatial flow, timeline, and overall experience..." required maxlength="500"></textarea>
           </div>
+
+          <div id="pub-form-error" style="display:none;color:#DC2626;background:rgba(220,38,38,0.08);padding:10px 14px;border-radius:6px;font-size:0.875rem;margin-top:12px;border:1px solid rgba(220,38,38,0.2);"></div>
 
           <button type="submit" class="btn btn-green w-full" id="pub-review-submit-btn" style="margin-top:20px;width:100%;justify-content:center;">
             Submit Review for Approval

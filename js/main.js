@@ -108,6 +108,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ── Floating Back to Top Button ──
+  let bttBtn = document.getElementById('back-to-top');
+  if (!bttBtn) {
+    bttBtn = document.createElement('button');
+    bttBtn.id = 'back-to-top';
+    bttBtn.className = 'back-to-top-btn';
+    bttBtn.type = 'button';
+    bttBtn.setAttribute('aria-label', 'Back to top of page');
+    bttBtn.innerHTML = '↑ Top';
+    document.body.appendChild(bttBtn);
+  }
+
+  const handleBttScroll = () => {
+    if (window.scrollY > 400) {
+      bttBtn.classList.add('visible');
+    } else {
+      bttBtn.classList.remove('visible');
+    }
+  };
+  window.addEventListener('scroll', handleBttScroll, { passive: true });
+  handleBttScroll();
+  bttBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
   // ── Smooth scroll for nav links ───────────────────────────
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', (e) => {
@@ -548,6 +573,34 @@ document.addEventListener('DOMContentLoaded', () => {
             step.classList.add('open');
             icon.textContent = '−';
           }
+        }
+      });
+    }
+  });
+
+  // ── Services Section Accordion on Mobile ──
+  const serviceCards = document.querySelectorAll('.service-card');
+  serviceCards.forEach(card => {
+    let toggleBtn = card.querySelector('.service-card__toggle-btn');
+    if (!toggleBtn) {
+      toggleBtn = document.createElement('button');
+      toggleBtn.className = 'service-card__toggle-btn mobile-only';
+      toggleBtn.type = 'button';
+      toggleBtn.innerHTML = '<span>Expand Details</span> <span class="toggle-icon">▾</span>';
+      
+      const footer = card.querySelector('.service-card__footer') || card;
+      card.insertBefore(toggleBtn, footer);
+
+      toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isOpen = card.classList.contains('open');
+        if (isOpen) {
+          card.classList.remove('open');
+          toggleBtn.innerHTML = '<span>Expand Details</span> <span class="toggle-icon">▾</span>';
+        } else {
+          card.classList.add('open');
+          toggleBtn.innerHTML = '<span>Collapse Details</span> <span class="toggle-icon">▴</span>';
         }
       });
     }

@@ -80,8 +80,8 @@
 <main class="section section--cream" style="padding-top:48px;">
   <div class="container">
 
-    <!-- Filter Bar -->
-    <div class="portfolio__filters reveal delay-1" id="portfolio-filters" role="group" aria-label="Filter projects by industry" style="margin-bottom:40px;">
+    <!-- Filter Bar (Desktop) -->
+    <div class="portfolio__filters desktop-only reveal delay-1" id="portfolio-filters" role="group" aria-label="Filter projects by industry" style="margin-bottom:40px;">
       <button class="filter-btn active" data-filter="all" id="filter-all">All Projects</button>
       <button class="filter-btn" data-filter="restaurant" id="filter-restaurant">Restaurants &amp; Cafes</button>
       <button class="filter-btn" data-filter="beauty" id="filter-beauty">Beauty &amp; Wellness</button>
@@ -90,6 +90,21 @@
       <button class="filter-btn" data-filter="residential" id="filter-villa">Villas &amp; Residential</button>
       <button class="filter-btn" data-filter="healthcare" id="filter-healthcare">Healthcare &amp; Clinics</button>
       <button class="filter-btn" data-filter="hospitality" id="filter-hospitality">Hotels &amp; Resorts</button>
+    </div>
+
+    <!-- Filter Bar (Mobile Dropdown) -->
+    <div class="portfolio__filters-mobile mobile-only reveal delay-1" style="margin-bottom:24px;">
+      <label for="portfolio-filter-select" class="sr-only">Filter projects by industry</label>
+      <select class="filter-dropdown form-control" id="portfolio-filter-select" aria-label="Select project category">
+        <option value="all">📁 All Projects</option>
+        <option value="restaurant">🍽️ Restaurants &amp; Cafes</option>
+        <option value="beauty">💄 Beauty &amp; Wellness</option>
+        <option value="retail">💎 Retail &amp; Jewellery</option>
+        <option value="office">🏢 Offices &amp; Workspaces</option>
+        <option value="residential">🏡 Villas &amp; Residential</option>
+        <option value="healthcare">🩺 Healthcare &amp; Clinics</option>
+        <option value="hospitality">🏨 Hotels &amp; Resorts</option>
+      </select>
     </div>
 
     <!-- Cards Grid -->

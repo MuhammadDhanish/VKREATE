@@ -108,16 +108,27 @@ app.get('/api/events', (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
   const clientId = Date.now() + Math.random().toString(36).slice(2, 7);
   const newClient = { id: clientId, res };
   sseClients.push(newClient);
 
-  // Send immediate heartbeat/welcome
-  res.write(`data: ${JSON.stringify({ type: 'connected', id: clientId })}\n\n`);
+  // Send immediate welcome ping
+  res.write(`data: ${JSON.stringify({ type: 'connected', id: clientId, timestamp: Date.now() })}\n\n`);
+
+  // Periodic heartbeat to prevent browser/proxy timeouts
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': heartbeat\n\n');
+    } catch (e) {
+      clearInterval(heartbeat);
+    }
+  }, 25000);
 
   req.on('close', () => {
+    clearInterval(heartbeat);
     sseClients = sseClients.filter(c => c.id !== clientId);
   });
 });
@@ -134,10 +145,14 @@ app.post('/api/projects', (req, res) => {
   let projects = readData('projects');
   const project = req.body;
 
+  if (!project) {
+    return res.status(400).json({ error: 'No payload provided' });
+  }
+
   if (Array.isArray(project)) {
     projects = project;
   } else {
-    if (!project.id) project.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    if (!project.id) project.id = 'proj-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     project.createdAt = project.createdAt || new Date().toISOString();
     project.updatedAt = new Date().toISOString();
 
@@ -161,7 +176,6 @@ app.put('/api/projects/:id', (req, res) => {
   const index = projects.findIndex(p => p.id === id);
 
   if (index < 0) {
-    // If not found, create it
     const newP = { id, ...updates, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     projects.unshift(newP);
     writeData('projects', projects);
@@ -184,7 +198,7 @@ app.delete('/api/projects/:id', (req, res) => {
   res.json({ success: true, id });
 });
 
-// Reviews
+// Reviews API
 app.get('/api/reviews', (req, res) => {
   const reviews = readData('reviews');
   res.json(reviews);
@@ -194,10 +208,16 @@ app.post('/api/reviews', (req, res) => {
   let reviews = readData('reviews');
   const review = req.body;
 
+  if (!review) {
+    return res.status(400).json({ error: 'No review data provided' });
+  }
+
   if (Array.isArray(review)) {
     reviews = review;
   } else {
-    if (!review.id) review.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    if (!review.id) {
+      review.id = 'rev-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
     review.createdAt = review.createdAt || new Date().toISOString();
     review.updatedAt = new Date().toISOString();
     if (!review.status) review.status = 'pending';
@@ -345,8 +365,18 @@ app.post('/api/upload', (req, res) => {
   }
 });
 
-// Static Files middleware
-app.use(express.static(__dirname));
+// Static Files middleware with optimal caching headers
+app.use(express.static(__dirname, {
+  maxAge: '1y',
+  etag: true,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    } else if (filePath.match(/\.(jpg|jpeg|png|gif|webp|svg|ico|mp4|woff2?|css|js)$/i)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }
+}));
 
 if (require.main === module) {
   app.listen(PORT, () => {

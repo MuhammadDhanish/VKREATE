@@ -67,6 +67,7 @@
             src="${proj.thumbnail}"
             alt="${proj.name} interior design project by VKREATE"
             loading="lazy"
+            decoding="async"
             onerror="this.onerror=null;this.src='assets/images/project_lilaa_1.jpg'"
           />
           <div class="portfolio__overlay">
