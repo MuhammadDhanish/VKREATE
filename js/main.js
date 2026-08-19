@@ -3,117 +3,13 @@
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+  document.body.style.overflow = '';
 
-  // ── Preloader — Logo Animation video (index.html only, once per session) ──
-  const preloader    = document.getElementById('preloader');
-  const progressFill = document.getElementById('preloader-progress');
-  const skipBtn      = document.getElementById('preloader-skip');
-  const video        = document.getElementById('preloader-video');
-
+  const preloader = document.getElementById('preloader');
   if (preloader) {
-    // If mobile device (screen width <= 768px), remove preloader immediately to prevent blocking mobile phones
-    const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window && window.innerWidth <= 768);
-    if (isMobile) {
-      try { preloader.remove(); } catch(e) {}
-      document.body.style.overflow = '';
-    } else {
-      // If already seen this session, skip immediately and remove
-      let hasSeen = false;
-      try { hasSeen = sessionStorage.getItem('vkreate_intro_seen'); } catch(e) {}
-
-      if (hasSeen) {
-        preloader.remove();
-        document.body.style.overflow = '';
-      } else {
-        document.body.style.overflow = 'hidden';
-
-        let dismissed = false;
-        let rafId;
-
-        const dismiss = () => {
-          if (dismissed) return;
-          dismissed = true;
-          try { sessionStorage.setItem('vkreate_intro_seen', '1'); } catch(e) {}
-          cancelAnimationFrame(rafId);
-          if (progressFill) progressFill.style.width = '100%';
-          preloader.classList.add('fade-out');
-          document.body.style.overflow = '';
-          setTimeout(() => {
-            try { preloader.remove(); } catch (e) {}
-          }, 300);
-        };
-
-        // Click / touch anywhere on preloader or skip button to dismiss immediately
-        preloader.addEventListener('click', dismiss);
-        preloader.addEventListener('touchstart', dismiss, { passive: true });
-        if (skipBtn) {
-          skipBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            dismiss();
-          });
-          skipBtn.addEventListener('touchstart', (e) => {
-            e.stopPropagation();
-            dismiss();
-          }, { passive: true });
-        }
-
-        // Hard safety fallback — dismiss after 1.2s max
-        const fallback = setTimeout(dismiss, 1200);
-
-        // Sync progress bar to video playback position
-        const tickVideo = () => {
-          if (!video || video.ended || video.paused) return;
-          if (video.duration && video.duration > 0) {
-            const pct = (video.currentTime / video.duration) * 100;
-            if (progressFill) progressFill.style.width = pct + '%';
-          }
-          rafId = requestAnimationFrame(tickVideo);
-        };
-
-        if (video) {
-          video.addEventListener('loadedmetadata', () => {
-            rafId = requestAnimationFrame(tickVideo);
-          });
-          video.addEventListener('ended', () => {
-            clearTimeout(fallback);
-            dismiss();
-          });
-          video.addEventListener('error', dismiss);
-
-          // Attempt video autoplay
-          const playPromise = video.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(() => {
-              // Autoplay prevented by browser policy — trigger fast fallback
-              setTimeout(dismiss, 300);
-            });
-          }
-        } else {
-          const startTime = performance.now();
-          const TOTAL_MS  = 1000;
-          const tick = (now) => {
-            const elapsed = now - startTime;
-            const pct = Math.min((elapsed / TOTAL_MS) * 100, 100);
-            if (progressFill) progressFill.style.width = pct + '%';
-            if (elapsed >= TOTAL_MS) { dismiss(); return; }
-            rafId = requestAnimationFrame(tick);
-          };
-          rafId = requestAnimationFrame(tick);
-        }
-      }
-    }
+    try { preloader.remove(); } catch(e) {}
   }
-
-  // Global safety watchdog — guarantee overflow is restored and preloader removed
-  const isMobileWatchdog = window.innerWidth <= 768;
-  setTimeout(() => {
-    const p = document.getElementById('preloader');
-    if (p) {
-      p.classList.add('fade-out');
-      setTimeout(() => p.remove(), 200);
-    }
-    document.body.style.overflow = '';
-  }, isMobileWatchdog ? 0 : 1200);
+  document.body.style.overflow = '';
 
 
 
