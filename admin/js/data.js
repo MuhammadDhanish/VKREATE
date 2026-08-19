@@ -796,6 +796,27 @@ DB.seed();
     } catch (e) {}
   }
 
+  // 4. Firebase Firestore Real-Time Listener
+  if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
+    try {
+      FirebaseDB.db.collection('reviews').onSnapshot((snapshot) => {
+        const firestoreReviews = [];
+        snapshot.forEach((doc) => {
+          if (doc.exists) firestoreReviews.push(doc.data());
+        });
+        if (firestoreReviews.length > 0) {
+          const currentLocal = DB._get(DB.KEYS.reviews) || [];
+          const merged = DB._mergeItems(currentLocal, firestoreReviews, DB._getDeleted(DB.KEYS.deletedReviews) || []);
+          DB._set(DB.KEYS.reviews, merged);
+          window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+          if (typeof App !== 'undefined') App.updateSidebar();
+        }
+      });
+    } catch (e) {
+      console.warn('Firestore review listener warning:', e);
+    }
+  }
+
   // Initial load
   DB.loadRemoteData();
 

@@ -431,7 +431,12 @@
         console.warn('LocalStorage save error:', err);
       }
 
-      // 1. Post to Backend API
+      // 1. Post to Firebase Firestore if connected
+      if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
+        FirebaseDB.db.collection('reviews').doc(newReview.id).set(newReview).catch(e => console.warn('Review Firestore sync warning:', e));
+      }
+
+      // 2. Post to Backend API
       fetch('/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
