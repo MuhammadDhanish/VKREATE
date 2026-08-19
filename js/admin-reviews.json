@@ -1,22 +1,5 @@
 [
   {
-    "id": "rev-mszoc1d72381",
-    "clientName": "dhanish",
-    "author": "dhanish",
-    "clientRole": "car wash",
-    "role": "car wash",
-    "clientEmail": "dhanishdhanishkk@gmail.com",
-    "projectId": "retail-jewellery",
-    "rating": 2,
-    "reviewText": "hi",
-    "text": "hi",
-    "status": "approved",
-    "createdAt": "2026-08-19T05:51:44.107Z",
-    "approvedAt": "2026-08-19T05:52:36.018Z",
-    "updatedAt": "2026-08-19T05:52:36.018Z",
-    "studioResponse": ""
-  },
-  {
     "id": "msyfdpv3lzwct",
     "projectId": "corporate-lounge",
     "projectName": "Corporate VIP Reception & Lounge",
