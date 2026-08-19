@@ -11,6 +11,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const video        = document.getElementById('preloader-video');
 
   if (preloader) {
+    // If mobile device (screen width <= 768px), remove preloader immediately to prevent blocking mobile phones
+    const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window && window.innerWidth <= 768);
+    if (isMobile) {
+      try { preloader.remove(); } catch(e) {}
+      document.body.style.overflow = '';
+      return;
+    }
+
     // If already seen this session, skip immediately and remove
     let hasSeen = false;
     try { hasSeen = sessionStorage.getItem('vkreate_intro_seen'); } catch(e) {}
@@ -34,20 +42,25 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.overflow = '';
         setTimeout(() => {
           try { preloader.remove(); } catch (e) {}
-        }, 400);
+        }, 300);
       };
 
-      // Click anywhere on preloader or skip button to dismiss immediately
+      // Click / touch anywhere on preloader or skip button to dismiss immediately
       preloader.addEventListener('click', dismiss);
+      preloader.addEventListener('touchstart', dismiss, { passive: true });
       if (skipBtn) {
         skipBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           dismiss();
         });
+        skipBtn.addEventListener('touchstart', (e) => {
+          e.stopPropagation();
+          dismiss();
+        }, { passive: true });
       }
 
-      // Hard safety fallback — dismiss after 1.8s max
-      const fallback = setTimeout(dismiss, 1800);
+      // Hard safety fallback — dismiss after 1.2s max
+      const fallback = setTimeout(dismiss, 1200);
 
       // Sync progress bar to video playback position
       const tickVideo = () => {
@@ -74,12 +87,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (playPromise !== undefined) {
           playPromise.catch(() => {
             // Autoplay prevented by browser policy — trigger fast fallback
-            setTimeout(dismiss, 600);
+            setTimeout(dismiss, 300);
           });
         }
       } else {
         const startTime = performance.now();
-        const TOTAL_MS  = 1200;
+        const TOTAL_MS  = 1000;
         const tick = (now) => {
           const elapsed = now - startTime;
           const pct = Math.min((elapsed / TOTAL_MS) * 100, 100);
@@ -92,15 +105,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Global safety watchdog — guarantee overflow is restored and preloader removed within 2.2s
+  // Global safety watchdog — guarantee overflow is restored and preloader removed
+  const isMobileWatchdog = window.innerWidth <= 768;
   setTimeout(() => {
     const p = document.getElementById('preloader');
     if (p) {
       p.classList.add('fade-out');
-      setTimeout(() => p.remove(), 300);
+      setTimeout(() => p.remove(), 200);
     }
     document.body.style.overflow = '';
-  }, 2200);
+  }, isMobileWatchdog ? 0 : 1200);
 
 
 

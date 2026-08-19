@@ -2035,6 +2035,18 @@
   pointer-events: none;
 }
 
+@media (max-width: 768px) {
+  #preloader,
+  .preloader,
+  .preloader__skip,
+  .preloader__progress-bar {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+}
+
 
 /* Inner wrapper — centres everything */
 .preloader__inner {
