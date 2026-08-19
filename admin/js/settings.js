@@ -122,20 +122,29 @@ const Settings = {
             <form id="creds-form" class="form-grid" style="gap:16px" onsubmit="Settings.saveCredentials(event)">
               <div class="form-group">
                 <label class="form-label">Admin Email</label>
-                <input class="form-control" name="email" type="email" value="${creds.email||''}" required>
+                <input class="form-control" name="email" type="email" value="${UI.escapeHTML(creds.email||'')}" required autocomplete="username">
               </div>
               <div class="form-group">
                 <label class="form-label">Current Password</label>
-                <input class="form-control" name="currentPw" type="password" placeholder="Enter current password" required>
+                <div style="position:relative">
+                  <input class="form-control" id="settings-cur-pw" name="currentPw" type="password" placeholder="Enter current password" required autocomplete="current-password" style="padding-right:44px">
+                  <button type="button" onclick="Settings.togglePwVisibility('settings-cur-pw')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:1rem;background:none;border:none;cursor:pointer;" title="Show/hide password">👁</button>
+                </div>
               </div>
               <div class="form-grid form-grid-2">
                 <div class="form-group">
                   <label class="form-label">New Password</label>
-                  <input class="form-control" name="newPw" type="password" placeholder="Minimum 8 characters">
+                  <div style="position:relative">
+                    <input class="form-control" id="settings-new-pw" name="newPw" type="password" placeholder="Minimum 8 characters" autocomplete="new-password" style="padding-right:44px">
+                    <button type="button" onclick="Settings.togglePwVisibility('settings-new-pw')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:1rem;background:none;border:none;cursor:pointer;" title="Show/hide password">👁</button>
+                  </div>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Confirm New Password</label>
-                  <input class="form-control" name="confirmPw" type="password" placeholder="Repeat new password">
+                  <div style="position:relative">
+                    <input class="form-control" id="settings-cfm-pw" name="confirmPw" type="password" placeholder="Repeat new password" autocomplete="new-password" style="padding-right:44px">
+                    <button type="button" onclick="Settings.togglePwVisibility('settings-cfm-pw')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:1rem;background:none;border:none;cursor:pointer;" title="Show/hide password">👁</button>
+                  </div>
                 </div>
               </div>
               <div class="form-hint">Leave new password fields blank to only update the email.</div>
@@ -361,6 +370,12 @@ const Settings = {
         }
       }
     }, 40);
+  },
+
+  togglePwVisibility(inputId) {
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    el.type = el.type === 'password' ? 'text' : 'password';
   },
 
   saveStudio(e) {

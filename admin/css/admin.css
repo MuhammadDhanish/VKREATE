@@ -444,15 +444,19 @@ td.td-name { font-weight: 600; color: var(--text-1); }
 .form-control {
   width: 100%;
   padding: 10px 14px;
-  border: 1.5px solid var(--border-md);
+  border: 1px solid var(--border-md);
   border-radius: var(--r-md);
   font-size: 0.875rem;
+  line-height: 1.4;
   color: var(--text-1);
   background: var(--card);
   transition: border-color var(--dur), box-shadow var(--dur);
   outline: none;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
-.form-control:focus { border-color: var(--green-mid); box-shadow: 0 0 0 3px rgba(61,92,80,0.10); }
+.form-control:focus { border-color: var(--green-mid); box-shadow: 0 0 0 3px rgba(61,92,80,0.12); }
 .form-control.error { border-color: var(--danger); }
 textarea.form-control { min-height: 110px; resize: vertical; }
 select.form-control { cursor: pointer; }
