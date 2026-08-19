@@ -422,8 +422,29 @@ document.addEventListener('DOMContentLoaded', () => {
         let inquiries = existingRaw ? JSON.parse(existingRaw) : [];
         inquiries.unshift(newInquiry);
         localStorage.setItem('vk_admin_inquiries', JSON.stringify(inquiries));
-        pushInquiryToGithub(newInquiry);
-        sendInquiryEmailNotification(newInquiry);
+
+        // 1. Post to API
+        fetch('/api/inquiries', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newInquiry)
+        }).catch(e => console.warn('Inquiry API sync warning:', e));
+
+        // 2. Post to BroadcastChannel
+        if (typeof BroadcastChannel !== 'undefined') {
+          try {
+            const bc = new BroadcastChannel('vk_sync');
+            bc.postMessage({ type: 'inquiries-updated', data: newInquiry });
+          } catch (e) {}
+        }
+        window.dispatchEvent(new Event('storage'));
+
+        if (typeof pushInquiryToGithub === 'function') {
+          try { pushInquiryToGithub(newInquiry); } catch (e) {}
+        }
+        if (typeof sendInquiryEmailNotification === 'function') {
+          try { sendInquiryEmailNotification(newInquiry); } catch (e) {}
+        }
       } catch (err) {
         console.warn('Could not save inquiry:', err);
       }

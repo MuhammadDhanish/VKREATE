@@ -313,11 +313,19 @@
         console.warn('LocalStorage save error:', err);
       }
 
-      // Sync to Firebase Firestore if initialized
-      if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
+      // 1. Post to Backend API
+      fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newReview)
+      }).catch(e => console.warn('Review API sync warning:', e));
+
+      // 2. Post to BroadcastChannel
+      if (typeof BroadcastChannel !== 'undefined') {
         try {
-          FirebaseDB.db.collection('reviews').doc(newReview.id).set(newReview, { merge: true });
-        } catch (err) {}
+          const bc = new BroadcastChannel('vk_sync');
+          bc.postMessage({ type: 'reviews-updated', data: newReview });
+        } catch (e) {}
       }
 
       // Notify open admin tabs and live site components via storage & custom events

@@ -820,45 +820,64 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
 }
 
 // ============================================================
-// Remote Admin-Projects & Reviews Sync (from GitHub JSON files)
+// Remote Admin-Projects & Reviews Sync (API, SSE & JSON Fallback)
 // ============================================================
-(async function loadRemoteAdminProjects() {
+const syncChannelLive = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('vk_sync') : null;
+
+async function loadRemoteAdminProjects() {
   try {
-    const res = await fetch('js/admin-projects.json?t=' + Date.now());
-    if (!res.ok) return;
-    const remoteProjects = await res.json();
+    let remoteProjects = null;
+    try {
+      const res = await fetch('/api/projects?t=' + Date.now());
+      if (res.ok) remoteProjects = await res.json();
+    } catch (e) {}
+
+    if (!remoteProjects) {
+      try {
+        const res = await fetch('js/admin-projects.json?t=' + Date.now());
+        if (res.ok) remoteProjects = await res.json();
+      } catch (e) {}
+    }
+
     if (Array.isArray(remoteProjects) && remoteProjects.length > 0) {
       applyAdminProjects(remoteProjects);
       window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
     }
-  } catch (e) {
-    // optional fail silently
-  }
-})();
-// ── Named re-fetchable remote reviews loader ─────────────────
+  } catch (e) {}
+}
+
 async function loadRemoteAdminReviews() {
   const reviewsMap = new Map();
 
   // 1. Seed static default showcase reviews
-  if (window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.reviews)) {
-    window.VKREATE_DATA.reviews.forEach(r => {
+  if (window.VKREATE_DATA && Array.isArray(staticDefaultReviews)) {
+    staticDefaultReviews.forEach(r => {
       if (r && r.id) reviewsMap.set(r.id, r);
     });
   }
 
-  // 2. Fetch remote reviews from GitHub admin-reviews.json
+  // 2. Fetch remote reviews from API or GitHub admin-reviews.json
   try {
-    const res = await fetch('js/admin-reviews.json?t=' + Date.now());
-    if (res.ok) {
-      const remoteReviews = await res.json();
-      if (Array.isArray(remoteReviews)) {
-        remoteReviews.forEach(r => {
-          if (r && r.id) {
-            const existing = reviewsMap.get(r.id);
-            reviewsMap.set(r.id, { ...existing, ...r });
-          }
-        });
-      }
+    let remoteReviews = null;
+    try {
+      const res = await fetch('/api/reviews?t=' + Date.now());
+      if (res.ok) remoteReviews = await res.json();
+    } catch (e) {}
+
+    if (!remoteReviews) {
+      try {
+        const res = await fetch('js/admin-reviews.json?t=' + Date.now());
+        if (res.ok) remoteReviews = await res.json();
+      } catch (e) {}
+    }
+
+    if (Array.isArray(remoteReviews)) {
+      remoteReviews.forEach(r => {
+        if (r && r.id) {
+          const existing = reviewsMap.get(r.id);
+          reviewsMap.set(r.id, { ...existing, ...r });
+        }
+      });
     }
   } catch (e) {}
 
@@ -902,11 +921,6 @@ async function loadRemoteAdminReviews() {
     }
   } catch (e) {}
 
-  // Update localStorage vk_admin_reviews with full combined set
-  try {
-    localStorage.setItem('vk_admin_reviews', JSON.stringify(Array.from(reviewsMap.values())));
-  } catch (e) {}
-
   // Filter approved reviews for live site display
   const allMerged = Array.from(reviewsMap.values());
   VKREATE_DATA.reviews = allMerged.filter(r => {
@@ -918,12 +932,31 @@ async function loadRemoteAdminReviews() {
   window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
 }
 
+// Initial remote load
+loadRemoteAdminProjects();
 loadRemoteAdminReviews();
 
-window.addEventListener('storage', function (e) {
-  if (!e || !e.key || e.key === 'vk_admin_reviews' || e.key === 'vk_reviews') {
+// ── Setup Live Sync Listeners ─────────────────────────────
+if (syncChannelLive) {
+  syncChannelLive.onmessage = (event) => {
+    loadRemoteAdminProjects();
     loadRemoteAdminReviews();
-  }
+  };
+}
+
+if (typeof EventSource !== 'undefined') {
+  try {
+    const evtSource = new EventSource('/api/events');
+    evtSource.onmessage = (e) => {
+      loadRemoteAdminProjects();
+      loadRemoteAdminReviews();
+    };
+  } catch (e) {}
+}
+
+window.addEventListener('storage', function (e) {
+  loadRemoteAdminProjects();
+  loadRemoteAdminReviews();
 });
 
 

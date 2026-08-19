@@ -1,6 +1,9 @@
 /* ============================================================
-   VKREATE Admin — Data Layer (localStorage CRUD)
+   VKREATE Admin — Data Layer (Unified API, Sync Engine & Fallback)
    ============================================================ */
+
+// BroadcastChannel for instant cross-tab sync in same browser
+const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('vk_sync') : null;
 
 const DB = {
 
@@ -150,15 +153,9 @@ const DB = {
     if (!this._get(this.KEYS.projects)) {
       this._set(this.KEYS.projects, this._defaultProjects());
     }
-
-    // Reviews
     if (!this._get(this.KEYS.reviews)) {
       this._set(this.KEYS.reviews, this._defaultReviews());
     }
-
-
-
-    // Inquiries
     if (!this._get(this.KEYS.inquiries)) {
       this._set(this.KEYS.inquiries, [
         {
@@ -219,60 +216,79 @@ const DB = {
         },
       ]);
     }
-
-    // Settings
-    this._set(this.KEYS.settings, {
-      studio: {
-        name: 'Vkreate Interior Architecture',
-        tagline: 'Where Design Speaks',
-        email: 'vkreatearchitecture@gmail.com',
-        phone: '+91 90371 61861',
-        address: 'LPOne Beyond, Venture Arcade, Thondayad, Kozhikode - 673016',
-        mapsUrl: 'https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw',
-        instagram: 'https://www.instagram.com/vkreate_interior_architecture',
-        facebook: '',
-        website: 'https://vkreate.com',
-      },
-      notifications: {
-        newReview: true,
-        newInquiry: true,
-        notifEmail: 'admin@vkreate.com',
-      },
-      credentials: {
-        email: 'admin@vkreate.com',
-        passwordHash: 'Admin@123', // plain for demo
-      }
-    });
-  },
-
-  // ── Firebase Integration Helpers ───────────────────────────
-  _syncFirebase(collection, docId, data, action = 'set') {
-    if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
-      try {
-        const ref = FirebaseDB.db.collection(collection).doc(docId);
-        if (action === 'delete') {
-          ref.delete().catch(err => console.warn('Firebase delete error:', err));
-        } else {
-          ref.set(data, { merge: true }).catch(err => console.warn('Firebase sync error:', err));
+    if (!this._get(this.KEYS.settings)) {
+      this._set(this.KEYS.settings, {
+        studio: {
+          name: 'Vkreate Interior Architecture',
+          tagline: 'Where Design Speaks',
+          email: 'vkreatearchitecture@gmail.com',
+          phone: '+91 90371 61861',
+          address: 'LPOne Beyond, Venture Arcade, Thondayad, Kozhikode - 673016',
+          mapsUrl: 'https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw',
+          instagram: 'https://www.instagram.com/vkreate_interior_architecture',
+          facebook: '',
+          website: 'https://vkreate.com',
+        },
+        notifications: {
+          newReview: true,
+          newInquiry: true,
+          notifEmail: 'admin@vkreate.com',
+        },
+        credentials: {
+          email: 'admin@vkreate.com',
+          passwordHash: 'Admin@123',
         }
-      } catch (e) {
-        console.warn('Firebase operation error:', e);
-      }
+      });
     }
   },
 
-  async uploadImage(file) {
-    if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.storage) {
-      try {
-        const filename = `projects/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-        const ref = FirebaseDB.storage.ref(filename);
-        const snapshot = await ref.put(file);
-        const url = await snapshot.ref.getDownloadURL();
-        return url;
-      } catch (e) {
-        console.error('Firebase Storage upload failed:', e);
-      }
+  // ── Broadcast Event Helper ──────────────────────────────
+  _broadcast(type, data) {
+    if (syncChannel) {
+      try { syncChannel.postMessage({ type, data, timestamp: Date.now() }); } catch (e) {}
     }
+    window.dispatchEvent(new CustomEvent(`vkreate:${type}`));
+    if (typeof GithubSync !== 'undefined' && GithubSync.push) {
+      GithubSync.push();
+    }
+  },
+
+  // ── Image Upload Helper ─────────────────────────────────
+  async uploadImage(fileOrBase64, filename = '') {
+    // 1. Try backend API upload
+    try {
+      let base64Data = fileOrBase64;
+      if (fileOrBase64 instanceof File) {
+        base64Data = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(fileOrBase64);
+        });
+        filename = fileOrBase64.name;
+      }
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename, base64Data })
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.url) return json.url;
+      }
+    } catch (e) {
+      console.warn('Backend image upload fallback to local storage / IDB:', e);
+    }
+
+    // 2. Fallback to ImageDB (IndexedDB)
+    if (typeof ImageDB !== 'undefined') {
+      try {
+        if (fileOrBase64 instanceof File) {
+          const id = await ImageDB.save(fileOrBase64);
+          return `idb:${id}`;
+        }
+      } catch (e) {}
+    }
+
     return null;
   },
 
@@ -291,25 +307,33 @@ const DB = {
         }
       });
 
-      if (updated) {
-        DB._set(DB.KEYS.projects, list);
-      }
+      if (updated) DB._set(DB.KEYS.projects, list);
       return list.filter(p => p && p.id && !deleted.includes(p.id));
     },
-    get(id)     { return this.all().find(p => p && p.id === id) || null; },
-    save(list)  { DB._set(DB.KEYS.projects, list); },
+    get(id) { return this.all().find(p => p && p.id === id) || null; },
+    save(list) {
+      DB._set(DB.KEYS.projects, list);
+      DB._broadcast('projects-updated', list);
+    },
     add(p) {
       const l = this.all();
       p.id = p.id || DB._id();
-      p.createdAt = new Date().toISOString();
-      p.updatedAt = p.createdAt;
+      p.createdAt = p.createdAt || new Date().toISOString();
+      p.updatedAt = new Date().toISOString();
       if (!p.views) p.views = 0;
       if (!p.clicks) p.clicks = 0;
       if (!p.leads) p.leads = 0;
       l.unshift(p);
-      const ok = DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
-      if (!ok) return null;
-      DB._syncFirebase('projects', p.id, p, 'set');
+      DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
+
+      // Sync to API asynchronously
+      fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(p)
+      }).catch(e => console.warn('API sync error:', e));
+
+      DB._broadcast('projects-updated', l);
       return p;
     },
     update(id, data) {
@@ -317,55 +341,49 @@ const DB = {
       const i = l.findIndex(p => p && p.id === id);
       if (i < 0) return null;
       l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
-      const ok = DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
-      if (!ok) return null;
-      DB._syncFirebase('projects', id, l[i], 'set');
+      DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
+
+      fetch(`/api/projects/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(l[i])
+      }).catch(e => console.warn('API update error:', e));
+
+      DB._broadcast('projects-updated', l);
       return l[i];
     },
-    delete(id)  {
+    delete(id) {
       const p = this.get(id);
       DB._addDeleted(DB.KEYS.deletedProjects, id);
       if (p && p.name) DB._addDeleted(DB.KEYS.deletedProjects, 'name:' + p.name.toLowerCase().trim());
-      this.save(this.all().filter(p => p && p.id !== id));
-      DB._syncFirebase('projects', id, null, 'delete');
+      const remaining = this.all().filter(p => p && p.id !== id);
+      DB._set(DB.KEYS.projects, remaining);
+
+      fetch(`/api/projects/${id}`, { method: 'DELETE' }).catch(e => console.warn('API delete error:', e));
+      DB._broadcast('projects-updated', remaining);
     },
     published() { return this.all().filter(p => p && p.status === 'published'); },
     drafts()    { return this.all().filter(p => p && p.status === 'draft'); },
   },
 
+  // ── Reviews CRUD ──────────────────────────────────────────
   reviews: {
     all() {
-      // Filter out legacy name/proj prefix strings from deleted list
       const rawDeleted = DB._getDeleted(DB.KEYS.deletedReviews) || [];
       const deleted = rawDeleted.filter(d => typeof d === 'string' && !d.startsWith('name:') && !d.startsWith('proj:'));
       const itemMap = new Map();
 
-      // 1. Add default showcase reviews (if any)
-      const defaults = (typeof DB._defaultReviews === 'function') ? DB._defaultReviews() : [];
-      if (Array.isArray(defaults)) {
-        defaults.forEach(def => {
-          if (def && def.id && !deleted.includes(def.id)) {
-            itemMap.set(def.id, def);
-          }
-        });
-      }
-
-      // 2. Loop over localStorage vk_admin_reviews
       try {
         const localAdmin = DB._get(DB.KEYS.reviews) || [];
         if (Array.isArray(localAdmin)) {
           localAdmin.forEach(r => {
             if (r && r.id && !deleted.includes(r.id)) {
-              const existing = itemMap.get(r.id) || {};
-              const status = (existing.status === 'approved' || existing.status === 'rejected') ? existing.status : (r.status || 'pending');
-              const studioResponse = r.studioResponse || existing.studioResponse || '';
-              itemMap.set(r.id, { ...existing, ...r, status, studioResponse });
+              itemMap.set(r.id, r);
             }
           });
         }
       } catch (e) {}
 
-      // 3. Loop over localStorage vk_reviews (live site submission fallback)
       try {
         const rawLive = JSON.parse(localStorage.getItem('vk_reviews')) || [];
         if (Array.isArray(rawLive)) {
@@ -384,7 +402,6 @@ const DB = {
         }
       } catch (e) {}
 
-      // Filter invalid & sort newest first
       const result = Array.from(itemMap.values()).filter(r => r && r.id && r.id !== 'mswstn7iv0g7w');
       result.sort((a, b) => {
         const tA = new Date(a.createdAt || a.approvedAt || a.date || 0).getTime();
@@ -393,23 +410,27 @@ const DB = {
       });
       return result;
     },
-    get(id)     { return this.all().find(r => r && r.id === id) || null; },
-    save(list)  {
+    get(id) { return this.all().find(r => r && r.id === id) || null; },
+    save(list) {
       DB._set(DB.KEYS.reviews, list);
-      try {
-        localStorage.setItem('vk_reviews', JSON.stringify(list));
-      } catch (e) {}
-      window.dispatchEvent(new Event('storage'));
-      window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+      try { localStorage.setItem('vk_reviews', JSON.stringify(list)); } catch (e) {}
+      DB._broadcast('reviews-updated', list);
     },
-    add(r)      {
+    add(r) {
       const l = this.all();
-      r.id = DB._id();
-      r.createdAt = new Date().toISOString();
-      r.status = 'pending';
+      r.id = r.id || DB._id();
+      r.createdAt = r.createdAt || new Date().toISOString();
+      if (!r.status) r.status = 'pending';
       l.unshift(r);
       this.save(l);
-      DB._syncFirebase('reviews', r.id, r, 'set');
+
+      fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(r)
+      }).catch(e => console.warn('API review add error:', e));
+
+      DB._broadcast('reviews-updated', l);
       return r;
     },
     update(id, data) {
@@ -418,7 +439,14 @@ const DB = {
       if (i < 0) return null;
       l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
       this.save(l);
-      DB._syncFirebase('reviews', id, l[i], 'set');
+
+      fetch(`/api/reviews/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(l[i])
+      }).catch(e => console.warn('API review update error:', e));
+
+      DB._broadcast('reviews-updated', l);
       return l[i];
     },
     approve(id) { return this.update(id, { status: 'approved', approvedAt: new Date().toISOString() }); },
@@ -428,7 +456,9 @@ const DB = {
       DB._addDeleted(DB.KEYS.deletedReviews, id);
       const remaining = this.all().filter(r => r && r.id !== id);
       this.save(remaining);
-      DB._syncFirebase('reviews', id, null, 'delete');
+
+      fetch(`/api/reviews/${id}`, { method: 'DELETE' }).catch(e => console.warn('API review delete error:', e));
+      DB._broadcast('reviews-updated', remaining);
     },
     pending()   { return this.all().filter(r => r && r.status === 'pending'); },
     approved()  { return this.all().filter(r => r && r.status === 'approved'); },
@@ -446,55 +476,87 @@ const DB = {
 
   // ── Inquiries CRUD ────────────────────────────────────────
   inquiries: {
-    all()       {
+    all() {
       const list = DB._get(DB.KEYS.inquiries) || [];
       const deleted = DB._getDeleted(DB.KEYS.deletedInquiries);
-      return list.filter(i => !deleted.includes(i.id));
+      return list.filter(i => i && i.id && !deleted.includes(i.id));
     },
-    get(id)     { return this.all().find(i => i.id === id) || null; },
-    save(list)  { DB._set(DB.KEYS.inquiries, list); },
-    add(item)   {
+    get(id) { return this.all().find(i => i.id === id) || null; },
+    save(list) {
+      DB._set(DB.KEYS.inquiries, list);
+      DB._broadcast('inquiries-updated', list);
+    },
+    add(item) {
       const l = this.all();
-      item.id = DB._id();
-      item.createdAt = new Date().toISOString();
-      item.status = 'new';
+      item.id = item.id || DB._id();
+      item.createdAt = item.createdAt || new Date().toISOString();
+      item.status = item.status || 'new';
       l.unshift(item);
       this.save(l);
-      DB._syncFirebase('inquiries', item.id, item, 'set');
+
+      fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item)
+      }).catch(e => console.warn('API inquiry add error:', e));
+
+      DB._broadcast('inquiries-updated', l);
       return item;
     },
     update(id, data) {
       const l = this.all();
-      const i = l.findIndex(x => x.id === id);
+      const i = l.findIndex(x => x && x.id === id);
       if (i < 0) return null;
       l[i] = { ...l[i], ...data };
       this.save(l);
-      DB._syncFirebase('inquiries', id, l[i], 'set');
+
+      fetch(`/api/inquiries/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(l[i])
+      }).catch(e => console.warn('API inquiry update error:', e));
+
+      DB._broadcast('inquiries-updated', l);
       return l[i];
     },
-    delete(id)  {
+    delete(id) {
       DB._addDeleted(DB.KEYS.deletedInquiries, id);
-      this.save(this.all().filter(i => i.id !== id));
-      DB._syncFirebase('inquiries', id, null, 'delete');
+      const remaining = this.all().filter(i => i && i.id !== id);
+      this.save(remaining);
+
+      fetch(`/api/inquiries/${id}`, { method: 'DELETE' }).catch(e => console.warn('API inquiry delete error:', e));
+      DB._broadcast('inquiries-updated', remaining);
     },
     byStatus(s) { return this.all().filter(i => i.status === s); },
     stats() {
       const all = this.all();
       return {
-        new:       all.filter(i => i.status === 'new').length,
-        contacted: all.filter(i => i.status === 'contacted').length,
-        quoted:    all.filter(i => i.status === 'quoted').length,
-        won:       all.filter(i => i.status === 'won').length,
-        lost:      all.filter(i => i.status === 'lost').length,
+        new:       all.filter(i => i && i.status === 'new').length,
+        contacted: all.filter(i => i && i.status === 'contacted').length,
+        quoted:    all.filter(i => i && i.status === 'quoted').length,
+        won:       all.filter(i => i && i.status === 'won').length,
+        lost:      all.filter(i => i && i.status === 'lost').length,
       };
     },
   },
 
   // ── Settings ─────────────────────────────────────────────
   settings: {
-    get()       { return DB._get(DB.KEYS.settings) || {}; },
-    save(data)  { DB._set(DB.KEYS.settings, data); },
-    update(key, val) { const s = this.get(); s[key] = { ...s[key], ...val }; this.save(s); },
+    get() { return DB._get(DB.KEYS.settings) || {}; },
+    save(data) {
+      DB._set(DB.KEYS.settings, data);
+      fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).catch(e => console.warn('API settings save error:', e));
+      DB._broadcast('settings-updated', data);
+    },
+    update(key, val) {
+      const s = this.get();
+      s[key] = { ...s[key], ...val };
+      this.save(s);
+    },
   },
 
   // ── Auth ─────────────────────────────────────────────────
@@ -511,7 +573,6 @@ const DB = {
       isValid()   {
         const s = this.get();
         if (!s) return false;
-        // 8-hour session
         return (Date.now() - s.ts) < 8 * 60 * 60 * 1000;
       },
     },
@@ -537,7 +598,8 @@ const DB = {
             const studioResponse = existing.studioResponse || item.studioResponse || '';
             const existingTime = new Date(existing.updatedAt || existing.approvedAt || existing.createdAt || 0).getTime();
             const remoteTime = new Date(item.updatedAt || item.approvedAt || item.createdAt || 0).getTime();
-            if (remoteTime > existingTime + 5000) {
+
+            if (remoteTime >= existingTime) {
               itemMap.set(item.id, { ...existing, ...item, status, studioResponse });
             } else {
               itemMap.set(item.id, { ...item, ...existing, status, studioResponse });
@@ -549,45 +611,63 @@ const DB = {
     return Array.from(itemMap.values());
   },
 
-  // ── Remote Sync Engine (Firebase Firestore & JSON Fallback) ──
+  // ── Remote Sync Engine ─────────────────────────────────────
   async loadRemoteData() {
     const deletedProjects = DB._getDeleted(DB.KEYS.deletedProjects);
     const deletedReviews = DB._getDeleted(DB.KEYS.deletedReviews);
     const deletedInquiries = DB._getDeleted(DB.KEYS.deletedInquiries);
-
     let updated = false;
 
-    // 1. Try fetching from Firebase Firestore first if active
-    if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
-      try {
-        const projSnap = await FirebaseDB.db.collection('projects').get();
-        if (!projSnap.empty) {
-          const remoteProjects = [];
-          projSnap.forEach(doc => remoteProjects.push(doc.data()));
+    // 1. Try Backend REST API first
+    try {
+      const [pRes, rRes, iRes, sRes] = await Promise.allSettled([
+        fetch('/api/projects?t=' + Date.now()),
+        fetch('/api/reviews?t=' + Date.now()),
+        fetch('/api/inquiries?t=' + Date.now()),
+        fetch('/api/settings?t=' + Date.now()),
+      ]);
+
+      if (pRes.status === 'fulfilled' && pRes.value.ok) {
+        const remoteProjects = await pRes.value.json();
+        if (Array.isArray(remoteProjects)) {
           const existing = DB._get(DB.KEYS.projects) || [];
           const merged = this._mergeItems(existing, remoteProjects, deletedProjects);
           DB._set(DB.KEYS.projects, merged);
           updated = true;
         }
-      } catch (e) {
-        console.warn("Firestore fetch error for projects:", e);
       }
 
-      try {
-        const revSnap = await FirebaseDB.db.collection('reviews').get();
-        if (!revSnap.empty) {
-          const remoteReviews = [];
-          revSnap.forEach(doc => remoteReviews.push(doc.data()));
+      if (rRes.status === 'fulfilled' && rRes.value.ok) {
+        const remoteReviews = await rRes.value.json();
+        if (Array.isArray(remoteReviews)) {
           const existing = DB._get(DB.KEYS.reviews) || [];
           const merged = this._mergeItems(existing, remoteReviews, deletedReviews);
           DB._set(DB.KEYS.reviews, merged);
           updated = true;
         }
-      } catch (e) {
-        console.warn("Firestore fetch error for reviews:", e);
       }
-    } else {
-      // 2. Fallback to static JSON files (Merging without wiping local submissions)
+
+      if (iRes.status === 'fulfilled' && iRes.value.ok) {
+        const remoteInquiries = await iRes.value.json();
+        if (Array.isArray(remoteInquiries)) {
+          const existing = DB._get(DB.KEYS.inquiries) || [];
+          const merged = this._mergeItems(existing, remoteInquiries, deletedInquiries);
+          DB._set(DB.KEYS.inquiries, merged);
+          updated = true;
+        }
+      }
+
+      if (sRes.status === 'fulfilled' && sRes.value.ok) {
+        const remoteSettings = await sRes.value.json();
+        if (remoteSettings && remoteSettings.studio) {
+          DB._set(DB.KEYS.settings, remoteSettings);
+          updated = true;
+        }
+      }
+    } catch (e) {
+      console.warn("Backend API fetch error, falling back to static files:", e);
+
+      // Fallback: static JSON files
       try {
         let projRes = await fetch('../js/admin-projects.json?t=' + Date.now());
         if (!projRes.ok) projRes = await fetch('js/admin-projects.json?t=' + Date.now());
@@ -600,7 +680,7 @@ const DB = {
             updated = true;
           }
         }
-      } catch (e) {}
+      } catch (err) {}
 
       try {
         let revRes = await fetch('../js/admin-reviews.json?t=' + Date.now());
@@ -614,12 +694,11 @@ const DB = {
             updated = true;
           }
         }
-      } catch (e) {}
-
-
+      } catch (err) {}
 
       try {
-        const inqRes = await fetch('../js/admin-inquiries.json?t=' + Date.now());
+        let inqRes = await fetch('../js/admin-inquiries.json?t=' + Date.now());
+        if (!inqRes.ok) inqRes = await fetch('js/admin-inquiries.json?t=' + Date.now());
         if (inqRes.ok) {
           const remoteInquiries = await inqRes.json();
           if (Array.isArray(remoteInquiries)) {
@@ -629,29 +708,63 @@ const DB = {
             updated = true;
           }
         }
-      } catch (e) {}
+      } catch (err) {}
     }
 
     if (updated) {
       window.dispatchEvent(new Event('storage'));
       window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
       window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
+      window.dispatchEvent(new CustomEvent('vkreate:inquiries-updated'));
+      window.dispatchEvent(new CustomEvent('vkreate:settings-updated'));
     }
   },
 };
 
-(async function autoLoadRemoteAdminData() {
-  if (typeof DB !== 'undefined' && DB.loadRemoteData) {
-    await DB.loadRemoteData();
+// Seed DB locally if empty
+DB.seed();
+
+// Setup Real-time Sync Listeners
+(function setupSyncListeners() {
+  // 1. BroadcastChannel Listener
+  if (syncChannel) {
+    syncChannel.onmessage = (event) => {
+      if (event.data && event.data.type) {
+        DB.loadRemoteData();
+        window.dispatchEvent(new CustomEvent(`vkreate:${event.data.type}`));
+      }
+    };
   }
 
-  // Refresh when window/tab is focused or shown on phone/desktop
+  // 2. Storage event listener (cross-tab in same browser)
+  window.addEventListener('storage', (e) => {
+    DB.loadRemoteData();
+  });
+
+  // 3. SSE Server-Sent Events Listener (real-time from server)
+  if (typeof EventSource !== 'undefined') {
+    try {
+      const evtSource = new EventSource('/api/events');
+      evtSource.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.type && msg.type !== 'connected') {
+            DB.loadRemoteData();
+            window.dispatchEvent(new CustomEvent(`vkreate:${msg.type}`));
+          }
+        } catch (err) {}
+      };
+    } catch (e) {}
+  }
+
+  // Initial load
+  DB.loadRemoteData();
+
+  // Handle tab visibility change & focus
   const handleFocus = async () => {
-    if (typeof DB !== 'undefined' && DB.loadRemoteData) {
-      await DB.loadRemoteData();
-      if (typeof App !== 'undefined' && App._refreshCurrentView) {
-        App._refreshCurrentView();
-      }
+    await DB.loadRemoteData();
+    if (typeof App !== 'undefined' && App._refreshCurrentView) {
+      App._refreshCurrentView();
     }
   };
 

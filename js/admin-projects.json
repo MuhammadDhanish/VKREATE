@@ -1,7 +1,7 @@
 [
   {
     "id": "lilaa-restaurant",
-    "name": "Lilaa — Malayali Cuisine",
+    "name": "Lilaa - Malayali Cuisine Edited",
     "industry": "restaurant",
     "industryLabel": "Restaurants & Cafes",
     "location": "Calicut, Kerala",
@@ -42,7 +42,14 @@
       "premium"
     ],
     "createdAt": "2025-06-15T10:00:00Z",
-    "updatedAt": "2025-07-01T08:30:00Z"
+    "updatedAt": "2026-08-19T08:56:37.673Z",
+    "studioResponse": "",
+    "rank": 99,
+    "afterImage": "../assets/images/project_lilaa_1.jpg",
+    "beforeImage": "../assets/images/project_lilaa_2.png",
+    "views": 0,
+    "clicks": 0,
+    "leads": 0
   },
   {
     "id": "luxury-salon",

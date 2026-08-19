@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "id": "rev-mszv1kpht19f",
+    "clientName": "John Doe",
+    "author": "John Doe",
+    "clientRole": "CEO, Test Corp",
+    "role": "CEO, Test Corp",
+    "clientEmail": "john.doe@test.com",
+    "projectId": "general",
+    "rating": 5,
+    "reviewText": "This is a test review for synchronization verification. Excellent work!",
+    "text": "This is a test review for synchronization verification. Excellent work!",
+    "status": "pending",
+    "createdAt": "2026-08-19T08:59:33.269Z",
+    "updatedAt": "2026-08-19T08:59:33.365Z"
+  }
+]

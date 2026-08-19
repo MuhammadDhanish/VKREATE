@@ -384,7 +384,20 @@ const App = {
     document.getElementById('sidebar')?.classList.remove('open');
     document.getElementById('sb-overlay')?.classList.remove('show');
   },
+  _refreshCurrentView() {
+    this.updateSidebar();
+    const page = this._current || 'dashboard';
+    const mod = PAGES[page]?.module;
+    if (mod && typeof mod.render === 'function') {
+      mod.render();
+    }
+  }
 };
+
+// ── Sync Event Listeners ────────────────────────────────────
+['vkreate:projects-updated', 'vkreate:reviews-updated', 'vkreate:inquiries-updated', 'vkreate:settings-updated', 'storage'].forEach(evt => {
+  window.addEventListener(evt, () => App._refreshCurrentView());
+});
 
 // ── Boot ────────────────────────────────────────────────────
 App.init();
