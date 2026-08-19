@@ -479,11 +479,11 @@ function applyAdminProjects(adminProjects) {
           solution: adminP.solution || staticP.solution,
           result: adminP.result || staticP.result,
           testimonial: adminP.testimonial?.text ? {
-            author: adminP.testimonial.author || staticP.testimonial.author,
-            role: adminP.testimonial.role || staticP.testimonial.role,
-            text: adminP.testimonial.text || staticP.testimonial.text,
+            author: adminP.testimonial.author,
+            role: adminP.testimonial.role,
+            text: adminP.testimonial.text,
             rating: adminP.testimonial.rating || 5
-          } : staticP.testimonial
+          } : null
         });
       }
     } else {

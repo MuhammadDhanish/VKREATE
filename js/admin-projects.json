@@ -25,12 +25,7 @@
       "Execution",
       "Handover"
     ],
-    "testimonial": {
-      "author": "Unnikrishnan Nair",
-      "role": "Founder & Owner, Lilaa Hospitality",
-      "text": "VKREATE captured our brand's warmth and sophistication in every detail.",
-      "rating": 5
-    },
+    "testimonial": null,
     "metrics": {
       "sqft": "2500",
       "seatingCapacity": 85,
@@ -69,12 +64,7 @@
       "Execution",
       "Handover"
     ],
-    "testimonial": {
-      "author": "Dr. Reshma Menon",
-      "role": "Salon Director, Wings Wellness",
-      "text": "Our clients feel like they're stepping into a 5-star spa retreat.",
-      "rating": 5
-    },
+    "testimonial": null,
     "metrics": {
       "sqft": "2200",
       "pods": 6,
@@ -114,12 +104,7 @@
       "Execution",
       "Handover"
     ],
-    "testimonial": {
-      "author": "Faisal Rahman",
-      "role": "Brand Manager, Wings Retail",
-      "text": "The design makes our jewellery the hero.",
-      "rating": 5
-    },
+    "testimonial": null,
     "metrics": {
       "sqft": "1800",
       "footTraffic": "+40%",
@@ -159,12 +144,7 @@
       "Execution",
       "Handover"
     ],
-    "testimonial": {
-      "author": "Sameer Varma",
-      "role": "Corporate Director, Apex Zenith",
-      "text": "First impressions matter immensely in corporate business.",
-      "rating": 5
-    },
+    "testimonial": null,
     "metrics": {
       "sqft": "2900",
       "satisfaction": "98%",
@@ -205,12 +185,7 @@
       "Execution",
       "Handover"
     ],
-    "testimonial": {
-      "author": "Anjali & Vikram Rao",
-      "role": "Homeowners",
-      "text": "Our villa interior is breathtaking. VKREATE blended teak wood warmth seamlessly.",
-      "rating": 5
-    },
+    "testimonial": null,
     "metrics": {
       "sqft": "4200",
       "bedrooms": 4,
@@ -256,12 +231,7 @@
       "Execution",
       "Handover"
     ],
-    "testimonial": {
-      "author": "Dr. Vivek Kurup",
-      "role": "Chief Surgeon, Aura Clinic",
-      "text": "The clinical layout reduces patient anxiety while offering high-efficiency workflow.",
-      "rating": 5
-    },
+    "testimonial": null,
     "metrics": {
       "sqft": "1600",
       "opdRooms": 3,
@@ -305,12 +275,7 @@
       "Execution",
       "Handover"
     ],
-    "testimonial": {
-      "author": "Mathew Joseph",
-      "role": "GM, Grand Horizon Hotel",
-      "text": "The lobby redesign surpassed expectations. Turnkey execution was completed 2 weeks ahead.",
-      "rating": 5
-    },
+    "testimonial": null,
     "metrics": {
       "sqft": "6500",
       "suites": 18,
@@ -354,12 +319,7 @@
       "Execution",
       "Handover"
     ],
-    "testimonial": {
-      "author": "Priya Ramakrishnan",
-      "role": "Owner, Emerald Brew Cafe",
-      "text": "An absolute delight to work with. The custom coffee bar created a buzzing community hotspot.",
-      "rating": 5
-    },
+    "testimonial": null,
     "metrics": {
       "sqft": "1500",
       "dailyCups": 450,
