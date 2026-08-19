@@ -241,3 +241,21 @@ window.addEventListener('vkreate:reviews-updated', () => {
   }
   if (typeof App !== 'undefined') App.updateSidebar();
 });
+
+// Continuous background loop sync — checks for newly added client reviews every 2 seconds
+if (!window._reviewsSyncLoopStarted) {
+  window._reviewsSyncLoopStarted = true;
+  let _lastReviewsLength = -1;
+  setInterval(() => {
+    try {
+      const all = DB.reviews.all() || [];
+      if (all.length !== _lastReviewsLength) {
+        _lastReviewsLength = all.length;
+        if (typeof App !== 'undefined') {
+          if (App._current === 'reviews') Reviews.render();
+          App.updateSidebar();
+        }
+      }
+    } catch(e) {}
+  }, 2000);
+}

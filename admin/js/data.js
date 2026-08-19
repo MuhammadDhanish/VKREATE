@@ -340,28 +340,32 @@ const DB = {
       const deleted = rawDeleted.filter(d => typeof d === 'string' && !d.startsWith('name:') && !d.startsWith('proj:'));
       const itemMap = new Map();
 
-      // 1. Add default showcase reviews
+      // 1. Add default showcase reviews (if any)
       const defaults = (typeof DB._defaultReviews === 'function') ? DB._defaultReviews() : [];
-      defaults.forEach(def => {
-        if (def && def.id && !deleted.includes(def.id)) {
-          itemMap.set(def.id, def);
-        }
-      });
-
-      // 2. Merge items from localStorage vk_admin_reviews
-      const localAdmin = DB._get(DB.KEYS.reviews) || [];
-      if (Array.isArray(localAdmin)) {
-        localAdmin.forEach(r => {
-          if (r && r.id && !deleted.includes(r.id)) {
-            const existing = itemMap.get(r.id) || {};
-            const status = (existing.status === 'approved' || existing.status === 'rejected') ? existing.status : (r.status || 'pending');
-            const studioResponse = r.studioResponse || existing.studioResponse || '';
-            itemMap.set(r.id, { ...existing, ...r, status, studioResponse });
+      if (Array.isArray(defaults)) {
+        defaults.forEach(def => {
+          if (def && def.id && !deleted.includes(def.id)) {
+            itemMap.set(def.id, def);
           }
         });
       }
 
-      // 3. Merge items from localStorage vk_reviews (if submitted from live site fallback)
+      // 2. Loop over localStorage vk_admin_reviews
+      try {
+        const localAdmin = DB._get(DB.KEYS.reviews) || [];
+        if (Array.isArray(localAdmin)) {
+          localAdmin.forEach(r => {
+            if (r && r.id && !deleted.includes(r.id)) {
+              const existing = itemMap.get(r.id) || {};
+              const status = (existing.status === 'approved' || existing.status === 'rejected') ? existing.status : (r.status || 'pending');
+              const studioResponse = r.studioResponse || existing.studioResponse || '';
+              itemMap.set(r.id, { ...existing, ...r, status, studioResponse });
+            }
+          });
+        }
+      } catch (e) {}
+
+      // 3. Loop over localStorage vk_reviews (live site submission fallback)
       try {
         const rawLive = JSON.parse(localStorage.getItem('vk_reviews')) || [];
         if (Array.isArray(rawLive)) {
@@ -380,7 +384,14 @@ const DB = {
         }
       } catch (e) {}
 
-      return Array.from(itemMap.values()).filter(r => r && r.id && r.id !== 'mswstn7iv0g7w');
+      // Filter invalid & sort newest first
+      const result = Array.from(itemMap.values()).filter(r => r && r.id && r.id !== 'mswstn7iv0g7w');
+      result.sort((a, b) => {
+        const tA = new Date(a.createdAt || a.approvedAt || a.date || 0).getTime();
+        const tB = new Date(b.createdAt || b.approvedAt || b.date || 0).getTime();
+        return tB - tA;
+      });
+      return result;
     },
     get(id)     { return this.all().find(r => r && r.id === id) || null; },
     save(list)  {
