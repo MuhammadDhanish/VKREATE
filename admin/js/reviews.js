@@ -29,7 +29,10 @@ const Reviews = {
             <p class="page-subtitle">Manage, approve, reject, and respond to client reviews</p>
           </div>
           <div class="page-actions">
-            <button class="btn btn-outline btn-sm" onclick="Reviews.deployLive()" title="Sync approved reviews & studio responses to production live site">
+            <button class="btn btn-outline btn-sm" onclick="Reviews.refreshSync()" title="Force merge sync from localStorage, JSON, and Firestore">
+              🔄 Refresh &amp; Sync
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="Reviews.deployLive()" title="Sync approved reviews & studio responses to production live site">
               🚀 Deploy to Live Site
             </button>
           </div>
@@ -202,5 +205,28 @@ const Reviews = {
     } else {
       UI.toast('Local storage reviews synced across tabs!', 'info');
     }
+  },
+
+  async refreshSync() {
+    UI.toast('🔄 Synchronizing reviews...', 'info');
+    if (typeof DB.loadRemoteData === 'function') {
+      await DB.loadRemoteData();
+    }
+    if (typeof App !== 'undefined') App.updateSidebar();
+    this.render();
+    UI.toast('✓ Reviews synchronized successfully', 'success');
   }
 };
+
+window.addEventListener('storage', () => {
+  if (typeof App !== 'undefined' && App._current === 'reviews') {
+    Reviews.render();
+  }
+  if (typeof App !== 'undefined') App.updateSidebar();
+});
+window.addEventListener('vkreate:reviews-updated', () => {
+  if (typeof App !== 'undefined' && App._current === 'reviews') {
+    Reviews.render();
+  }
+  if (typeof App !== 'undefined') App.updateSidebar();
+});

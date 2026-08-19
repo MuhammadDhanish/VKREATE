@@ -910,52 +910,83 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
 })();
 // ── Named re-fetchable remote reviews loader ─────────────────
 async function loadRemoteAdminReviews() {
-  let combinedAdmin = [];
-  let hasAdminSource = false;
+  const reviewsMap = new Map();
 
+  // 1. Seed static default showcase reviews
+  if (window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.reviews)) {
+    window.VKREATE_DATA.reviews.forEach(r => {
+      if (r && r.id) reviewsMap.set(r.id, r);
+    });
+  }
+
+  // 2. Fetch remote reviews from GitHub admin-reviews.json
   try {
     const res = await fetch('js/admin-reviews.json?t=' + Date.now());
     if (res.ok) {
       const remoteReviews = await res.json();
       if (Array.isArray(remoteReviews)) {
-        hasAdminSource = true;
-        combinedAdmin = remoteReviews.filter(r => r && (r.status === 'approved' || r.verified === true));
-        if (combinedAdmin.length > 0) {
-          try {
-            let existingLocal = JSON.parse(localStorage.getItem('vk_admin_reviews')) || [];
-            const map = new Map();
-            (window.VKREATE_DATA.reviews || []).forEach(r => map.set(r.id, r));
-            existingLocal.forEach(r => { if (r && r.id) map.set(r.id, r); });
-            combinedAdmin.forEach(r => { if (r && r.id) map.set(r.id, r); });
-            localStorage.setItem('vk_admin_reviews', JSON.stringify(Array.from(map.values())));
-          } catch (e) {}
-        }
+        remoteReviews.forEach(r => {
+          if (r && r.id) {
+            const existing = reviewsMap.get(r.id);
+            reviewsMap.set(r.id, { ...existing, ...r });
+          }
+        });
       }
     }
   } catch (e) {}
 
-  if (!hasAdminSource || combinedAdmin.length === 0) {
+  // 3. Merge items from localStorage vk_admin_reviews
+  try {
     const rawLocal = localStorage.getItem('vk_admin_reviews');
-    if (rawLocal !== null) {
-      try {
-        const parsed = JSON.parse(rawLocal);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          combinedAdmin = parsed;
-        }
-      } catch (e) {}
+    if (rawLocal) {
+      const parsed = JSON.parse(rawLocal);
+      if (Array.isArray(parsed)) {
+        parsed.forEach(r => {
+          if (r && r.id) {
+            const existing = reviewsMap.get(r.id);
+            reviewsMap.set(r.id, { ...existing, ...r });
+          }
+        });
+      }
     }
-  }
+  } catch (e) {}
 
-  if (combinedAdmin.length > 0) {
-    VKREATE_DATA.reviews = combinedAdmin.filter(r => r && (r.status === 'approved' || r.verified === true));
-  }
+  // 4. Also check localStorage vk_reviews fallback
+  try {
+    const rawLive = localStorage.getItem('vk_reviews');
+    if (rawLive) {
+      const parsed = JSON.parse(rawLive);
+      if (Array.isArray(parsed)) {
+        parsed.forEach(r => {
+          if (r && r.id) {
+            const existing = reviewsMap.get(r.id);
+            reviewsMap.set(r.id, { ...existing, ...r });
+          }
+        });
+      }
+    }
+  } catch (e) {}
+
+  // Update localStorage vk_admin_reviews with full combined set
+  try {
+    localStorage.setItem('vk_admin_reviews', JSON.stringify(Array.from(reviewsMap.values())));
+  } catch (e) {}
+
+  // Filter approved reviews for live site display
+  const allMerged = Array.from(reviewsMap.values());
+  VKREATE_DATA.reviews = allMerged.filter(r => {
+    if (!r) return false;
+    const isApproved = r.status === 'approved' || r.verified === true || (!r.status && r.rating);
+    return isApproved && r.id !== 'mswstn7iv0g7w';
+  });
+
   window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
 }
 
 loadRemoteAdminReviews();
 
 window.addEventListener('storage', function (e) {
-  if (!e || !e.key || e.key === 'vk_admin_reviews') {
+  if (!e || !e.key || e.key === 'vk_admin_reviews' || e.key === 'vk_reviews') {
     loadRemoteAdminReviews();
   }
 });

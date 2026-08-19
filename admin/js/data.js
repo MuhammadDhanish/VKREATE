@@ -478,25 +478,45 @@ const DB = {
     drafts()    { return this.all().filter(p => p && p.status === 'draft'); },
   },
 
-  // ── Reviews CRUD ──────────────────────────────────────────
   reviews: {
     all() {
-      const list = DB._get(DB.KEYS.reviews) || [];
-      const defaults = (typeof DB._defaultReviews === 'function') ? DB._defaultReviews() : [];
-      const deleted = DB._getDeleted(DB.KEYS.deletedReviews);
-      let updated = false;
+      const deleted = DB._getDeleted(DB.KEYS.deletedReviews) || [];
+      const itemMap = new Map();
 
+      // 1. Add default showcase reviews
+      const defaults = (typeof DB._defaultReviews === 'function') ? DB._defaultReviews() : [];
       defaults.forEach(def => {
-        if (def && def.id && !deleted.includes(def.id) && !list.some(r => r && r.id === def.id)) {
-          list.push(def);
-          updated = true;
+        if (def && def.id && !deleted.includes(def.id)) {
+          itemMap.set(def.id, def);
         }
       });
 
-      if (updated) {
-        DB._set(DB.KEYS.reviews, list);
+      // 2. Merge items from localStorage vk_admin_reviews
+      const localAdmin = DB._get(DB.KEYS.reviews) || [];
+      if (Array.isArray(localAdmin)) {
+        localAdmin.forEach(r => {
+          if (r && r.id && !deleted.includes(r.id)) {
+            const clientNameKey = r.clientName ? 'name:' + r.clientName.toLowerCase().trim() : '';
+            if (!clientNameKey || !deleted.includes(clientNameKey)) {
+              itemMap.set(r.id, { ...(itemMap.get(r.id) || {}), ...r });
+            }
+          }
+        });
       }
-      return list.filter(r => r && r.id && !deleted.includes(r.id) && r.id !== 'mswstn7iv0g7w');
+
+      // 3. Merge items from localStorage vk_reviews (if submitted from live site fallback)
+      try {
+        const rawLive = JSON.parse(localStorage.getItem('vk_reviews')) || [];
+        if (Array.isArray(rawLive)) {
+          rawLive.forEach(r => {
+            if (r && r.id && !deleted.includes(r.id) && !itemMap.has(r.id)) {
+              itemMap.set(r.id, r);
+            }
+          });
+        }
+      } catch (e) {}
+
+      return Array.from(itemMap.values()).filter(r => r && r.id && r.id !== 'mswstn7iv0g7w');
     },
     get(id)     { return this.all().find(r => r && r.id === id) || null; },
     save(list)  { DB._set(DB.KEYS.reviews, list); },
