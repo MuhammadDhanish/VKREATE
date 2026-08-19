@@ -30,6 +30,9 @@ const Reviews = {
             <p class="page-subtitle">Manage, approve, reject, and respond to client reviews</p>
           </div>
           <div class="page-actions">
+            <button class="btn btn-gold btn-sm" onclick="Reviews.openAddModal()" title="Add a new client review directly from Admin">
+              ➕ Add Review
+            </button>
             <button class="btn btn-outline btn-sm" onclick="Reviews.refreshSync(this)" title="Force merge sync from localStorage, JSON, and Firestore">
               <span class="refresh-icon" style="display:inline-block;transition:transform 0.5s ease;">🔄</span> Refresh &amp; Sync
             </button>
@@ -245,6 +248,118 @@ const Reviews = {
     } catch(e) {
       console.warn('restoreSeedReviews error:', e);
     }
+  },
+
+  openAddModal() {
+    const projects = DB.projects.all() || [];
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay active';
+    overlay.id = 'admin-add-review-modal';
+
+    overlay.innerHTML = `
+      <div class="modal card" style="max-width:560px;width:100%;padding:28px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <h2 style="font-family:var(--font-serif);font-size:1.4rem;font-weight:400;color:var(--text-1);margin:0;">➕ Add Client Review</h2>
+          <button class="btn btn-ghost btn-icon" onclick="document.getElementById('admin-add-review-modal').remove()" style="font-size:1.2rem;">✕</button>
+        </div>
+
+        <form id="admin-add-review-form" onsubmit="Reviews.submitAddForm(event)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div class="form-group">
+              <label class="form-label" style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:6px;">Client Name *</label>
+              <input type="text" id="adm-rev-name" class="form-control" placeholder="e.g. Unnikrishnan Nair" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:6px;">Role / Title *</label>
+              <input type="text" id="adm-rev-role" class="form-control" placeholder="e.g. Founder, Lilaa Restaurants" required />
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div class="form-group">
+              <label class="form-label" style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:6px;">Email Address</label>
+              <input type="email" id="adm-rev-email" class="form-control" placeholder="client@company.com" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:6px;">Rating *</label>
+              <select id="adm-rev-rating" class="form-control">
+                <option value="5" selected>⭐⭐⭐⭐⭐ (5 Stars)</option>
+                <option value="4">⭐⭐⭐⭐ (4 Stars)</option>
+                <option value="3">⭐⭐⭐ (3 Stars)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:16px;">
+            <label class="form-label" style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:6px;">Select Project (Optional)</label>
+            <select id="adm-rev-project" class="form-control">
+              <option value="general">General Studio Testimonial</option>
+              ${projects.map(p => `<option value="${p.id}">${UI.escapeHTML(p.name)}</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom:16px;">
+            <label class="form-label" style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:6px;">Review Text *</label>
+            <textarea id="adm-rev-text" class="form-control" rows="4" placeholder="Write the client's review text..." required></textarea>
+          </div>
+
+          <div class="form-group" style="margin-bottom:24px;">
+            <label class="form-label" style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:6px;">Status *</label>
+            <select id="adm-rev-status" class="form-control">
+              <option value="approved" selected>✅ Approved (Publish to Live Site Immediately)</option>
+              <option value="pending">⏳ Pending Approval</option>
+            </select>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:12px;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('admin-add-review-modal').remove()">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm">Save &amp; Publish Review</button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  },
+
+  submitAddForm(e) {
+    e.preventDefault();
+    const name = (document.getElementById('adm-rev-name')?.value || '').trim();
+    const role = (document.getElementById('adm-rev-role')?.value || '').trim();
+    const email = (document.getElementById('adm-rev-email')?.value || '').trim();
+    const rating = parseInt(document.getElementById('adm-rev-rating')?.value || '5', 10);
+    const projectId = document.getElementById('adm-rev-project')?.value || 'general';
+    const text = (document.getElementById('adm-rev-text')?.value || '').trim();
+    const status = document.getElementById('adm-rev-status')?.value || 'approved';
+
+    if (!name || !text) {
+      UI.toast('Please provide a client name and review text.', 'warning');
+      return;
+    }
+
+    const newRev = {
+      id: 'rev-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      clientName: name,
+      author: name,
+      clientRole: role || 'Client',
+      role: role || 'Client',
+      clientEmail: email,
+      projectId,
+      rating,
+      reviewText: text,
+      text,
+      status,
+      createdAt: new Date().toISOString(),
+      approvedAt: status === 'approved' ? new Date().toISOString() : null
+    };
+
+    DB.reviews.add(newRev);
+
+    const modal = document.getElementById('admin-add-review-modal');
+    if (modal) modal.remove();
+
+    UI.toast(`✓ Review from ${name} added successfully!`, 'success');
+    this.render();
+    if (typeof App !== 'undefined') App.updateSidebar();
   }
 };
 
