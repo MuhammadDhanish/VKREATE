@@ -18,37 +18,7 @@
   <!-- CSS -->
   <link rel="stylesheet" href="css/reset.css" />
   <link rel="stylesheet" href="css/animations.css" />
-  <!-- Instant Mobile Nav Toggle Script -->
-  <script>
-    window.toggleMobileNav = function (e) {
-      if (e) {
-        if (e.preventDefault) e.preventDefault();
-        if (e.stopPropagation) e.stopPropagation();
-      }
-      var hamburger = document.getElementById('hamburger') || document.querySelector('.nav__hamburger');
-      var mobileNav = document.getElementById('mobile-nav') || document.querySelector('.nav__mobile');
-      if (!hamburger || !mobileNav) return;
-
-      var isOpen = hamburger.classList.toggle('open');
-      if (isOpen) {
-        mobileNav.classList.add('open');
-        mobileNav.style.display = 'flex';
-        mobileNav.style.opacity = '1';
-        mobileNav.style.pointerEvents = 'all';
-        document.body.classList.add('nav-open');
-        document.body.style.overflow = 'hidden';
-        hamburger.setAttribute('aria-expanded', 'true');
-      } else {
-        mobileNav.classList.remove('open');
-        mobileNav.style.display = '';
-        mobileNav.style.opacity = '';
-        mobileNav.style.pointerEvents = '';
-        document.body.classList.remove('nav-open');
-        document.body.style.overflow = '';
-        hamburger.setAttribute('aria-expanded', 'false');
-      }
-    };
-  </script>
+  <link rel="stylesheet" href="css/main.css" />
 </head>
 <body>
 
