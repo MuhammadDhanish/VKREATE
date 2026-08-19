@@ -300,11 +300,15 @@
         createdAt: new Date().toISOString()
       };
 
-      // Save to localStorage vk_admin_reviews
+      // Save to localStorage vk_admin_reviews & vk_reviews
       try {
-        let existing = JSON.parse(localStorage.getItem('vk_admin_reviews')) || [];
-        existing.unshift(newReview);
-        localStorage.setItem('vk_admin_reviews', JSON.stringify(existing));
+        let existingAdmin = JSON.parse(localStorage.getItem('vk_admin_reviews')) || [];
+        existingAdmin.unshift(newReview);
+        localStorage.setItem('vk_admin_reviews', JSON.stringify(existingAdmin));
+
+        let existingLive = JSON.parse(localStorage.getItem('vk_reviews')) || [];
+        existingLive.unshift(newReview);
+        localStorage.setItem('vk_reviews', JSON.stringify(existingLive));
       } catch (err) {
         console.warn('LocalStorage save error:', err);
       }
@@ -316,8 +320,9 @@
         } catch (err) {}
       }
 
-      // Notify other open tabs / admin panel via storage event
+      // Notify open admin tabs and live site components via storage & custom events
       window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
 
       // Show Thank You Feedback inside modal
       if (modalBody) {

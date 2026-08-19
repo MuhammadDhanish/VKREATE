@@ -335,7 +335,9 @@ const DB = {
 
   reviews: {
     all() {
-      const deleted = DB._getDeleted(DB.KEYS.deletedReviews) || [];
+      // Filter out legacy name/proj prefix strings from deleted list
+      const rawDeleted = DB._getDeleted(DB.KEYS.deletedReviews) || [];
+      const deleted = rawDeleted.filter(d => typeof d === 'string' && !d.startsWith('name:') && !d.startsWith('proj:'));
       const itemMap = new Map();
 
       // 1. Add default showcase reviews
@@ -351,10 +353,7 @@ const DB = {
       if (Array.isArray(localAdmin)) {
         localAdmin.forEach(r => {
           if (r && r.id && !deleted.includes(r.id)) {
-            const clientNameKey = r.clientName ? 'name:' + r.clientName.toLowerCase().trim() : '';
-            if (!clientNameKey || !deleted.includes(clientNameKey)) {
-              itemMap.set(r.id, { ...(itemMap.get(r.id) || {}), ...r });
-            }
+            itemMap.set(r.id, { ...(itemMap.get(r.id) || {}), ...r });
           }
         });
       }
@@ -397,14 +396,10 @@ const DB = {
     approve(id) { return this.update(id, { status: 'approved', approvedAt: new Date().toISOString() }); },
     reject(id)  { return this.update(id, { status: 'rejected' }); },
     delete(id)  {
-      const r = this.get(id);
+      if (!id) return;
       DB._addDeleted(DB.KEYS.deletedReviews, id);
-      if (r) {
-        if (r.clientName) DB._addDeleted(DB.KEYS.deletedReviews, 'name:' + r.clientName.toLowerCase().trim());
-        if (r.author) DB._addDeleted(DB.KEYS.deletedReviews, 'name:' + r.author.toLowerCase().trim());
-        if (r.projectId) DB._addDeleted(DB.KEYS.deletedReviews, 'proj:' + r.projectId);
-      }
-      this.save(this.all().filter(r => r && r.id !== id));
+      const remaining = this.all().filter(r => r && r.id !== id);
+      this.save(remaining);
       DB._syncFirebase('reviews', id, null, 'delete');
     },
     pending()   { return this.all().filter(r => r && r.status === 'pending'); },
