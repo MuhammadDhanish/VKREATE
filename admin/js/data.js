@@ -2,18 +2,6 @@
    VKREATE Admin — Data Layer (Unified API, Sync Engine & Fallback)
    ============================================================ */
 
-// Force-purge stale mobile local storage cache
-(function purgeStaleMobileStorage() {
-  try {
-    const PURGE_KEY = 'vk_purge_v4';
-    if (localStorage.getItem('vk_purge_key') !== PURGE_KEY) {
-      localStorage.removeItem('vk_admin_reviews');
-      localStorage.removeItem('vk_reviews');
-      localStorage.setItem('vk_purge_key', PURGE_KEY);
-    }
-  } catch (e) {}
-})();
-
 // BroadcastChannel for instant cross-tab sync in same browser
 const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('vk_sync') : null;
 
@@ -164,7 +152,46 @@ const DB = {
   },
 
   _defaultReviews() {
-    return [];
+    return [
+      {
+        id: 'rev-lilaa-01',
+        clientName: 'Anand Varma',
+        clientRole: 'Founder, Lilaa Restaurants',
+        clientEmail: 'anand@lilaarestaurants.com',
+        projectId: 'lilaa-restaurant',
+        rating: 5,
+        reviewText: "VKREATE transformed our vision into Kerala's most talked-about dining space. The arched alcoves, warm ambient lighting, and bespoke furniture elevated our brand experience significantly. Table turn rate increased 30% in the first month!",
+        status: 'approved',
+        createdAt: '2025-07-02T10:00:00Z',
+        approvedAt: '2025-07-02T12:00:00Z',
+        studioResponse: 'Thank you Anand! Designing Lilaa was an incredible experience for our entire interior architecture team.'
+      },
+      {
+        id: 'rev-wings-02',
+        clientName: 'Dr. Priya Nair',
+        clientRole: 'Managing Director, Wings Salon & Spa',
+        clientEmail: 'priya@wingsbeauty.in',
+        projectId: 'luxury-salon',
+        rating: 5,
+        reviewText: 'Flawless execution from concept to completion. The layout optimization in our Kochi salon created a serene, high-end sanctuary that our VIP clients absolutely love. Highly recommend VKREATE for luxury wellness spaces.',
+        status: 'approved',
+        createdAt: '2025-07-10T14:30:00Z',
+        approvedAt: '2025-07-10T16:00:00Z',
+        studioResponse: 'We are thrilled Dr. Priya! The curved glass arches and acoustic detailing in Wings remain one of our proudest accomplishments.'
+      },
+      {
+        id: 'rev-pending-03',
+        clientName: 'Suresh Menon',
+        clientRole: 'Commercial Property Owner',
+        clientEmail: 'suresh.menon@menongroup.com',
+        projectId: 'corporate-lounge',
+        rating: 5,
+        reviewText: 'Outstanding craftsmanship on our executive workspace lounge in Calicut. The lighting accents and wood ribbing created an extraordinary corporate environment for our executive guests.',
+        status: 'pending',
+        createdAt: '2025-08-18T18:20:00Z',
+        studioResponse: ''
+      }
+    ];
   },
 
   // ── Seed ─────────────────────────────────────────────────
@@ -663,9 +690,13 @@ const DB = {
         updated = true;
       }
 
-      if (Array.isArray(remoteReviews)) {
-        DB._set(DB.KEYS.reviews, remoteReviews);
-        try { localStorage.setItem('vk_reviews', JSON.stringify(remoteReviews)); } catch (e) {}
+      if (Array.isArray(remoteReviews) && remoteReviews.length > 0) {
+        const localRev = DB._get(DB.KEYS.reviews) || [];
+        const rawLiveRev = (() => { try { return JSON.parse(localStorage.getItem('vk_reviews')) || []; } catch { return []; } })();
+        const currentRev = DB._mergeItems(localRev, rawLiveRev);
+        const mergedReviews = DB._mergeItems(currentRev, remoteReviews, DB._getDeleted(DB.KEYS.deletedReviews) || []);
+        DB._set(DB.KEYS.reviews, mergedReviews);
+        try { localStorage.setItem('vk_reviews', JSON.stringify(mergedReviews)); } catch (e) {}
         updated = true;
       }
 
