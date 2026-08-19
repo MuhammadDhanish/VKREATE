@@ -72,11 +72,17 @@
     const aggStarsEl = document.getElementById('agg-stars');
     const aggCountEl = document.getElementById('agg-count');
 
-    if (aggScoreEl && reviews.length > 0) {
-      const avg = (reviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0) / reviews.length).toFixed(1);
-      aggScoreEl.textContent = avg;
-      if (aggStarsEl) aggStarsEl.innerHTML = renderStarsHTML(Math.round(avg));
-      if (aggCountEl) aggCountEl.textContent = `Based on ${reviews.length} verified client review${reviews.length !== 1 ? 's' : ''}`;
+    if (aggScoreEl) {
+      if (reviews.length > 0) {
+        const avg = (reviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0) / reviews.length).toFixed(1);
+        aggScoreEl.textContent = avg;
+        if (aggStarsEl) aggStarsEl.innerHTML = renderStarsHTML(Math.round(avg));
+        if (aggCountEl) aggCountEl.textContent = `Based on ${reviews.length} verified client review${reviews.length !== 1 ? 's' : ''}`;
+      } else {
+        aggScoreEl.textContent = '5.0';
+        if (aggStarsEl) aggStarsEl.innerHTML = renderStarsHTML(5);
+        if (aggCountEl) aggCountEl.textContent = 'Ready for your client review';
+      }
     }
 
     // Filter by industry
@@ -93,10 +99,15 @@
 
     if (filtered.length === 0) {
       grid.innerHTML = `
-        <div style="grid-column:1/-1;text-align:center;padding:48px 20px;background:rgba(255,255,255,0.03);border:1px dashed var(--border-color);border-radius:var(--radius-lg)">
-          <div style="font-size:2rem;margin-bottom:12px">✍️</div>
-          <h3 class="t-h3" style="color:var(--charcoal)">No Reviews in this Category Yet</h3>
-          <p class="t-body" style="color:var(--text-muted);margin-top:4px">Be the first client to review a project in this category.</p>
+        <div style="grid-column:1/-1;text-align:center;padding:56px 24px;background:rgba(255,255,255,0.03);border:1px dashed var(--border-color);border-radius:var(--radius-lg);margin-top:20px;">
+          <div style="font-size:2.5rem;margin-bottom:16px">✍️</div>
+          <h3 class="t-h3" style="color:var(--charcoal);margin-bottom:8px;">No Verified Reviews Yet</h3>
+          <p class="t-body" style="color:var(--text-muted);margin:0 auto 24px auto;max-width:440px;line-height:1.6;">
+            Be the first client to share your experience working with VKREATE Design Studio on an interior architecture project!
+          </p>
+          <button type="button" class="btn btn-green" onclick="window.openReviewModal()" style="padding:12px 24px;font-size:0.9375rem;">
+            ✍️ Write a Client Review
+          </button>
         </div>`;
       return;
     }
