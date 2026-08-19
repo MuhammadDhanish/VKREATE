@@ -1,5 +1,20 @@
 [
   {
+    "id": "inq-mszvbvvw",
+    "name": "Alice Smith",
+    "email": "alice.smith@test.com",
+    "phone": "+91 98765 43210",
+    "industry": "Office / Commercial",
+    "projectType": "Office / Commercial",
+    "projectBudget": "Flexible",
+    "timeline": "Flexible",
+    "location": "Mumbai",
+    "brief": "This is a test contact inquiry to verify real-time sync.",
+    "status": "new",
+    "notes": "",
+    "createdAt": "2026-08-19T09:07:34.316Z"
+  },
+  {
     "id": "inq-mszppaf0",
     "name": "Nashwin",
     "email": "nashwin@gmail.com",
