@@ -419,10 +419,29 @@ const DB = {
       const deleted = rawDeleted.filter(d => typeof d === 'string' && !d.startsWith('name:') && !d.startsWith('proj:'));
       const itemMap = new Map();
 
+      const normalize = (r) => {
+        if (!r || typeof r !== 'object') return null;
+        const statusRaw = (r.status || 'pending').toString().toLowerCase().trim();
+        const status = (statusRaw === 'approved' || statusRaw === 'published') ? 'approved' : (statusRaw === 'rejected' ? 'rejected' : 'pending');
+        return {
+          ...r,
+          id: r.id || DB._id(),
+          clientName: r.clientName || r.author || r.name || 'Anonymous Client',
+          clientRole: r.clientRole || r.role || 'Client',
+          clientEmail: r.clientEmail || r.email || '',
+          reviewText: r.reviewText || r.text || r.content || '',
+          rating: parseInt(r.rating || 5, 10),
+          status,
+          createdAt: r.createdAt || r.approvedAt || r.date || new Date().toISOString()
+        };
+      };
+
+      // 1. Read local admin reviews
       try {
         const localAdmin = DB._get(DB.KEYS.reviews) || [];
         if (Array.isArray(localAdmin)) {
-          localAdmin.forEach(r => {
+          localAdmin.forEach(raw => {
+            const r = normalize(raw);
             if (r && r.id && !deleted.includes(r.id)) {
               itemMap.set(r.id, r);
             }
@@ -430,19 +449,34 @@ const DB = {
         }
       } catch (e) {}
 
+      // 2. Read live reviews
       try {
         const rawLive = JSON.parse(localStorage.getItem('vk_reviews')) || [];
         if (Array.isArray(rawLive)) {
-          rawLive.forEach(r => {
+          rawLive.forEach(raw => {
+            const r = normalize(raw);
             if (r && r.id && !deleted.includes(r.id)) {
               const existing = itemMap.get(r.id);
               if (!existing) {
                 itemMap.set(r.id, r);
               } else {
-                const status = (existing.status === 'approved' || existing.status === 'rejected') ? existing.status : (r.status || existing.status || 'pending');
+                const status = (existing.status === 'approved' || existing.status === 'rejected') ? existing.status : r.status;
                 const studioResponse = existing.studioResponse || r.studioResponse || '';
                 itemMap.set(r.id, { ...r, ...existing, status, studioResponse });
               }
+            }
+          });
+        }
+      } catch (e) {}
+
+      // 3. Fallback merge with default seed reviews
+      try {
+        const defaults = DB._defaultReviews();
+        if (Array.isArray(defaults)) {
+          defaults.forEach(raw => {
+            const r = normalize(raw);
+            if (r && r.id && !deleted.includes(r.id) && !itemMap.has(r.id)) {
+              itemMap.set(r.id, r);
             }
           });
         }
