@@ -503,7 +503,6 @@
       </a>
       <ul class="nav__links" role="list">
         <li><a class="nav__link" href="index.html#portfolio">Portfolio</a></li>
-        <li><a class="nav__link" href="index.html#reviews">Reviews</a></li>
         <li><a class="nav__link" href="index.html#about">About</a></li>
         <li><a class="nav__link" href="index.html#services">Services</a></li>
         <li><a class="nav__link nav__cta" href="index.html#contact">Start a Project</a></li>
@@ -516,7 +515,6 @@
 </nav>
 <div class="nav__mobile" id="mobile-nav" role="dialog" aria-label="Mobile menu">
   <a class="nav__link" href="index.html#portfolio">Portfolio</a>
-  <a class="nav__link" href="index.html#reviews">Reviews</a>
   <a class="nav__link" href="index.html#about">About</a>
   <a class="nav__link" href="index.html#services">Services</a>
   <a class="nav__cta" href="index.html#contact">Start a Project</a>
@@ -524,71 +522,6 @@
 
 <!-- â”€â”€ Page content injected by JS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
 <div id="project-root"></div>
-
-<!-- ══════════════════════════════════════════════════════════
-     CLIENT REVIEW SUBMISSION MODAL
-══════════════════════════════════════════════════════════ -->
-<div class="review-modal-overlay" id="pub-review-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-review-title">
-  <div class="review-modal">
-    <div class="review-modal__header">
-      <div>
-        <h3 class="review-modal__title" id="modal-review-title">Share Your Experience</h3>
-        <div class="review-modal__subtitle">Tell us about working with VKREATE Design Studio</div>
-      </div>
-      <button type="button" class="review-modal__close" id="close-pub-review-btn" aria-label="Close modal">✕</button>
-    </div>
-    
-    <div class="review-modal__body" id="pub-review-modal-body">
-      <form id="pub-review-form">
-        <!-- Interactive Star Selector -->
-        <div class="star-rating-wrap">
-          <div class="star-rating-stars" id="pub-star-selector">
-            <span class="star-rating-star" data-rating="1">★</span>
-            <span class="star-rating-star" data-rating="2">★</span>
-            <span class="star-rating-star" data-rating="3">★</span>
-            <span class="star-rating-star" data-rating="4">★</span>
-            <span class="star-rating-star" data-rating="5">★</span>
-          </div>
-          <div class="star-rating-label" id="pub-star-label">Click stars to rate (1–5)</div>
-          <input type="hidden" id="pub-rating-val" name="rating" value="0" required />
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="pub-client-name">Your Name *</label>
-            <input type="text" id="pub-client-name" name="clientName" placeholder="e.g. Unnikrishnan Nair" required />
-          </div>
-          <div class="form-group">
-            <label for="pub-client-role">Role / Title *</label>
-            <input type="text" id="pub-client-role" name="clientRole" placeholder="e.g. Founder, Lilaa Hospitality" required />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="pub-client-email">Email Address *</label>
-            <input type="email" id="pub-client-email" name="clientEmail" placeholder="your@company.com" required />
-          </div>
-          <div class="form-group">
-            <label for="pub-project-sel">Select Project (Optional)</label>
-            <select id="pub-project-sel" name="projectId">
-              <option value="general">General Studio Review</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group" style="margin-top:12px;">
-          <label for="pub-review-text">Your Review *</label>
-          <textarea id="pub-review-text" name="reviewText" rows="4" placeholder="Tell us about the design quality, spatial flow, timeline, and overall experience..." required></textarea>
-        </div>
-
-        <button type="submit" class="btn btn-green w-full" id="pub-review-submit-btn" style="margin-top:20px;width:100%;justify-content:center;">
-          Submit Review for Approval
-        </button>
-      </form>
-    </div>
-  </div>
-</div>
 
 <!-- Scripts -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -598,7 +531,6 @@
 <script src="js/data.js"></script>
 <script src="js/slider.js"></script>
 <script src="js/main.js"></script>
-<script src="js/reviews.js"></script>
 <script>
 (function () {
   const params = new URLSearchParams(window.location.search);
@@ -839,9 +771,6 @@
           <div style="text-align:center;">
             <div class="proj-testimonial__author-name">${project.testimonial.author}</div>
             <div class="proj-testimonial__author-role">${project.testimonial.role}</div>
-          </div>
-          <div style="margin-top:var(--space-md);">
-            <button type="button" class="btn btn-outline btn-sm open-review-modal-trigger" id="open-review-modal-btn-proj" style="color:var(--gold);border-color:rgba(201,169,110,0.3);text-decoration:none;cursor:pointer;">✍️ Share Your Experience</button>
           </div>
         </div>
       </div>

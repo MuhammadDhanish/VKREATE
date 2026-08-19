@@ -7,7 +7,6 @@ const Dashboard = {
   render() {
     try {
       const projects  = DB.projects.all() || [];
-      const revStats  = DB.reviews.stats() || { total: 0, pending: 0, approved: 0, rejected: 0, avgRating: 0 };
       const inqStats  = DB.inquiries.stats() || { new: 0, contacted: 0, quoted: 0, won: 0, lost: 0 };
       const recent    = this._recentActivity() || [];
 
@@ -37,8 +36,7 @@ const Dashboard = {
 
         <!-- Stats Cards -->
         <div class="stats-grid">
-          ${this._statCard('Total Projects', projects.length, '🏗️', '#EFF6FF', (revStats.total || 0) > 0 ? '+' + projects.length + ' total' : '', 'neutral', 'Projects in portfolio')}
-          ${this._statCard('Pending Reviews', revStats.pending || 0, '⏳', '#FFFBEB', (revStats.pending || 0) > 0 ? 'Action needed' : 'All clear', (revStats.pending || 0) > 0 ? 'down' : 'up', 'Awaiting your approval')}
+          ${this._statCard('Total Projects', projects.length, '🏗️', '#EFF6FF', projects.length + ' total', 'neutral', 'Projects in portfolio')}
           ${this._statCard('Open Inquiries', (inqStats.new || 0) + (inqStats.contacted || 0), '📬', '#FFF7ED', (inqStats.won || 0) + ' won this month', 'up', 'Leads in pipeline')}
         </div>
 
@@ -47,7 +45,6 @@ const Dashboard = {
           <h3 class="fw-600 text-sm text-muted mb-16" style="text-transform:uppercase;letter-spacing:.08em">Quick Actions</h3>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
             ${this._quickCard('➕', 'Add Project', 'Upload a new portfolio project', 'projects-add', '#EFF6FF')}
-            ${this._quickCard('⭐', 'Review Queue', (revStats.pending || 0) + ' pending approval', 'reviews', '#FFFBEB')}
             ${this._quickCard('📬', 'Inquiries', (inqStats.new || 0) + ' new messages', 'inquiries', '#F0FDF4')}
           </div>
         </div>
@@ -84,9 +81,8 @@ const Dashboard = {
           </div>
         </div>
 
-        <!-- Projects Overview + Review Snapshot -->
-        <div class="two-col">
-          <!-- Top Projects -->
+        <!-- Projects Overview -->
+        <div class="mb-24">
           <div class="card">
             <div class="card-header">
               <span class="card-title">Projects Overview</span>
@@ -107,17 +103,6 @@ const Dashboard = {
               </table>
             </div>
           </div>
-
-          <!-- Review Stats -->
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Reviews Snapshot</span>
-              <button class="btn btn-ghost btn-sm" onclick="App.navigate('reviews')">Manage</button>
-            </div>
-            <div class="card-body">
-              ${this._reviewSnapshot(revStats)}
-            </div>
-          </div>
         </div>
       `;
     } catch (err) {
@@ -127,10 +112,9 @@ const Dashboard = {
         content.innerHTML = `
           <div class="card" style="padding:40px;text-align:center">
             <h2 style="color:var(--green-deep);margin-bottom:12px">Dashboard Loaded</h2>
-            <p style="color:var(--text-3);margin-bottom:20px">Your portfolio and studio reviews are active.</p>
+            <p style="color:var(--text-3);margin-bottom:20px">Your portfolio and studio dashboard are active.</p>
             <div style="display:flex;gap:12px;justify-content:center">
               <button class="btn btn-primary" onclick="App.navigate('projects')">Manage Projects</button>
-              <button class="btn btn-outline" onclick="App.navigate('reviews')">Manage Reviews</button>
             </div>
           </div>
         `;
@@ -186,60 +170,9 @@ const Dashboard = {
       </div>`;
   },
 
-  _reviewSnapshot(stats) {
-    stats = stats || { total: 0, pending: 0, approved: 0, rejected: 0, avgRating: 0 };
-    const allReviews = DB.reviews.all() || [];
-    const bars = [
-      { label: '5 ★', color: '#22C55E', count: allReviews.filter(r => r && (r.rating == 5)).length },
-      { label: '4 ★', color: '#86EFAC', count: allReviews.filter(r => r && (r.rating == 4)).length },
-      { label: '3 ★', color: '#F59E0B', count: allReviews.filter(r => r && (r.rating == 3)).length },
-      { label: '2 ★', color: '#F97316', count: allReviews.filter(r => r && (r.rating == 2)).length },
-      { label: '1 ★', color: '#EF4444', count: allReviews.filter(r => r && (r.rating == 1)).length },
-    ];
-    const total = bars.reduce((s,b)=>s+b.count,0) || 1;
-    return `
-      <div style="display:flex;align-items:center;gap:24px;margin-bottom:20px">
-        <div style="text-align:center">
-          <div style="font-family:var(--font-serif);font-size:3rem;font-weight:300;line-height:1;color:var(--gold)">${stats.avgRating || 0}</div>
-          <div style="color:var(--text-3);font-size:.75rem;margin-top:4px">Avg Rating</div>
-          <div style="color:var(--text-4);font-size:.7rem">${stats.total || 0} reviews</div>
-        </div>
-        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
-          ${bars.map(b => `
-            <div style="display:flex;align-items:center;gap:8px">
-              <div style="width:28px;font-size:.7rem;color:var(--text-3)">${b.label}</div>
-              <div class="progress" style="flex:1"><div class="progress-bar" style="background:${b.color};width:${Math.round(b.count/total*100)}%"></div></div>
-              <div style="width:16px;font-size:.75rem;font-weight:600;color:var(--text-2);text-align:right">${b.count}</div>
-            </div>`).join('')}
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        ${[
-          { label: 'Pending', val: stats.pending || 0, color: '#F59E0B' },
-          { label: 'Approved', val: stats.approved || 0, color: '#22C55E' },
-          { label: 'Rejected', val: stats.rejected || 0, color: '#EF4444' },
-        ].map(s => `
-          <div style="background:var(--bg);border-radius:var(--r-md);padding:12px;text-align:center">
-            <div style="font-family:var(--font-serif);font-size:1.5rem;font-weight:300;color:${s.color}">${s.val}</div>
-            <div style="font-size:.7rem;color:var(--text-3);margin-top:2px">${s.label}</div>
-          </div>`).join('')}
-      </div>
-    `;
-  },
-
   _recentActivity() {
     const events = [];
     try {
-      (DB.reviews.all() || []).slice(0, 5).forEach(r => {
-        if (!r) return;
-        const name = r.clientName || r.author || 'Client';
-        const rawText = r.reviewText || r.shortTestimonial || r.text || '';
-        events.push({
-          text: `Review by <strong>${name}</strong> — "${rawText.slice(0, 50)}${rawText.length > 50 ? '...' : ''}"`,
-          date: r.createdAt || r.approvedAt || r.date || new Date().toISOString(),
-          color: r.status === 'approved' ? '#22C55E' : r.status === 'rejected' ? '#EF4444' : '#F59E0B',
-        });
-      });
       (DB.inquiries.all() || []).slice(0, 5).forEach(i => {
         if (!i) return;
         events.push({

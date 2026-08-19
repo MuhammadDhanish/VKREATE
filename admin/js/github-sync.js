@@ -34,9 +34,8 @@ const GithubSync = {
         'Content-Type': 'application/json',
       };
 
-      // Push all 3 files in parallel so reviews deployment is instant
+      // Push project and inquiry data to GitHub
       await Promise.allSettled([
-        this._pushFile('js/admin-reviews.json', DB.reviews.all(), headers),
         this._pushFile('js/admin-projects.json', DB.projects.all(), headers),
         this._pushFile('js/admin-inquiries.json', DB.inquiries.all(), headers)
       ]);
