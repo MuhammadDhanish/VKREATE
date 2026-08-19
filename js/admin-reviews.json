@@ -1,16 +1,18 @@
 [
   {
-    "id": "rev-mszlvjfp",
-    "clientName": "NASHWIN NASER",
-    "clientRole": "Videographer",
-    "clientEmail": "sayedsinan788@gmail.com",
-    "rating": 5,
-    "projectName": "General Studio Review",
-    "projectId": "general",
-    "reviewText": "Hwhwjjanavs",
+    "id": "rev-mszoc1d72381",
+    "clientName": "dhanish",
+    "author": "dhanish",
+    "clientRole": "car wash",
+    "role": "car wash",
+    "clientEmail": "dhanishdhanishkk@gmail.com",
+    "projectId": "retail-jewellery",
+    "rating": 2,
+    "reviewText": "hi",
+    "text": "hi",
     "status": "approved",
-    "createdAt": "2026-08-19T04:42:55.141Z",
-    "approvedAt": "2026-08-19T05:43:51.631Z",
-    "updatedAt": "2026-08-19T05:43:51.639Z"
+    "createdAt": "2026-08-19T05:51:44.107Z",
+    "approvedAt": "2026-08-19T05:52:36.018Z",
+    "updatedAt": "2026-08-19T05:52:36.018Z"
   }
 ]
