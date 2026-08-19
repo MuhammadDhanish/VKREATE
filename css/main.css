@@ -381,71 +381,14 @@
   display: none;
 }
 
-/* ── Mobile Nav: Scale desktop design to fit phones ────── */
-@media (max-width: 1024px) {
+@media (max-width: 900px) {
   .nav {
-    top: 8px;
-    width: calc(100% - 16px);
-    height: 52px;
-    padding: 0 12px;
+    top: 12px;
+    width: calc(100% - 24px);
+    height: 56px;
+    padding: 0 18px;
     z-index: 99990 !important;
   }
-  .nav__links {
-    gap: 12px !important;
-  }
-  .nav__link {
-    font-size: 0.625rem !important;
-    letter-spacing: 0.04em !important;
-  }
-  .nav__cta {
-    padding: 8px 14px !important;
-    font-size: 0.625rem !important;
-  }
-  .nav__logo-img {
-    height: 32px !important;
-  }
-  .nav__logo-name {
-    font-size: 1rem !important;
-  }
-  .nav__logo-tagline {
-    font-size: 0.4rem !important;
-  }
-}
-
-@media (max-width: 640px) {
-  .nav {
-    top: 6px;
-    width: calc(100% - 12px);
-    height: 48px;
-    padding: 0 10px;
-  }
-  .nav__links {
-    gap: 6px !important;
-  }
-  .nav__link {
-    font-size: 0.5rem !important;
-    letter-spacing: 0.02em !important;
-  }
-  .nav__cta {
-    padding: 6px 10px !important;
-    font-size: 0.5rem !important;
-  }
-  .nav__logo-img {
-    height: 26px !important;
-  }
-  .nav__logo-name {
-    font-size: 0.85rem !important;
-  }
-  .nav__logo-tagline {
-    display: none !important;
-  }
-  .nav__logo-text-wrap {
-    display: none !important;
-  }
-}
-
-/* ── Hamburger only on very narrow screens ────────────── */
-@media (max-width: 420px) {
   .nav__links { display: none !important; }
   .nav__hamburger {
     display: flex !important;
@@ -454,6 +397,9 @@
     min-height: 44px;
     align-items: center;
     justify-content: center;
+  }
+  .nav__logo-text-wrap {
+    display: none !important;
   }
   .nav__mobile {
     display: none !important;
