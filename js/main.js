@@ -16,91 +16,90 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isMobile) {
       try { preloader.remove(); } catch(e) {}
       document.body.style.overflow = '';
-      return;
-    }
-
-    // If already seen this session, skip immediately and remove
-    let hasSeen = false;
-    try { hasSeen = sessionStorage.getItem('vkreate_intro_seen'); } catch(e) {}
-
-    if (hasSeen) {
-      preloader.remove();
-      document.body.style.overflow = '';
     } else {
-      document.body.style.overflow = 'hidden';
+      // If already seen this session, skip immediately and remove
+      let hasSeen = false;
+      try { hasSeen = sessionStorage.getItem('vkreate_intro_seen'); } catch(e) {}
 
-      let dismissed = false;
-      let rafId;
-
-      const dismiss = () => {
-        if (dismissed) return;
-        dismissed = true;
-        try { sessionStorage.setItem('vkreate_intro_seen', '1'); } catch(e) {}
-        cancelAnimationFrame(rafId);
-        if (progressFill) progressFill.style.width = '100%';
-        preloader.classList.add('fade-out');
+      if (hasSeen) {
+        preloader.remove();
         document.body.style.overflow = '';
-        setTimeout(() => {
-          try { preloader.remove(); } catch (e) {}
-        }, 300);
-      };
-
-      // Click / touch anywhere on preloader or skip button to dismiss immediately
-      preloader.addEventListener('click', dismiss);
-      preloader.addEventListener('touchstart', dismiss, { passive: true });
-      if (skipBtn) {
-        skipBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          dismiss();
-        });
-        skipBtn.addEventListener('touchstart', (e) => {
-          e.stopPropagation();
-          dismiss();
-        }, { passive: true });
-      }
-
-      // Hard safety fallback — dismiss after 1.2s max
-      const fallback = setTimeout(dismiss, 1200);
-
-      // Sync progress bar to video playback position
-      const tickVideo = () => {
-        if (!video || video.ended || video.paused) return;
-        if (video.duration && video.duration > 0) {
-          const pct = (video.currentTime / video.duration) * 100;
-          if (progressFill) progressFill.style.width = pct + '%';
-        }
-        rafId = requestAnimationFrame(tickVideo);
-      };
-
-      if (video) {
-        video.addEventListener('loadedmetadata', () => {
-          rafId = requestAnimationFrame(tickVideo);
-        });
-        video.addEventListener('ended', () => {
-          clearTimeout(fallback);
-          dismiss();
-        });
-        video.addEventListener('error', dismiss);
-
-        // Attempt video autoplay
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(() => {
-            // Autoplay prevented by browser policy — trigger fast fallback
-            setTimeout(dismiss, 300);
-          });
-        }
       } else {
-        const startTime = performance.now();
-        const TOTAL_MS  = 1000;
-        const tick = (now) => {
-          const elapsed = now - startTime;
-          const pct = Math.min((elapsed / TOTAL_MS) * 100, 100);
-          if (progressFill) progressFill.style.width = pct + '%';
-          if (elapsed >= TOTAL_MS) { dismiss(); return; }
-          rafId = requestAnimationFrame(tick);
+        document.body.style.overflow = 'hidden';
+
+        let dismissed = false;
+        let rafId;
+
+        const dismiss = () => {
+          if (dismissed) return;
+          dismissed = true;
+          try { sessionStorage.setItem('vkreate_intro_seen', '1'); } catch(e) {}
+          cancelAnimationFrame(rafId);
+          if (progressFill) progressFill.style.width = '100%';
+          preloader.classList.add('fade-out');
+          document.body.style.overflow = '';
+          setTimeout(() => {
+            try { preloader.remove(); } catch (e) {}
+          }, 300);
         };
-        rafId = requestAnimationFrame(tick);
+
+        // Click / touch anywhere on preloader or skip button to dismiss immediately
+        preloader.addEventListener('click', dismiss);
+        preloader.addEventListener('touchstart', dismiss, { passive: true });
+        if (skipBtn) {
+          skipBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dismiss();
+          });
+          skipBtn.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+            dismiss();
+          }, { passive: true });
+        }
+
+        // Hard safety fallback — dismiss after 1.2s max
+        const fallback = setTimeout(dismiss, 1200);
+
+        // Sync progress bar to video playback position
+        const tickVideo = () => {
+          if (!video || video.ended || video.paused) return;
+          if (video.duration && video.duration > 0) {
+            const pct = (video.currentTime / video.duration) * 100;
+            if (progressFill) progressFill.style.width = pct + '%';
+          }
+          rafId = requestAnimationFrame(tickVideo);
+        };
+
+        if (video) {
+          video.addEventListener('loadedmetadata', () => {
+            rafId = requestAnimationFrame(tickVideo);
+          });
+          video.addEventListener('ended', () => {
+            clearTimeout(fallback);
+            dismiss();
+          });
+          video.addEventListener('error', dismiss);
+
+          // Attempt video autoplay
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(() => {
+              // Autoplay prevented by browser policy — trigger fast fallback
+              setTimeout(dismiss, 300);
+            });
+          }
+        } else {
+          const startTime = performance.now();
+          const TOTAL_MS  = 1000;
+          const tick = (now) => {
+            const elapsed = now - startTime;
+            const pct = Math.min((elapsed / TOTAL_MS) * 100, 100);
+            if (progressFill) progressFill.style.width = pct + '%';
+            if (elapsed >= TOTAL_MS) { dismiss(); return; }
+            rafId = requestAnimationFrame(tick);
+          };
+          rafId = requestAnimationFrame(tick);
+        }
       }
     }
   }
