@@ -436,10 +436,22 @@ td.td-name { font-weight: 600; color: var(--text-1); }
 
 /* Forms */
 .form-grid { display: grid; gap: 20px; }
-.form-grid-2 { grid-template-columns: 1fr 1fr; }
+.form-grid-2 { grid-template-columns: 1fr 1fr; align-items: start; }
 @media (max-width: 700px) { .form-grid-2 { grid-template-columns: 1fr; } }
-.form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-label { font-size: 0.8125rem; font-weight: 600; color: var(--text-2); }
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 68px;
+  box-sizing: border-box;
+}
+.form-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-2);
+  line-height: 1.2;
+  user-select: none;
+}
 .form-label span { color: var(--danger); margin-left: 2px; }
 .form-control {
   width: 100%;
@@ -454,9 +466,11 @@ td.td-name { font-weight: 600; color: var(--text-1); }
   transition: border-color var(--dur), box-shadow var(--dur);
   outline: none;
   box-sizing: border-box;
-  transform: translateZ(0);
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  will-change: border-color, box-shadow;
 }
 .form-control:focus { border-color: var(--green-mid); box-shadow: 0 0 0 3px rgba(61,92,80,0.12); }
 .form-control.error { border-color: var(--danger); }
@@ -465,11 +479,23 @@ select.form-control { cursor: pointer; }
 .form-hint { font-size: 0.75rem; color: var(--text-4); }
 .form-error { font-size: 0.75rem; color: var(--danger); display: flex; align-items: center; gap: 4px; }
 
+/* Chrome & WebKit Autofill Stability Override */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #F0F5FE inset !important;
+  -webkit-text-fill-color: var(--text-1) !important;
+  transition: background-color 5000s ease-in-out 0s;
+  font-family: var(--font) !important;
+}
+
 /* Password input wrapper & non-shaking toggle button */
 .pw-wrap {
   position: relative;
   width: 100%;
   height: 42px;
+  box-sizing: border-box;
 }
 .pw-wrap .form-control {
   height: 42px;
