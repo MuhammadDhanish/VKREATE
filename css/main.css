@@ -397,14 +397,9 @@
     align-items: center;
     justify-content: center;
   }
-  /* Hide text logo on mobile — only show the image logo to avoid duplication */
-  .nav__logo-text-wrap,
-  .nav__logo > div:not(.nav__logo-text-wrap) {
-    display: none !important;
-  }
-  .nav__logo-name,
-  .nav__logo-tagline {
-    display: none !important;
+  /* Ensure logo text fallback displays cleanly if image fails on mobile */
+  .nav__logo-img[style*="display: none"] + .nav__logo-text-wrap {
+    display: flex !important;
   }
   .nav__mobile {
     display: flex;
@@ -2881,12 +2876,11 @@
 ══════════════════════════════════════════════════════════ */
 
 /* Utility Visibility Classes */
-.desktop-only { display: flex; }
-.mobile-only { display: none !important; }
-
+@media (min-width: 901px) {
+  .mobile-only { display: none !important; }
+}
 @media (max-width: 900px) {
   .desktop-only { display: none !important; }
-  .mobile-only { display: block !important; }
 }
 
 /* Loop 2: Hero Section Mobile Sizing */
