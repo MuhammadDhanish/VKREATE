@@ -134,7 +134,7 @@
   width: calc(100% - 48px);
   max-width: 1240px;
   height: 64px;
-  z-index: 99990 !important;
+  z-index: 1000;
   display: flex;
   align-items: center;
   padding: 0 28px;
@@ -162,6 +162,7 @@
     inset 0 0 20px 0 rgba(255, 255, 255, 0.25);
     
   transition: all 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 
 /* Glass Specular Top Highlight Rim */
@@ -360,13 +361,10 @@
   display: none;
   flex-direction: column;
   gap: 5px;
-  padding: 10px;
+  padding: 8px;
   cursor: pointer;
   background: transparent;
   border: none;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  z-index: 1002;
 }
 .nav__hamburger span {
   display: block;
@@ -393,15 +391,20 @@
   .nav__links { display: none; }
   .nav__hamburger {
     display: flex;
-    z-index: 99999 !important;
+    z-index: 1001;
     min-width: 44px;
     min-height: 44px;
     align-items: center;
     justify-content: center;
   }
-  /* Ensure logo text fallback displays cleanly if image fails on mobile */
-  .nav__logo-img[style*="display: none"] + .nav__logo-text-wrap {
-    display: flex !important;
+  /* Hide text logo on mobile — only show the image logo to avoid duplication */
+  .nav__logo-text-wrap,
+  .nav__logo > div:not(.nav__logo-text-wrap) {
+    display: none !important;
+  }
+  .nav__logo-name,
+  .nav__logo-tagline {
+    display: none !important;
   }
   .nav__mobile {
     display: flex;
@@ -410,13 +413,13 @@
     width: 100vw;
     height: 100vh;
     height: 100dvh;
-    background: rgba(26, 36, 32, 0.98);
+    background: rgba(26, 36, 32, 0.96);
     backdrop-filter: blur(28px) saturate(1.8);
     -webkit-backdrop-filter: blur(28px) saturate(1.8);
     padding: 90px 28px 40px 28px;
     flex-direction: column;
     justify-content: space-between;
-    z-index: 99985 !important;
+    z-index: 999;
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--dur-mid) var(--ease-out), transform var(--dur-mid) var(--ease-out);
@@ -424,10 +427,9 @@
     box-sizing: border-box;
   }
   .nav__mobile.open {
-    opacity: 1 !important;
-    pointer-events: all !important;
-    transform: translateY(0) !important;
-    z-index: 99995 !important;
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
   }
   .nav__mobile-header {
     margin-bottom: 20px;
@@ -2879,11 +2881,12 @@
 ══════════════════════════════════════════════════════════ */
 
 /* Utility Visibility Classes */
-@media (min-width: 901px) {
-  .mobile-only { display: none !important; }
-}
+.desktop-only { display: flex; }
+.mobile-only { display: none !important; }
+
 @media (max-width: 900px) {
   .desktop-only { display: none !important; }
+  .mobile-only { display: block !important; }
 }
 
 /* Loop 2: Hero Section Mobile Sizing */

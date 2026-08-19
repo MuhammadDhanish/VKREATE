@@ -130,18 +130,13 @@ document.addEventListener('DOMContentLoaded', () => {
         revealObserver.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.01, rootMargin: '100px 0px 100px 0px' });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
   revealEls.forEach(el => revealObserver.observe(el));
-
-  // Fallback: Ensure all reveal elements become visible after page load to prevent blank gaps
-  setTimeout(() => {
-    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => el.classList.add('visible'));
-  }, 400);
 
   // ── Sticky Nav ────────────────────────────────────────────
   const nav = document.getElementById('main-nav');
   const handleNavScroll = () => {
-    if (nav) nav.classList.toggle('scrolled', window.scrollY > 40);
+    nav.classList.toggle('scrolled', window.scrollY > 40);
   };
   window.addEventListener('scroll', handleNavScroll, { passive: true });
   handleNavScroll();
@@ -160,51 +155,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { threshold: 0.35 });
   sections.forEach(s => sectionObserver.observe(s));
 
-  // ── Mobile Nav Toggle (Inline Onclick & Touch Support) ────
-  window.toggleMobileNav = function (e) {
-    if (e) {
-      if (e.preventDefault) e.preventDefault();
-      if (e.stopPropagation) e.stopPropagation();
-    }
-    const hamburger = document.getElementById('hamburger') || document.querySelector('.nav__hamburger');
-    const mobileNav = document.getElementById('mobile-nav') || document.querySelector('.nav__mobile');
-    if (!hamburger || !mobileNav) return;
-
+  // ── Mobile nav ────────────────────────────────────────────
+  const hamburger = document.getElementById('hamburger');
+  const mobileNav = document.getElementById('mobile-nav');
+  hamburger?.addEventListener('click', () => {
     const isOpen = hamburger.classList.toggle('open');
     mobileNav.classList.toggle('open', isOpen);
     document.body.classList.toggle('nav-open', isOpen);
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-  };
-
-  const hamburger = document.getElementById('hamburger') || document.querySelector('.nav__hamburger');
-  const mobileNav = document.getElementById('mobile-nav') || document.querySelector('.nav__mobile');
-
-  if (hamburger) {
-    hamburger.addEventListener('click', window.toggleMobileNav);
-    hamburger.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      window.toggleMobileNav(e);
-    }, { passive: false });
-  }
-
-  if (mobileNav) {
-    mobileNav.querySelectorAll('a').forEach(a => {
-      a.addEventListener('click', () => {
-        if (hamburger) {
-          hamburger.classList.remove('open');
-          hamburger.setAttribute('aria-expanded', 'false');
-        }
-        mobileNav.classList.remove('open');
-        document.body.classList.remove('nav-open');
-        document.body.style.overflow = '';
-      });
+    hamburger.setAttribute('aria-expanded', isOpen);
+  });
+  mobileNav?.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+      hamburger.classList.remove('open');
+      mobileNav.classList.remove('open');
+      document.body.classList.remove('nav-open');
+      hamburger.setAttribute('aria-expanded', false);
     });
-  }
+  });
 
   // ── Smooth scroll for nav links ───────────────────────────
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
