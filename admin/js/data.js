@@ -625,92 +625,54 @@ const DB = {
 
   // ── Remote Sync Engine ─────────────────────────────────────
   async loadRemoteData() {
-    const deletedProjects = DB._getDeleted(DB.KEYS.deletedProjects);
-    const deletedReviews = DB._getDeleted(DB.KEYS.deletedReviews);
-    const deletedInquiries = DB._getDeleted(DB.KEYS.deletedInquiries);
     let updated = false;
 
-    // 1. Try Backend REST API first
+    // Helper to fetch from API or static JSON file
+    const fetchEntity = async (apiEndpoint, staticPath) => {
+      try {
+        const res = await fetch(apiEndpoint + '?t=' + Date.now());
+        if (res.ok) return await res.json();
+      } catch (e) {}
+
+      try {
+        let res = await fetch('../' + staticPath + '?t=' + Date.now());
+        if (!res.ok) res = await fetch(staticPath + '?t=' + Date.now());
+        if (res.ok) return await res.json();
+      } catch (e) {}
+
+      return null;
+    };
+
     try {
-      const [pRes, rRes, iRes, sRes] = await Promise.allSettled([
-        fetch('/api/projects?t=' + Date.now()),
-        fetch('/api/reviews?t=' + Date.now()),
-        fetch('/api/inquiries?t=' + Date.now()),
-        fetch('/api/settings?t=' + Date.now()),
+      const [remoteProjects, remoteReviews, remoteInquiries, remoteSettings] = await Promise.all([
+        fetchEntity('/api/projects', 'js/admin-projects.json'),
+        fetchEntity('/api/reviews', 'js/admin-reviews.json'),
+        fetchEntity('/api/inquiries', 'js/admin-inquiries.json'),
+        fetchEntity('/api/settings', 'js/admin-settings.json'),
       ]);
 
-      if (pRes.status === 'fulfilled' && pRes.value.ok) {
-        const remoteProjects = await pRes.value.json();
-        if (Array.isArray(remoteProjects)) {
-          DB._set(DB.KEYS.projects, remoteProjects);
-          updated = true;
-        }
+      if (Array.isArray(remoteProjects) && remoteProjects.length > 0) {
+        DB._set(DB.KEYS.projects, remoteProjects);
+        updated = true;
       }
 
-      if (rRes.status === 'fulfilled' && rRes.value.ok) {
-        const remoteReviews = await rRes.value.json();
-        if (Array.isArray(remoteReviews)) {
-          DB._set(DB.KEYS.reviews, remoteReviews);
-          try { localStorage.setItem('vk_reviews', JSON.stringify(remoteReviews)); } catch (e) {}
-          updated = true;
-        }
+      if (Array.isArray(remoteReviews)) {
+        DB._set(DB.KEYS.reviews, remoteReviews);
+        try { localStorage.setItem('vk_reviews', JSON.stringify(remoteReviews)); } catch (e) {}
+        updated = true;
       }
 
-      if (iRes.status === 'fulfilled' && iRes.value.ok) {
-        const remoteInquiries = await iRes.value.json();
-        if (Array.isArray(remoteInquiries)) {
-          DB._set(DB.KEYS.inquiries, remoteInquiries);
-          updated = true;
-        }
+      if (Array.isArray(remoteInquiries)) {
+        DB._set(DB.KEYS.inquiries, remoteInquiries);
+        updated = true;
       }
 
-      if (sRes.status === 'fulfilled' && sRes.value.ok) {
-        const remoteSettings = await sRes.value.json();
-        if (remoteSettings && remoteSettings.studio) {
-          DB._set(DB.KEYS.settings, remoteSettings);
-          updated = true;
-        }
+      if (remoteSettings && remoteSettings.studio) {
+        DB._set(DB.KEYS.settings, remoteSettings);
+        updated = true;
       }
     } catch (e) {
-      console.warn("Backend API fetch error, falling back to static files:", e);
-
-      // Fallback: static JSON files
-      try {
-        let projRes = await fetch('../js/admin-projects.json?t=' + Date.now());
-        if (!projRes.ok) projRes = await fetch('js/admin-projects.json?t=' + Date.now());
-        if (projRes.ok) {
-          const remoteProjects = await projRes.json();
-          if (Array.isArray(remoteProjects)) {
-            DB._set(DB.KEYS.projects, remoteProjects);
-            updated = true;
-          }
-        }
-      } catch (err) {}
-
-      try {
-        let revRes = await fetch('../js/admin-reviews.json?t=' + Date.now());
-        if (!revRes.ok) revRes = await fetch('js/admin-reviews.json?t=' + Date.now());
-        if (revRes.ok) {
-          const remoteReviews = await revRes.json();
-          if (Array.isArray(remoteReviews)) {
-            DB._set(DB.KEYS.reviews, remoteReviews);
-            try { localStorage.setItem('vk_reviews', JSON.stringify(remoteReviews)); } catch (e) {}
-            updated = true;
-          }
-        }
-      } catch (err) {}
-
-      try {
-        let inqRes = await fetch('../js/admin-inquiries.json?t=' + Date.now());
-        if (!inqRes.ok) inqRes = await fetch('js/admin-inquiries.json?t=' + Date.now());
-        if (inqRes.ok) {
-          const remoteInquiries = await inqRes.json();
-          if (Array.isArray(remoteInquiries)) {
-            DB._set(DB.KEYS.inquiries, remoteInquiries);
-            updated = true;
-          }
-        }
-      } catch (err) {}
+      console.warn("loadRemoteData error:", e);
     }
 
     if (updated) {
