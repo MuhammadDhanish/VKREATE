@@ -239,10 +239,10 @@ const Reviews = {
 
   restoreSeedReviews() {
     try {
-      localStorage.removeItem('vk_admin_deleted_reviews');
-      const defaults = DB._defaultReviews();
+      const deletedIds = DB._getDeleted(DB.KEYS.deletedReviews) || [];
+      const defaults = DB._defaultReviews().filter(r => r && r.id && !deletedIds.includes(r.id));
       DB.reviews.save(defaults);
-      UI.toast('✓ Restored sample reviews successfully!', 'success');
+      UI.toast('✓ Restored missing sample reviews!', 'success');
       this.render();
       if (typeof App !== 'undefined') App.updateSidebar();
     } catch(e) {

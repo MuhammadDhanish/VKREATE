@@ -537,6 +537,10 @@ const DB = {
       const remaining = this.all().filter(r => r && r.id !== id);
       this.save(remaining);
 
+      if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
+        FirebaseDB.db.collection('reviews').doc(id).delete().catch(e => console.warn('Firestore review delete warning:', e));
+      }
+
       fetch(`/api/reviews/${id}`, { method: 'DELETE' }).catch(e => console.warn('API review delete error:', e));
       DB._broadcast('reviews-updated', remaining);
     },
