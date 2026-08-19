@@ -11,12 +11,13 @@ const Reviews = {
       const stats = DB.reviews.stats();
 
       let filtered = allReviews;
-      if (this._filter === 'pending') {
-        filtered = allReviews.filter(r => r.status === 'pending');
-      } else if (this._filter === 'approved') {
-        filtered = allReviews.filter(r => r.status === 'approved');
-      } else if (this._filter === 'rejected') {
-        filtered = allReviews.filter(r => r.status === 'rejected');
+      const curFilter = (this._filter || 'all').toLowerCase().trim();
+      if (curFilter === 'pending') {
+        filtered = allReviews.filter(r => (r.status || 'pending').toLowerCase().trim() === 'pending');
+      } else if (curFilter === 'approved') {
+        filtered = allReviews.filter(r => (r.status || 'pending').toLowerCase().trim() === 'approved');
+      } else if (curFilter === 'rejected') {
+        filtered = allReviews.filter(r => (r.status || 'pending').toLowerCase().trim() === 'rejected');
       }
 
       const content = document.getElementById('main-content');
@@ -40,17 +41,17 @@ const Reviews = {
 
         <!-- Filter Tabs -->
         <div class="tabs-nav mb-24">
-          <button type="button" class="tab-btn ${this._filter === 'all' ? 'active' : ''}" onclick="Reviews.setFilter('all')">
-            All Reviews <span class="badge ${this._filter === 'all' ? 'badge-gold' : 'badge-gray'}">${stats.total || 0}</span>
+          <button type="button" class="tab-btn ${curFilter === 'all' ? 'active' : ''}" onclick="Reviews.setFilter('all')">
+            All Reviews <span class="badge ${curFilter === 'all' ? 'badge-gold' : 'badge-gray'}">${stats.total || 0}</span>
           </button>
-          <button type="button" class="tab-btn ${this._filter === 'pending' ? 'active' : ''}" onclick="Reviews.setFilter('pending')">
+          <button type="button" class="tab-btn ${curFilter === 'pending' ? 'active' : ''}" onclick="Reviews.setFilter('pending')">
             ⏳ Pending Approval ${stats.pending ? `<span class="badge badge-warning">${stats.pending}</span>` : '<span class="badge badge-gray">0</span>'}
           </button>
-          <button type="button" class="tab-btn ${this._filter === 'approved' ? 'active' : ''}" onclick="Reviews.setFilter('approved')">
-            ✅ Approved <span class="badge ${this._filter === 'approved' ? 'badge-success' : 'badge-gray'}">${stats.approved || 0}</span>
+          <button type="button" class="tab-btn ${curFilter === 'approved' ? 'active' : ''}" onclick="Reviews.setFilter('approved')">
+            ✅ Approved <span class="badge ${curFilter === 'approved' ? 'badge-success' : 'badge-gray'}">${stats.approved || 0}</span>
           </button>
-          <button type="button" class="tab-btn ${this._filter === 'rejected' ? 'active' : ''}" onclick="Reviews.setFilter('rejected')">
-            🚫 Rejected <span class="badge ${this._filter === 'rejected' ? 'badge-danger' : 'badge-gray'}">${stats.rejected || 0}</span>
+          <button type="button" class="tab-btn ${curFilter === 'rejected' ? 'active' : ''}" onclick="Reviews.setFilter('rejected')">
+            🚫 Rejected <span class="badge ${curFilter === 'rejected' ? 'badge-danger' : 'badge-gray'}">${stats.rejected || 0}</span>
           </button>
         </div>
 
@@ -63,6 +64,11 @@ const Reviews = {
             <div style="font-size:2.5rem;margin-bottom:12px">⭐</div>
             <h3 class="fw-600 text-lg">No Reviews Found</h3>
             <p class="text-muted text-sm mt-4">No reviews match the selected filter category.</p>
+            <div style="margin-top:16px;">
+              <button class="btn btn-outline btn-sm" onclick="Reviews.restoreSeedReviews()">
+                🔄 Restore Sample Reviews &amp; Reset Storage
+              </button>
+            </div>
           </div>`}
       `;
     } catch (err) {
@@ -226,6 +232,19 @@ const Reviews = {
     const approvedCount = all.filter(r => r && r.status === 'approved').length;
 
     UI.toast(`✓ Synced successfully! (${pendingCount} pending, ${approvedCount} approved)`, 'success');
+  },
+
+  restoreSeedReviews() {
+    try {
+      localStorage.removeItem('vk_admin_deleted_reviews');
+      const defaults = DB._defaultReviews();
+      DB.reviews.save(defaults);
+      UI.toast('✓ Restored sample reviews successfully!', 'success');
+      this.render();
+      if (typeof App !== 'undefined') App.updateSidebar();
+    } catch(e) {
+      console.warn('restoreSeedReviews error:', e);
+    }
   }
 };
 
