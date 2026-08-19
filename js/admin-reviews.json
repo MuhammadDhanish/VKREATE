@@ -15,21 +15,6 @@
     "studioResponse": ""
   },
   {
-    "id": "rev-hotel-07",
-    "clientName": "Mathew Joseph",
-    "clientRole": "GM, Grand Horizon Hotel",
-    "clientEmail": "gm@grandhorizon.com",
-    "rating": 5,
-    "projectName": "Grand Horizon Lobby & Suite",
-    "projectId": "grand-horizon-hotel",
-    "industry": "hospitality",
-    "reviewText": "The lobby redesign surpassed expectations. Turnkey execution was completed 2 weeks ahead of our festival launch, and our guest satisfaction scores have reached an all-time high.",
-    "status": "approved",
-    "createdAt": "2025-08-01T10:00:00.000Z",
-    "approvedAt": "2025-08-01T10:00:00.000Z",
-    "studioResponse": ""
-  },
-  {
     "id": "rev-villa-05",
     "clientName": "Anjali & Vikram Rao",
     "clientRole": "Homeowners, Serene Heights",
@@ -64,21 +49,6 @@
     "visibility": "public",
     "createdAt": "2025-06-20T10:00:00Z",
     "approvedAt": "2025-06-21T09:00:00Z"
-  },
-  {
-    "id": "rev-clinic-06",
-    "clientName": "Dr. Vivek Kurup",
-    "clientRole": "Chief Surgeon, Aura Clinic",
-    "clientEmail": "vivek@auraclinic.org",
-    "rating": 5,
-    "projectName": "Aura Medical Centre",
-    "projectId": "aura-clinic",
-    "industry": "healthcare",
-    "reviewText": "The clinical layout reduces patient anxiety while offering high-efficiency workflow for our medical staff. The sage green accent walls and acoustic partitions make a massive difference.",
-    "status": "approved",
-    "createdAt": "2025-05-01T10:00:00.000Z",
-    "approvedAt": "2025-05-01T10:00:00.000Z",
-    "studioResponse": ""
   },
   {
     "id": "rev-lounge-04",
