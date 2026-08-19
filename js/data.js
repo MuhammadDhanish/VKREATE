@@ -870,8 +870,10 @@ async function loadRemoteAdminReviews() {
       if (Array.isArray(parsed)) {
         parsed.forEach(r => {
           if (r && r.id) {
-            const existing = reviewsMap.get(r.id);
-            reviewsMap.set(r.id, { ...existing, ...r });
+            const existing = reviewsMap.get(r.id) || {};
+            const status = (existing.status === 'approved' || existing.status === 'rejected') ? existing.status : (r.status || 'pending');
+            const studioResponse = r.studioResponse || existing.studioResponse || '';
+            reviewsMap.set(r.id, { ...existing, ...r, status, studioResponse });
           }
         });
       }
@@ -887,7 +889,13 @@ async function loadRemoteAdminReviews() {
         parsed.forEach(r => {
           if (r && r.id) {
             const existing = reviewsMap.get(r.id);
-            reviewsMap.set(r.id, { ...existing, ...r });
+            if (!existing) {
+              reviewsMap.set(r.id, r);
+            } else {
+              const status = (existing.status === 'approved' || existing.status === 'rejected') ? existing.status : (r.status || existing.status || 'pending');
+              const studioResponse = existing.studioResponse || r.studioResponse || '';
+              reviewsMap.set(r.id, { ...r, ...existing, status, studioResponse });
+            }
           }
         });
       }

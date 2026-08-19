@@ -353,7 +353,10 @@ const DB = {
       if (Array.isArray(localAdmin)) {
         localAdmin.forEach(r => {
           if (r && r.id && !deleted.includes(r.id)) {
-            itemMap.set(r.id, { ...(itemMap.get(r.id) || {}), ...r });
+            const existing = itemMap.get(r.id) || {};
+            const status = (existing.status === 'approved' || existing.status === 'rejected') ? existing.status : (r.status || 'pending');
+            const studioResponse = r.studioResponse || existing.studioResponse || '';
+            itemMap.set(r.id, { ...existing, ...r, status, studioResponse });
           }
         });
       }
@@ -363,8 +366,15 @@ const DB = {
         const rawLive = JSON.parse(localStorage.getItem('vk_reviews')) || [];
         if (Array.isArray(rawLive)) {
           rawLive.forEach(r => {
-            if (r && r.id && !deleted.includes(r.id) && !itemMap.has(r.id)) {
-              itemMap.set(r.id, r);
+            if (r && r.id && !deleted.includes(r.id)) {
+              const existing = itemMap.get(r.id);
+              if (!existing) {
+                itemMap.set(r.id, r);
+              } else {
+                const status = (existing.status === 'approved' || existing.status === 'rejected') ? existing.status : (r.status || existing.status || 'pending');
+                const studioResponse = existing.studioResponse || r.studioResponse || '';
+                itemMap.set(r.id, { ...r, ...existing, status, studioResponse });
+              }
             }
           });
         }
@@ -373,7 +383,14 @@ const DB = {
       return Array.from(itemMap.values()).filter(r => r && r.id && r.id !== 'mswstn7iv0g7w');
     },
     get(id)     { return this.all().find(r => r && r.id === id) || null; },
-    save(list)  { DB._set(DB.KEYS.reviews, list); },
+    save(list)  {
+      DB._set(DB.KEYS.reviews, list);
+      try {
+        localStorage.setItem('vk_reviews', JSON.stringify(list));
+      } catch (e) {}
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+    },
     add(r)      {
       const l = this.all();
       r.id = DB._id();
