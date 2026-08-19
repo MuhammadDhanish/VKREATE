@@ -2,6 +2,18 @@
 // VKREATE — Static Data Layer
 // ============================================================
 
+// Force-purge stale mobile local storage cache
+(function purgeStaleMobileStorage() {
+  try {
+    const PURGE_KEY = 'vk_purge_v4';
+    if (localStorage.getItem('vk_purge_key') !== PURGE_KEY) {
+      localStorage.removeItem('vk_admin_reviews');
+      localStorage.removeItem('vk_reviews');
+      localStorage.setItem('vk_purge_key', PURGE_KEY);
+    }
+  } catch (e) {}
+})();
+
 window.VKREATE_DATA = {
 
   projects: [
@@ -36,11 +48,7 @@ window.VKREATE_DATA = {
       solution: "Multi-zone dining experience combining intimate booth seating, communal long-table areas, and a lounge with arched niches, vertical ribbed wood panels, custom pendant chandeliers, and a warm cream/beige palette.",
       result: "Functional elegance delivering a 30% increase in table turns, 100% weekend reservation capacity, and a distinctive brand experience.",
       processPhases: ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
-      testimonial: {
-        author: "Unnikrishnan Nair",
-        role: "Founder & Owner, Lilaa Hospitality",
-        text: "VKREATE captured our brand's warmth and sophistication in every detail. The arched niches, warm lighting, and seating layout elevated our entire dining experience. The space speaks for itself."
-      },
+      testimonial: null,
       metrics: { sqft: "2,500", seatingCapacity: 85, reservationWait: "100% full", timeline: "4 months" }
     },
     {
@@ -71,11 +79,7 @@ window.VKREATE_DATA = {
       solution: "Individual styling pods with oversized illuminated circular LED mirrors, a private pedicure suite with acoustic drapery, botanical flamingo wallpaper murals in terracotta tones, and custom gold-accented styling stations.",
       result: "Elevated brand positioning with improved staff workflow, a 45% increase in repeat bookings, and high client retention.",
       processPhases: ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
-      testimonial: {
-        author: "Dr. Reshma Menon",
-        role: "Salon Director, Wings Wellness",
-        text: "Our clients feel like they're stepping into a 5-star spa retreat. VKREATE's design elevated our entire brand perception. The private pedicure suite and vanity pods are guest favorites!"
-      },
+      testimonial: null,
       metrics: { sqft: "2,200", pods: 6, retentionRate: "92%", timeline: "3 months" }
     },
     {
@@ -104,11 +108,7 @@ window.VKREATE_DATA = {
       solution: "High-impact storefront featuring grand arched maroon grid glass windows, a backlit diamond-cut mirror feature wall with glowing gold 'Wings' branding, and precision micro-spotlighting for display cases.",
       result: "40% increase in mall corridor foot traffic, longer average store dwell time, and enhanced brand prestige.",
       processPhases: ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
-      testimonial: {
-        author: "Faisal Rahman",
-        role: "Brand Manager, Wings Retail",
-        text: "The design makes our jewellery the hero. Customers spend significantly more time browsing, and our storefront is now the most recognizable facade in the entire mall."
-      },
+      testimonial: null,
       metrics: { sqft: "1,800", footTraffic: "+40%", conversionLift: "+32%", timeline: "2 months" }
     },
     {
@@ -135,11 +135,7 @@ window.VKREATE_DATA = {
       solution: "Sculptural cream armchairs, warm indirect LED ceiling troffers, organic cloud pendant chandeliers, vertical ribbed acoustic timber panels, and a terrazzo pathway guiding visitors to private consultation suites.",
       result: "Enhanced client-facing experience reinforcing Apex Zenith's market position, leading to positive feedback from international delegates.",
       processPhases: ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
-      testimonial: {
-        author: "Sameer Varma",
-        role: "Corporate Director, Apex Zenith",
-        text: "First impressions matter immensely in corporate business. VKREATE designed a VIP reception that speaks our core values immediately upon arrival."
-      },
+      testimonial: null,
       metrics: { sqft: "2,900", satisfaction: "98%", executiveZones: 4, timeline: "2.5 months" }
     }
   ],

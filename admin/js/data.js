@@ -2,6 +2,18 @@
    VKREATE Admin — Data Layer (Unified API, Sync Engine & Fallback)
    ============================================================ */
 
+// Force-purge stale mobile local storage cache
+(function purgeStaleMobileStorage() {
+  try {
+    const PURGE_KEY = 'vk_purge_v4';
+    if (localStorage.getItem('vk_purge_key') !== PURGE_KEY) {
+      localStorage.removeItem('vk_admin_reviews');
+      localStorage.removeItem('vk_reviews');
+      localStorage.setItem('vk_purge_key', PURGE_KEY);
+    }
+  } catch (e) {}
+})();
+
 // BroadcastChannel for instant cross-tab sync in same browser
 const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('vk_sync') : null;
 
