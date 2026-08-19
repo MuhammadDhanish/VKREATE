@@ -2328,9 +2328,10 @@
   transition: opacity 0.25s ease;
 }
 .review-modal-overlay.open,
-.review-modal-overlay.show {
-  display: flex;
-  opacity: 1;
+.review-modal-overlay.show,
+.review-modal-overlay.active {
+  display: flex !important;
+  opacity: 1 !important;
 }
 .review-modal {
   background: #FFFFFF;
@@ -2345,7 +2346,8 @@
   position: relative;
 }
 .review-modal-overlay.open .review-modal,
-.review-modal-overlay.show .review-modal {
+.review-modal-overlay.show .review-modal,
+.review-modal-overlay.active .review-modal {
   transform: translateY(0) scale(1);
 }
 

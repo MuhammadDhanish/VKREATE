@@ -213,6 +213,23 @@
     });
   }
 
+  // Global modal open/close functions for inline onclick & event listener support
+  window.openReviewModal = function() {
+    const overlay = document.getElementById('pub-review-overlay');
+    if (!overlay) return;
+    overlay.classList.add('active', 'open', 'show');
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeReviewModal = function() {
+    const overlay = document.getElementById('pub-review-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('active', 'open', 'show');
+    overlay.style.display = 'none';
+    document.body.style.overflow = '';
+  };
+
   // Submission Modal Open/Close Controls
   function setupModalControls() {
     const overlay = document.getElementById('pub-review-overlay');
@@ -220,23 +237,18 @@
     if (!overlay) return;
 
     document.querySelectorAll('.open-review-modal-trigger, #open-review-modal-btn, #open-review-modal-btn-proj').forEach(btn => {
-      btn.addEventListener('click', () => {
-        overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.openReviewModal();
       });
     });
 
-    const closeModal = () => {
-      overlay.classList.remove('active');
-      document.body.style.overflow = '';
-    };
-
-    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (closeBtn) closeBtn.addEventListener('click', window.closeReviewModal);
     overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) closeModal();
+      if (e.target === overlay) window.closeReviewModal();
     });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && overlay.classList.contains('active')) closeModal();
+      if (e.key === 'Escape') window.closeReviewModal();
     });
   }
 
@@ -311,23 +323,26 @@
       }
 
       setTimeout(() => {
-        if (overlay) {
-          overlay.classList.remove('active');
-          document.body.style.overflow = '';
-        }
+        window.closeReviewModal();
       }, 3500);
     });
   }
 
   // Init Engine
-  document.addEventListener('DOMContentLoaded', () => {
+  function initEngine() {
     populateProjectDropdown();
     renderReviews();
     setupFilters();
     setupStarSelector();
     setupModalControls();
     setupFormSubmit();
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEngine);
+  } else {
+    initEngine();
+  }
 
   // Listen to remote update events
   window.addEventListener('vkreate:reviews-updated', renderReviews);
