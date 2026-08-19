@@ -339,32 +339,39 @@ ul, ol { list-style: none; }
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
   padding: 9px 18px;
   border-radius: var(--r-md);
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  transition: all var(--dur) var(--ease);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   white-space: nowrap;
   cursor: pointer;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 .btn svg { width: 15px; height: 15px; flex-shrink: 0; }
-.btn-primary { background: var(--green-deep); color: #fff; }
-.btn-primary:hover { background: var(--green-mid); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(46,74,64,0.35); }
-.btn-gold { background: var(--gold); color: var(--text-1); }
-.btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
-.btn-outline { border: 1.5px solid var(--border-md); color: var(--text-2); background: transparent; }
-.btn-outline:hover { background: var(--bg); border-color: var(--green-mid); color: var(--green-deep); }
-.btn-danger { background: var(--danger); color: #fff; }
-.btn-danger:hover { background: #DC2626; }
-.btn-success { background: var(--success); color: #fff; }
-.btn-ghost { color: var(--text-3); padding: 8px 12px; }
+.btn-primary { background: var(--green-deep); color: #fff; border: 1px solid var(--green-deep); }
+.btn-primary:hover { background: var(--green-mid); border-color: var(--green-mid); box-shadow: 0 4px 12px rgba(46,74,64,0.3); }
+.btn-gold { background: var(--gold); color: var(--text-1); border: 1px solid var(--gold); }
+.btn-gold:hover { background: var(--gold-light); border-color: var(--gold-light); box-shadow: 0 4px 12px rgba(201,169,110,0.3); }
+.btn-outline { border: 1px solid var(--border-md); color: var(--text-2); background: transparent; }
+.btn-outline:hover { background: rgba(61,92,80,0.06); border-color: var(--green-mid); color: var(--green-deep); }
+.btn-danger { background: var(--danger); color: #fff; border: 1px solid var(--danger); }
+.btn-danger:hover { background: #DC2626; border-color: #DC2626; box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
+.btn-success { background: var(--success); color: #fff; border: 1px solid var(--success); }
+.btn-ghost { color: var(--text-3); padding: 8px 12px; border: 1px solid transparent; }
 .btn-ghost:hover { background: var(--bg); color: var(--text-1); }
-.btn-sm { padding: 6px 12px; font-size: 0.75rem; }
-.btn-lg { padding: 12px 24px; font-size: 0.9375rem; }
+.btn-sm { padding: 6px 12px; font-size: 0.75rem; min-height: 32px; }
+.btn-lg { padding: 12px 24px; font-size: 0.9375rem; min-height: 44px; }
 .btn-icon { padding: 8px; border-radius: var(--r-md); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
 
 /* Badges / Status pills */
 .badge {
