@@ -348,6 +348,10 @@ app.post('/api/upload', (req, res) => {
 // Static Files middleware
 app.use(express.static(__dirname));
 
-app.listen(PORT, () => {
-  console.log(`⚡ VKREATE Server running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`⚡ VKREATE Server running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
