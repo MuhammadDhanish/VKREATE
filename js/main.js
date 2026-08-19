@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Sticky Nav ────────────────────────────────────────────
   const nav = document.getElementById('main-nav');
   const handleNavScroll = () => {
-    nav.classList.toggle('scrolled', window.scrollY > 40);
+    if (nav) nav.classList.toggle('scrolled', window.scrollY > 40);
   };
   window.addEventListener('scroll', handleNavScroll, { passive: true });
   handleNavScroll();
@@ -162,19 +162,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Mobile Nav Toggle (Inline Onclick & Touch Support) ────
   window.toggleMobileNav = function (e) {
-    if (e && e.stopPropagation) e.stopPropagation();
-    const hamburger = document.getElementById('hamburger');
-    const mobileNav = document.getElementById('mobile-nav');
+    if (e) {
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+    }
+    const hamburger = document.getElementById('hamburger') || document.querySelector('.nav__hamburger');
+    const mobileNav = document.getElementById('mobile-nav') || document.querySelector('.nav__mobile');
     if (!hamburger || !mobileNav) return;
 
     const isOpen = hamburger.classList.toggle('open');
     mobileNav.classList.toggle('open', isOpen);
     document.body.classList.toggle('nav-open', isOpen);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
     hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
   };
 
-  const hamburger = document.getElementById('hamburger');
-  const mobileNav = document.getElementById('mobile-nav');
+  const hamburger = document.getElementById('hamburger') || document.querySelector('.nav__hamburger');
+  const mobileNav = document.getElementById('mobile-nav') || document.querySelector('.nav__mobile');
 
   if (hamburger) {
     hamburger.addEventListener('click', window.toggleMobileNav);
@@ -193,6 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         mobileNav.classList.remove('open');
         document.body.classList.remove('nav-open');
+        document.body.style.overflow = '';
       });
     });
   }
