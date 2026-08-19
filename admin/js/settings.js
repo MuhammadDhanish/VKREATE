@@ -165,63 +165,65 @@ const Settings = {
                   }
                 } catch(e) {}
                 const maxBytes = 5 * 1024 * 1024;
-                const pct = Math.min(Math.round((totalBytes / maxBytes) * 100), 100);
+                const pctExact = ((totalBytes / maxBytes) * 100).toFixed(1);
+                const pctDisplay = pctExact === '0.0' && totalBytes > 0 ? '<1%' : `${Math.round(pctExact)}%`;
                 const usedKB = Math.round(totalBytes / 1024);
-                const color = pct > 80 ? '#dc2626' : pct > 60 ? '#d97706' : '#16a34a';
+                const color = pctExact > 80 ? '#dc2626' : pctExact > 60 ? '#d97706' : '#16a34a';
+                const widthPct = Math.max(parseFloat(pctExact), totalBytes > 0 ? 1.5 : 0);
                 return `
-                  <div style="padding:14px;background:var(--bg);border-radius:var(--r-md)">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                      <span class="text-sm fw-600">📦 localStorage <span style="font-weight:400;opacity:.6">(project metadata)</span></span>
-                      <span class="text-xs text-muted">${usedKB} KB / 5120 KB (${pct}%)</span>
+                  <div style="padding:16px;background:#ffffff;border:1px solid #e2e8f0;border-radius:var(--r-md);box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                      <span class="text-sm fw-600" style="color:#0f172a">📦 localStorage <span style="font-weight:400;color:#64748b">(project metadata)</span></span>
+                      <span class="text-xs fw-600" style="color:#475569">${usedKB} KB / 5120 KB (${pctDisplay})</span>
                     </div>
-                    <div style="background:var(--border);border-radius:4px;height:8px;overflow:hidden">
-                      <div style="width:${pct}%;height:100%;background:${color};border-radius:4px"></div>
+                    <div style="background:#e2e8f0;border-radius:6px;height:10px;overflow:hidden">
+                      <div style="width:${widthPct}%;height:100%;background:${color};border-radius:6px;transition:width 0.4s ease"></div>
                     </div>
-                    ${pct > 70 ? `<p class="text-xs mt-6" style="color:${color}">⚠️ Storage getting ${pct > 90 ? 'critically full' : 'full'} — clear image cache below.</p>` : '<p class="text-xs mt-6" style="color:#16a34a">✓ Metadata storage is healthy.</p>'}
+                    ${pctExact > 70 ? `<p class="text-xs mt-6 fw-500" style="color:${color}">⚠️ Storage getting ${pctExact > 90 ? 'critically full' : 'full'} — clear image cache below.</p>` : '<p class="text-xs mt-6 fw-500" style="color:#16a34a">✓ Metadata storage is healthy.</p>'}
                   </div>`;
               })()}
 
               <!-- IndexedDB meter (async loaded) -->
-              <div id="idb-meter" style="padding:14px;background:var(--bg);border-radius:var(--r-md)">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                  <span class="text-sm fw-600">🖼️ IndexedDB <span style="font-weight:400;opacity:.6">(uploaded images)</span></span>
-                  <span class="text-xs text-muted" id="idb-size-label">Loading...</span>
+              <div id="idb-meter" style="padding:16px;background:#ffffff;border:1px solid #e2e8f0;border-radius:var(--r-md);box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span class="text-sm fw-600" style="color:#0f172a">🖼️ IndexedDB <span style="font-weight:400;color:#64748b">(uploaded images)</span></span>
+                  <span class="text-xs fw-600" style="color:#475569" id="idb-size-label">Loading...</span>
                 </div>
-                <div style="background:var(--border);border-radius:4px;height:8px;overflow:hidden">
-                  <div id="idb-bar" style="width:0%;height:100%;background:#6366f1;border-radius:4px;transition:width .4s"></div>
+                <div style="background:#e2e8f0;border-radius:6px;height:10px;overflow:hidden">
+                  <div id="idb-bar" style="width:0%;height:100%;background:#6366f1;border-radius:6px;transition:width .4s ease"></div>
                 </div>
-                <p class="text-xs mt-6 text-muted" id="idb-info">IndexedDB can store up to ~250 MB of images.</p>
+                <p class="text-xs mt-6 fw-500" style="color:#475569" id="idb-info">IndexedDB can store up to ~250 MB of images.</p>
               </div>
 
               <!-- Domain Storage Quota meter (live browser estimate) -->
-              <div id="domain-meter" style="padding:14px;background:var(--bg);border-radius:var(--r-md)">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                  <span class="text-sm fw-600">🌐 Domain Available Space <span style="font-weight:400;opacity:.6">(browser origin quota)</span></span>
-                  <span class="text-xs text-muted" id="domain-quota-label">Calculating...</span>
+              <div id="domain-meter" style="padding:16px;background:#ffffff;border:1px solid #e2e8f0;border-radius:var(--r-md);box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span class="text-sm fw-600" style="color:#0f172a">🌐 Domain Available Space <span style="font-weight:400;color:#64748b">(browser origin quota)</span></span>
+                  <span class="text-xs fw-600" style="color:#475569" id="domain-quota-label">Calculating...</span>
                 </div>
-                <div style="background:var(--border);border-radius:4px;height:8px;overflow:hidden">
-                  <div id="domain-quota-bar" style="width:0%;height:100%;background:#0284c7;border-radius:4px;transition:width .4s"></div>
+                <div style="background:#e2e8f0;border-radius:6px;height:10px;overflow:hidden">
+                  <div id="domain-quota-bar" style="width:0%;height:100%;background:#0284c7;border-radius:6px;transition:width .4s ease"></div>
                 </div>
-                <p class="text-xs mt-6 text-muted" id="domain-quota-info">Querying origin storage API...</p>
+                <p class="text-xs mt-6 fw-500" style="color:#16a34a" id="domain-quota-info">Querying origin storage API...</p>
               </div>
 
-              <p class="text-sm text-muted">Export data as backup, import, or reset to demo content.</p>
+              <p class="text-sm text-muted mt-4">Export data as backup, import, or reset to demo content.</p>
               <div style="display:flex;gap:10px;flex-wrap:wrap">
-                <button class="btn btn-outline btn-sm" onclick="Settings.exportAll()">
-                  ${UI.icon('download')} Export All Data
+                <button type="button" class="btn btn-outline btn-sm" onclick="Settings.exportAll()">
+                  📥 Export All Data
                 </button>
-                <button class="btn btn-outline btn-sm" onclick="Settings.importData()">
+                <button type="button" class="btn btn-outline btn-sm" onclick="Settings.importData()">
                   📂 Import Data
                 </button>
-                <button class="btn btn-outline btn-sm" onclick="Settings.clearImageCache()" style="color:#dc2626;border-color:#fca5a5">
+                <button type="button" class="btn btn-outline btn-sm" onclick="Settings.clearImageCache()" style="color:#dc2626;border-color:#fca5a5;background:#fef2f2">
                   🖼️ Clear Image Cache
                 </button>
-                <button class="btn btn-danger btn-sm" onclick="Settings.resetData()">
-                  🔄 Reset to Demo Data
+                <button type="button" class="btn btn-danger btn-sm" onclick="Settings.resetData()">
+                  ⚠️ Reset to Demo Data
                 </button>
               </div>
               <div style="background:#fffbeb;border:1px solid #fde68a;padding:10px 14px;border-radius:var(--r-md)">
-                <span class="text-xs" style="color:#92400E">⚠️ <strong>Clear Image Cache</strong> removes photos from IndexedDB (projects stay, images reset to placeholders). <strong>Reset</strong> erases everything.</span>
+                <span class="text-xs" style="color:#92400E">⚠️ <strong>Clear Image Cache</strong> removes custom photos from IndexedDB. <strong>Reset</strong> restores fresh demo content.</span>
               </div>
             </div>
           </div>
