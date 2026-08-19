@@ -130,8 +130,13 @@ document.addEventListener('DOMContentLoaded', () => {
         revealObserver.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  }, { threshold: 0.01, rootMargin: '100px 0px 100px 0px' });
   revealEls.forEach(el => revealObserver.observe(el));
+
+  // Fallback: Ensure all reveal elements become visible after page load to prevent blank gaps
+  setTimeout(() => {
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => el.classList.add('visible'));
+  }, 400);
 
   // ── Sticky Nav ────────────────────────────────────────────
   const nav = document.getElementById('main-nav');
