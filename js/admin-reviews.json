@@ -1,41 +1,5 @@
 [
   {
-    "id": "msyi0ylujxun5",
-    "clientName": "sayed",
-    "clientRole": "ieufyrwiufrj",
-    "clientEmail": "sayedsinan788@gmail.com",
-    "rating": 3,
-    "projectName": "Lilaa — Malayali Cuisine",
-    "projectId": "lilaa-restaurant",
-    "industry": "restaurant",
-    "reviewText": "lldiufrw8tg34tgu4",
-    "status": "approved",
-    "createdAt": "2026-08-18T10:07:23.442Z",
-    "approvedAt": "2026-08-18T23:22:00.000Z",
-    "studioResponse": ""
-  },
-  {
-    "id": "rev-lilaa-01",
-    "projectId": "lilaa-restaurant",
-    "projectName": "Lilaa — Malayali Cuisine",
-    "clientName": "Unnikrishnan Nair",
-    "clientRole": "Founder & Owner, Lilaa Hospitality",
-    "clientEmail": "unni@lilaa.in",
-    "rating": 5,
-    "rank": 1,
-    "reviewText": "VKREATE captured our brand's warmth and sophistication in every detail. The spatial flow, arched niches, warm lighting, and seating layout elevated our entire dining experience. The space speaks for itself and guest retention has been phenomenal.",
-    "shortTestimonial": "VKREATE captured our brand's warmth and sophistication in every detail.",
-    "status": "approved",
-    "studioResponse": "Thank you Unnikrishnan! It was a true pleasure bringing Lilaa's spatial vision to life.",
-    "tags": [
-      "restaurant",
-      "dining"
-    ],
-    "visibility": "public",
-    "createdAt": "2025-06-20T10:00:00Z",
-    "approvedAt": "2025-06-21T09:00:00Z"
-  },
-  {
     "id": "rev-lounge-04",
     "projectId": "corporate-lounge",
     "projectName": "Corporate VIP Reception & Lounge",
