@@ -399,7 +399,7 @@
     justify-content: center;
   }
   .nav__mobile {
-    display: flex;
+    display: none !important;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     width: 100vw;
@@ -419,6 +419,7 @@
     box-sizing: border-box;
   }
   .nav__mobile.open {
+    display: flex !important;
     opacity: 1 !important;
     pointer-events: all !important;
     transform: translateY(0) !important;
