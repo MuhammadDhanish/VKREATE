@@ -187,24 +187,24 @@ const Settings = {
               <div id="idb-meter" style="padding:16px;background:#ffffff;border:1px solid #e2e8f0;border-radius:var(--r-md);box-shadow:0 1px 3px rgba(0,0,0,0.04)">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                   <span class="text-sm fw-600" style="color:#0f172a">🖼️ IndexedDB <span style="font-weight:400;color:#64748b">(uploaded images)</span></span>
-                  <span class="text-xs fw-600" style="color:#475569" id="idb-size-label">Loading...</span>
+                  <span class="text-xs fw-600" style="color:#475569" id="idb-size-label">${window._cachedIdbLabel || 'Calculating...'}</span>
                 </div>
                 <div style="background:#e2e8f0;border-radius:6px;height:10px;overflow:hidden">
-                  <div id="idb-bar" style="width:0%;height:100%;background:#6366f1;border-radius:6px;transition:width .4s ease"></div>
+                  <div id="idb-bar" style="width:${window._cachedIdbPct || 0}%;height:100%;background:#6366f1;border-radius:6px;transition:width .4s ease"></div>
                 </div>
-                <p class="text-xs mt-6 fw-500" style="color:#475569" id="idb-info">IndexedDB can store up to ~250 MB of images.</p>
+                <p class="text-xs mt-6 fw-500" style="color:#475569" id="idb-info">${window._cachedIdbInfo || 'IndexedDB can store up to ~250 MB of images.'}</p>
               </div>
 
               <!-- Domain Storage Quota meter (live browser estimate) -->
               <div id="domain-meter" style="padding:16px;background:#ffffff;border:1px solid #e2e8f0;border-radius:var(--r-md);box-shadow:0 1px 3px rgba(0,0,0,0.04)">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                   <span class="text-sm fw-600" style="color:#0f172a">🌐 Domain Available Space <span style="font-weight:400;color:#64748b">(browser origin quota)</span></span>
-                  <span class="text-xs fw-600" style="color:#475569" id="domain-quota-label">Calculating...</span>
+                  <span class="text-xs fw-600" style="color:#475569" id="domain-quota-label">${window._cachedDomainLabel || 'Calculating...'}</span>
                 </div>
                 <div style="background:#e2e8f0;border-radius:6px;height:10px;overflow:hidden">
-                  <div id="domain-quota-bar" style="width:0%;height:100%;background:#0284c7;border-radius:6px;transition:width .4s ease"></div>
+                  <div id="domain-quota-bar" style="width:${window._cachedDomainPct || 1}%;height:100%;background:#0284c7;border-radius:6px;transition:width .4s ease"></div>
                 </div>
-                <p class="text-xs mt-6 fw-500" style="color:#16a34a" id="domain-quota-info">Querying origin storage API...</p>
+                <p class="text-xs mt-6 fw-500" style="color:#16a34a" id="domain-quota-info">${window._cachedDomainInfo || 'Querying origin storage API...'}</p>
               </div>
 
               <p class="text-sm text-muted mt-4">Export data as backup, import, or reset to demo content.</p>
@@ -299,14 +299,23 @@ const Settings = {
           const pct = Math.min(Math.round((stats.bytes / maxBytes) * 100), 100);
           const usedMB = (stats.bytes / (1024 * 1024)).toFixed(1);
 
-          if (label) label.textContent = `${usedMB} MB / 250 MB (${pct}%) — ${stats.count} image${stats.count !== 1 ? 's' : ''}`;
-          if (bar) bar.style.width = `${Math.max(pct, stats.count ? 2 : 0)}%`;
+          const labelText = `${usedMB} MB / 250 MB (${pct}%) — ${stats.count} image${stats.count !== 1 ? 's' : ''}`;
+          const widthPct = Math.max(pct, stats.count ? 2 : 0);
+          window._cachedIdbLabel = labelText;
+          window._cachedIdbPct = widthPct;
+
+          if (label) label.textContent = labelText;
+          if (bar) bar.style.width = `${widthPct}%`;
           if (info) {
             if (stats.count === 0) {
-              info.textContent = '✓ IndexedDB memory is healthy. No custom uploaded images cached.';
+              const txt = '✓ IndexedDB memory is healthy. No custom uploaded images cached.';
+              window._cachedIdbInfo = txt;
+              info.textContent = txt;
               info.style.color = '#16a34a';
             } else {
-              info.textContent = `IndexedDB is caching ${stats.count} custom image file${stats.count !== 1 ? 's' : ''} (${usedMB} MB used).`;
+              const txt = `IndexedDB is caching ${stats.count} custom image file${stats.count !== 1 ? 's' : ''} (${usedMB} MB used).`;
+              window._cachedIdbInfo = txt;
+              info.textContent = txt;
               info.style.color = 'var(--text-muted)';
             }
           }
@@ -333,10 +342,18 @@ const Settings = {
           const bar = document.getElementById('domain-quota-bar');
           const info = document.getElementById('domain-quota-info');
 
-          if (label) label.textContent = `${usedMB} MB used / ${availGB} GB available (${quotaGB} GB quota)`;
-          if (bar) bar.style.width = `${Math.max(pct, 1)}%`;
+          const domainLabel = `${usedMB} MB used / ${availGB} GB available (${quotaGB} GB quota)`;
+          const domainPct = Math.max(pct, 1);
+          const domainInfo = `✓ Domain origin (${window.location.hostname || 'vkreatearchitecture.com'}) has ${availGB} GB of available storage allocated by your browser.`;
+
+          window._cachedDomainLabel = domainLabel;
+          window._cachedDomainPct = domainPct;
+          window._cachedDomainInfo = domainInfo;
+
+          if (label) label.textContent = domainLabel;
+          if (bar) bar.style.width = `${domainPct}%`;
           if (info) {
-            info.textContent = `✓ Domain origin (${window.location.hostname || 'vkreatearchitecture.com'}) has ${availGB} GB of available storage allocated by your browser.`;
+            info.textContent = domainInfo;
             info.style.color = '#16a34a';
           }
         } catch (e) {

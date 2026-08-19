@@ -255,6 +255,8 @@ ul, ol { list-style: none; }
   flex: 1;
   padding: 28px;
   animation: fadeInUp 0.3s var(--ease) both;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(12px); }
@@ -282,6 +284,8 @@ ul, ol { list-style: none; }
   border-radius: var(--r-lg);
   border: 1px solid var(--border);
   box-shadow: var(--sh-sm);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 .card-body { padding: 24px; }
 .card-header {

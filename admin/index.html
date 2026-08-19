@@ -328,6 +328,7 @@ const App = {
       return;
     }
 
+    const isPageChange = (this._current !== page);
     this._current = page;
     location.hash = page;
 
@@ -342,13 +343,12 @@ const App = {
 
     // Re-render content
     const content = document.getElementById('main-content');
-    if (content) content.style.animation = 'none';
-
     const mod = PAGES[page]?.module;
     if (mod && typeof mod.render === 'function') {
-      if (content) {
-        content.style.animation = '';
-        void content.offsetWidth; // reflow to restart animation
+      if (content && isPageChange) {
+        content.style.animation = 'none';
+        void content.offsetWidth;
+        content.style.animation = 'fadeInUp 0.3s var(--ease) both';
       }
       mod.render();
     }
@@ -387,6 +387,12 @@ const App = {
   _refreshCurrentView() {
     this.updateSidebar();
     const page = this._current || 'dashboard';
+
+    // Prevent view re-rendering while user is actively filling forms or typing in inputs
+    if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+      return;
+    }
+
     const mod = PAGES[page]?.module;
     if (mod && typeof mod.render === 'function') {
       mod.render();
