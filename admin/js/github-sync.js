@@ -34,8 +34,9 @@ const GithubSync = {
         'Content-Type': 'application/json',
       };
 
-      // Push project and inquiry data to GitHub
+      // Push projects, reviews, and inquiries data to GitHub
       await Promise.allSettled([
+        this._pushFile('js/admin-reviews.json', DB.reviews.all(), headers),
         this._pushFile('js/admin-projects.json', DB.projects.all(), headers),
         this._pushFile('js/admin-inquiries.json', DB.inquiries.all(), headers)
       ]);

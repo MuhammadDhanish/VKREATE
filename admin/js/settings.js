@@ -74,9 +74,16 @@ const Settings = {
             <span class="card-title">🔔 Notifications</span>
           </div>
           <div class="card-body">
-            <div style="display:grid;gap:16px">
-
               <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg);border-radius:var(--r-md)">
+                <div>
+                  <div class="fw-600 text-sm">New Review Alert</div>
+                  <div class="text-xs text-muted">Get notified when a new client review is submitted</div>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="notif-review" ${notif.newReview?'checked':''} onchange="Settings.saveNotif()">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
                 <div>
                   <div class="fw-600 text-sm">New Inquiry Alert</div>
                   <div class="text-xs text-muted">Get notified when a contact form is submitted</div>

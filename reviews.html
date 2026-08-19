@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Reviews &amp; Testimonials | VKREATE Design Studio</title>
+  <meta name="description" content="Read real client reviews, verified ratings, and studio responses for VKREATE's interior architecture projects across restaurants, salons, retail, offices, and villas." />
+  <meta name="keywords" content="client reviews, interior design reviews, VKREATE reviews, verified client testimonials" />
+  <meta property="og:title" content="Client Reviews &amp; Testimonials — VKREATE Design Studio" />
+  <meta property="og:description" content="Verified client ratings and reviews for commercial interior design projects." />
+  <meta property="og:type" content="website" />
+
+  <script>window.IS_FULL_REVIEWS_PAGE = true;</script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════
+       NAVIGATION
+  ══════════════════════════════════════════════════════════ -->
+  <nav class="nav" id="main-nav" role="navigation" aria-label="Main navigation">
+    <div class="container">
+      <div class="nav__inner">
+        <a class="nav__logo" href="index.html" aria-label="VKREATE — Home">
+          <img src="assets/images/logo.png" alt="VKREATE — Where Design Speaks" class="nav__logo-img" style="height:44px; width:auto; object-fit:contain; filter:brightness(0);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+          <div class="nav__logo-text-wrap" style="display:none; flex-direction:column;">
+            <span class="nav__logo-name">VKREATE</span>
+            <span class="nav__logo-tagline">Where Design Speaks</span>
+          </div>
+        </a>
+
+        <ul class="nav__links" role="list">
+          <li><a class="nav__link" href="index.html">Home</a></li>
+          <li><a class="nav__link" href="projects.html">Portfolio</a></li>
+          <li><a class="nav__link active" href="reviews.html">Reviews</a></li>
+          <li><a class="nav__link" href="about.html">About</a></li>
+          <li><a class="nav__link" href="services.html">Services</a></li>
+          <li><a class="nav__link nav__cta" href="contact.html">Start a Project</a></li>
+        </ul>
+
+        <button class="nav__hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Nav Drawer -->
+  <div class="nav__mobile" id="mobile-nav" role="dialog" aria-label="Mobile menu">
+    <div class="nav__mobile-header">
+      <span class="nav__mobile-brand">VKREATE STUDIO</span>
+    </div>
+    <nav class="nav__mobile-links">
+      <a class="nav__mobile-link" href="index.html">Home</a>
+      <a class="nav__mobile-link" href="projects.html">Portfolio Showcase</a>
+      <a class="nav__mobile-link active" href="reviews.html">Client Reviews</a>
+      <a class="nav__mobile-link" href="about.html">About VKREATE</a>
+      <a class="nav__mobile-link" href="services.html">Our Services</a>
+      <a class="nav__mobile-cta" href="contact.html">Start Project Brief</a>
+    </nav>
+    <div class="nav__mobile-footer">
+      <a href="admin/index.html" target="_blank" class="nav__mobile-admin">🔒 Admin Portal</a>
+    </div>
+  </div>
+
+  <main style="padding-top: calc(var(--nav-height, 70px) + 32px);">
+    <!-- ══════════════════════════════════════════════════════════
+         REVIEWS SECTION
+    ══════════════════════════════════════════════════════════ -->
+    <section class="reviews section" aria-label="Client reviews and ratings" style="padding-top:20px;">
+      <div class="container">
+        
+        <div class="section__header reveal">
+          <span class="t-overline section__overline">Client Voices</span>
+          <h1 class="t-h1 section__title">Client Reviews &amp; Testimonials</h1>
+          <p class="section__desc t-body" style="margin-top:8px;">
+            Every rating reflects a real project, a real relationship, and a real space transformed.
+          </p>
+          <div class="divider"></div>
+        </div>
+
+        <!-- Aggregate Score Card & Write Review CTA -->
+        <div class="reviews__aggregate reveal" style="margin-bottom:40px;">
+          <div>
+            <div class="reviews__big-score" id="agg-score" aria-label="Average rating">5.0</div>
+          </div>
+          <div class="reviews__score-detail">
+            <div class="reviews__score-stars" id="agg-stars" aria-label="5 star rating">
+              <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span>
+            </div>
+            <div class="reviews__score-count" id="agg-count">Based on verified client reviews</div>
+          </div>
+          <div class="reviews__trust-badges">
+            <div class="trust-badge">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              All Reviews Verified
+            </div>
+            <div class="trust-badge">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              100% Genuine Clients
+            </div>
+            <div class="trust-badge">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              On-Time Guarantee
+            </div>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;">
+            <button type="button" class="btn btn-green open-review-modal-trigger" id="open-review-modal-btn" style="padding:14px 28px;font-size:0.9375rem;">
+              ✍️ Write a Client Review
+            </button>
+          </div>
+        </div>
+
+        <!-- Review Filters (Desktop) -->
+        <div class="reviews__filters desktop-only reveal delay-1" id="reviews-filters" role="group" aria-label="Filter reviews by industry" style="margin-bottom:40px;">
+          <button class="filter-btn active" data-filter="all" id="rev-filter-all">All Reviews</button>
+          <button class="filter-btn" data-filter="restaurant" id="rev-filter-restaurant">Restaurants</button>
+          <button class="filter-btn" data-filter="beauty" id="rev-filter-beauty">Beauty &amp; Wellness</button>
+          <button class="filter-btn" data-filter="retail" id="rev-filter-retail">Retail</button>
+          <button class="filter-btn" data-filter="office" id="rev-filter-office">Offices</button>
+        </div>
+
+        <!-- Review Filters (Mobile Dropdown) -->
+        <div class="reviews__filters-mobile mobile-only reveal delay-1" style="margin-bottom:32px;">
+          <label for="reviews-filter-select" class="sr-only">Filter reviews by industry</label>
+          <select class="filter-dropdown" id="reviews-filter-select" aria-label="Select review category">
+            <option value="all">All Reviews</option>
+            <option value="restaurant">Restaurants</option>
+            <option value="beauty">Beauty &amp; Wellness</option>
+            <option value="retail">Retail</option>
+            <option value="office">Offices</option>
+          </select>
+        </div>
+
+        <!-- Review Cards Grid -->
+        <div class="reviews__grid" id="reviews-grid" role="list" aria-label="Client review cards"></div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════════════════════════ -->
+  <footer class="footer" role="contentinfo" aria-label="Site footer">
+    <div class="container">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <div class="footer__logo">VKREATE</div>
+          <div class="footer__tagline">Where Design Speaks</div>
+          <p class="footer__brand-desc">A premium commercial interior design studio transforming spaces across India.</p>
+        </div>
+        <div class="footer__col">
+          <div class="footer__col-title">Navigate</div>
+          <ul class="footer__links">
+            <li><a class="footer__link" href="index.html">Home</a></li>
+            <li><a class="footer__link" href="projects.html">Portfolio</a></li>
+            <li><a class="footer__link" href="reviews.html">Reviews</a></li>
+            <li><a class="footer__link" href="about.html">About</a></li>
+            <li><a class="footer__link" href="services.html">Services</a></li>
+            <li><a class="footer__link" href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <div class="footer__col-title">Studio Location</div>
+          <ul class="footer__links">
+            <li><a class="footer__link" href="mailto:vkreatearchitecture@gmail.com">vkreatearchitecture@gmail.com</a></li>
+            <li><a class="footer__link" href="tel:+919037161861">+91 90371 61861</a></li>
+            <li>
+              <a class="footer__link" href="https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw" target="_blank" rel="noopener noreferrer" title="Open Studio Location on Google Maps" style="text-decoration:none;display:block;">
+                <span style="font-weight:600;color:var(--white);display:block;transition:color 0.2s;">LPOne Beyond, Venture Arcade</span>
+                <span style="display:block;transition:color 0.2s;">Thondayad, Kozhikode - 673016 ↗</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copy">© 2025 VKREATE Design Studio. All rights reserved.</span>
+        <div class="footer__legal">
+          <a href="admin/index.html" target="_blank" style="color:var(--gold);font-weight:500;">🔒 Admin Panel</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ══════════════════════════════════════════════════════════
+       CLIENT REVIEW SUBMISSION MODAL
+  ══════════════════════════════════════════════════════════ -->
+  <div class="review-modal-overlay" id="pub-review-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-review-title">
+    <div class="review-modal">
+      <div class="review-modal__header">
+        <div>
+          <h3 class="review-modal__title" id="modal-review-title">Share Your Experience</h3>
+          <div class="review-modal__subtitle">Tell us about working with VKREATE Design Studio</div>
+        </div>
+        <button type="button" class="review-modal__close" id="close-pub-review-btn" aria-label="Close modal">✕</button>
+      </div>
+      
+      <div class="review-modal__body" id="pub-review-modal-body">
+        <form id="pub-review-form">
+          <!-- Interactive Star Selector -->
+          <div class="star-rating-wrap">
+            <div class="star-rating-stars" id="pub-star-selector">
+              <span class="star-rating-star" data-rating="1">★</span>
+              <span class="star-rating-star" data-rating="2">★</span>
+              <span class="star-rating-star" data-rating="3">★</span>
+              <span class="star-rating-star" data-rating="4">★</span>
+              <span class="star-rating-star" data-rating="5">★</span>
+            </div>
+            <div class="star-rating-label" id="pub-star-label">Click stars to rate (1–5)</div>
+            <input type="hidden" id="pub-rating-val" name="rating" value="0" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="pub-client-name">Your Name *</label>
+              <input type="text" id="pub-client-name" name="clientName" placeholder="e.g. Unnikrishnan Nair" required />
+            </div>
+            <div class="form-group">
+              <label for="pub-client-role">Role / Title *</label>
+              <input type="text" id="pub-client-role" name="clientRole" placeholder="e.g. Founder, Lilaa Hospitality" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="pub-client-email">Email Address *</label>
+              <input type="email" id="pub-client-email" name="clientEmail" placeholder="your@company.com" required />
+            </div>
+            <div class="form-group">
+              <label for="pub-project-sel">Select Project (Optional)</label>
+              <select id="pub-project-sel" name="projectId">
+                <option value="general">General Studio Review</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top:12px;">
+            <label for="pub-review-text">Your Review *</label>
+            <textarea id="pub-review-text" name="reviewText" rows="4" placeholder="Tell us about the design quality, spatial flow, timeline, and overall experience..." required></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-green w-full" id="pub-review-submit-btn" style="margin-top:20px;width:100%;justify-content:center;">
+            Submit Review for Approval
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/reviews.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

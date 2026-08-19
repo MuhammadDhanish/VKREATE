@@ -296,6 +296,11 @@ const DB = {
       this._set(this.KEYS.projects, this._defaultProjects());
     }
 
+    // Reviews
+    if (!this._get(this.KEYS.reviews)) {
+      this._set(this.KEYS.reviews, this._defaultReviews());
+    }
+
 
 
     // Inquiries
@@ -475,17 +480,70 @@ const DB = {
 
   // ── Reviews CRUD ──────────────────────────────────────────
   reviews: {
-    all()       { return []; },
-    get()       { return null; },
-    save()      {},
-    add()       { return null; },
-    update()    { return null; },
-    approve()   { return null; },
-    reject()    { return null; },
-    delete()    {},
-    pending()   { return []; },
-    approved()  { return []; },
-    stats()     { return { total: 0, pending: 0, approved: 0, rejected: 0, avgRating: 0 }; },
+    all() {
+      const list = DB._get(DB.KEYS.reviews) || [];
+      const defaults = (typeof DB._defaultReviews === 'function') ? DB._defaultReviews() : [];
+      const deleted = DB._getDeleted(DB.KEYS.deletedReviews);
+      let updated = false;
+
+      defaults.forEach(def => {
+        if (def && def.id && !deleted.includes(def.id) && !list.some(r => r && r.id === def.id)) {
+          list.push(def);
+          updated = true;
+        }
+      });
+
+      if (updated) {
+        DB._set(DB.KEYS.reviews, list);
+      }
+      return list.filter(r => r && r.id && !deleted.includes(r.id) && r.id !== 'mswstn7iv0g7w');
+    },
+    get(id)     { return this.all().find(r => r && r.id === id) || null; },
+    save(list)  { DB._set(DB.KEYS.reviews, list); },
+    add(r)      {
+      const l = this.all();
+      r.id = DB._id();
+      r.createdAt = new Date().toISOString();
+      r.status = 'pending';
+      l.unshift(r);
+      this.save(l);
+      DB._syncFirebase('reviews', r.id, r, 'set');
+      return r;
+    },
+    update(id, data) {
+      const l = this.all();
+      const i = l.findIndex(r => r && r.id === id);
+      if (i < 0) return null;
+      l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
+      this.save(l);
+      DB._syncFirebase('reviews', id, l[i], 'set');
+      return l[i];
+    },
+    approve(id) { return this.update(id, { status: 'approved', approvedAt: new Date().toISOString() }); },
+    reject(id)  { return this.update(id, { status: 'rejected' }); },
+    delete(id)  {
+      const r = this.get(id);
+      DB._addDeleted(DB.KEYS.deletedReviews, id);
+      if (r) {
+        if (r.clientName) DB._addDeleted(DB.KEYS.deletedReviews, 'name:' + r.clientName.toLowerCase().trim());
+        if (r.author) DB._addDeleted(DB.KEYS.deletedReviews, 'name:' + r.author.toLowerCase().trim());
+        if (r.projectId) DB._addDeleted(DB.KEYS.deletedReviews, 'proj:' + r.projectId);
+      }
+      this.save(this.all().filter(r => r && r.id !== id));
+      DB._syncFirebase('reviews', id, null, 'delete');
+    },
+    pending()   { return this.all().filter(r => r && r.status === 'pending'); },
+    approved()  { return this.all().filter(r => r && r.status === 'approved'); },
+    stats() {
+      const all = this.all();
+      return {
+        total: all.length,
+        pending: all.filter(r => r && r.status === 'pending').length,
+        approved: all.filter(r => r && r.status === 'approved').length,
+        rejected: all.filter(r => r && r.status === 'rejected').length,
+        avgRating: all.length ? (all.reduce((s,r) => s + (r.rating || 5), 0) / all.length).toFixed(1) : 0,
+      };
+    },
   },
 
   // ── Inquiries CRUD ────────────────────────────────────────
@@ -636,6 +694,19 @@ const DB = {
             const existing = DB._get(DB.KEYS.projects) || [];
             const merged = this._mergeItems(existing, remoteProjects, deletedProjects);
             DB._set(DB.KEYS.projects, merged);
+            updated = true;
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const revRes = await fetch('../js/admin-reviews.json?t=' + Date.now());
+        if (revRes.ok) {
+          const remoteReviews = await revRes.json();
+          if (Array.isArray(remoteReviews)) {
+            const existing = DB._get(DB.KEYS.reviews) || [];
+            const merged = this._mergeItems(existing, remoteReviews, deletedReviews);
+            DB._set(DB.KEYS.reviews, merged);
             updated = true;
           }
         }

@@ -293,7 +293,80 @@ window.VKREATE_DATA = {
     }
   ],
 
-  reviews: []
+  reviews: [
+    {
+      id: "rev-lilaa-01",
+      projectId: "lilaa-restaurant",
+      projectName: "Lilaa — Malayali Cuisine",
+      author: "Unnikrishnan Nair",
+      clientName: "Unnikrishnan Nair",
+      role: "Founder & Owner, Lilaa Hospitality",
+      clientRole: "Founder & Owner, Lilaa Hospitality",
+      industry: "restaurant",
+      rating: 5,
+      rank: 1,
+      date: "Jun 2025",
+      text: "VKREATE captured our brand's warmth and sophistication in every detail. The spatial flow, arched niches, warm lighting, and seating layout elevated our entire dining experience. The space speaks for itself and guest retention has been phenomenal.",
+      reviewText: "VKREATE captured our brand's warmth and sophistication in every detail. The spatial flow, arched niches, warm lighting, and seating layout elevated our entire dining experience. The space speaks for itself and guest retention has been phenomenal.",
+      verified: true,
+      status: 'approved',
+      studioResponse: "Thank you Unnikrishnan! It was a true pleasure bringing Lilaa's spatial vision to life."
+    },
+    {
+      id: "rev-salon-02",
+      projectId: "luxury-salon",
+      projectName: "Wings Luxury Beauty & Wellness",
+      author: "Dr. Reshma Menon",
+      clientName: "Dr. Reshma Menon",
+      role: "Salon Director, Wings Wellness",
+      clientRole: "Salon Director, Wings Wellness",
+      industry: "beauty",
+      rating: 5,
+      rank: 2,
+      date: "Apr 2025",
+      text: "Our clients feel like they're stepping into a 5-star spa retreat. VKREATE's design elevated our entire brand perception. The private pedicure suite, illuminated vanity pods, and botanical murals are guest favorites!",
+      reviewText: "Our clients feel like they're stepping into a 5-star spa retreat. VKREATE's design elevated our entire brand perception. The private pedicure suite, illuminated vanity pods, and botanical murals are guest favorites!",
+      verified: true,
+      status: 'approved',
+      studioResponse: "Warmest thanks Dr. Reshma! Designing a serene sanctuary for Wings Wellness was a fantastic journey."
+    },
+    {
+      id: "rev-retail-03",
+      projectId: "retail-jewellery",
+      projectName: "Wings Jewellery Showroom",
+      author: "Faisal Rahman",
+      clientName: "Faisal Rahman",
+      role: "Brand Manager, Wings Retail",
+      clientRole: "Brand Manager, Wings Retail",
+      industry: "retail",
+      rating: 5,
+      rank: 3,
+      date: "Feb 2025",
+      text: "The interior design makes our jewellery display the hero. Corridor foot traffic increased by 40% immediately after handover, and the arched grid glass storefront gives us high visibility.",
+      reviewText: "The interior design makes our jewellery display the hero. Corridor foot traffic increased by 40% immediately after handover, and the arched grid glass storefront gives us high visibility.",
+      verified: true,
+      status: 'approved',
+      studioResponse: "Thank you Faisal! We are thrilled to see Wings Retail booming in your new space."
+    },
+    {
+      id: "rev-lounge-04",
+      projectId: "corporate-lounge",
+      projectName: "Corporate VIP Reception & Lounge",
+      author: "Sameer Varma",
+      clientName: "Sameer Varma",
+      role: "Corporate Director, Apex Zenith",
+      clientRole: "Corporate Director, Apex Zenith",
+      industry: "office",
+      rating: 5,
+      rank: 4,
+      date: "Jan 2025",
+      text: "First impressions matter immensely in corporate business. The VIP reception lounge designed by VKREATE commands respect, offers privacy, and reflects high-level prestige for all visiting dignitaries.",
+      reviewText: "First impressions matter immensely in corporate business. The VIP reception lounge designed by VKREATE commands respect, offers privacy, and reflects high-level prestige for all visiting dignitaries.",
+      verified: true,
+      status: 'approved',
+      studioResponse: "Thank you Sameer! It was an honor executing the VIP corporate lounge."
+    }
+  ]
 };
 
 // ============================================================
@@ -835,7 +908,57 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
     // optional fail silently
   }
 })();
+// ── Named re-fetchable remote reviews loader ─────────────────
+async function loadRemoteAdminReviews() {
+  let combinedAdmin = [];
+  let hasAdminSource = false;
 
+  try {
+    const res = await fetch('js/admin-reviews.json?t=' + Date.now());
+    if (res.ok) {
+      const remoteReviews = await res.json();
+      if (Array.isArray(remoteReviews)) {
+        hasAdminSource = true;
+        combinedAdmin = remoteReviews.filter(r => r && (r.status === 'approved' || r.verified === true));
+        if (combinedAdmin.length > 0) {
+          try {
+            let existingLocal = JSON.parse(localStorage.getItem('vk_admin_reviews')) || [];
+            const map = new Map();
+            (window.VKREATE_DATA.reviews || []).forEach(r => map.set(r.id, r));
+            existingLocal.forEach(r => { if (r && r.id) map.set(r.id, r); });
+            combinedAdmin.forEach(r => { if (r && r.id) map.set(r.id, r); });
+            localStorage.setItem('vk_admin_reviews', JSON.stringify(Array.from(map.values())));
+          } catch (e) {}
+        }
+      }
+    }
+  } catch (e) {}
+
+  if (!hasAdminSource || combinedAdmin.length === 0) {
+    const rawLocal = localStorage.getItem('vk_admin_reviews');
+    if (rawLocal !== null) {
+      try {
+        const parsed = JSON.parse(rawLocal);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          combinedAdmin = parsed;
+        }
+      } catch (e) {}
+    }
+  }
+
+  if (combinedAdmin.length > 0) {
+    VKREATE_DATA.reviews = combinedAdmin.filter(r => r && (r.status === 'approved' || r.verified === true));
+  }
+  window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+}
+
+loadRemoteAdminReviews();
+
+window.addEventListener('storage', function (e) {
+  if (!e || !e.key || e.key === 'vk_admin_reviews') {
+    loadRemoteAdminReviews();
+  }
+});
 
 
 // ============================================================
