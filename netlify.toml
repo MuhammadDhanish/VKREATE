@@ -1,2 +1,4 @@
 [build]
   publish = "."
+  ignore = "git log -1 --pretty=%B | grep -q 'Admin sync:'"
+
