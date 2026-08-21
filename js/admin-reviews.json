@@ -1,17 +1,1 @@
-[
-  {
-    "id": "rev-test123",
-    "clientName": "Test Customer",
-    "author": "Test Customer",
-    "clientRole": "Business Owner",
-    "role": "Business Owner",
-    "clientEmail": "test@example.com",
-    "projectId": "general",
-    "rating": 5,
-    "reviewText": "This is a test review submitted from the frontend form.",
-    "text": "This is a test review submitted from the frontend form.",
-    "status": "pending",
-    "createdAt": "2026-08-21T15:17:00.000Z",
-    "updatedAt": "2026-08-21T15:17:44.315Z"
-  }
-]
+[]
