@@ -784,7 +784,9 @@ const DB = {
         updated = true;
       }
 
-      if (Array.isArray(remoteReviews) && remoteReviews.length > 0) {
+      // Always merge remote reviews regardless of count (empty list = server was cleared,
+      // non-empty list = merge new pending submissions from frontend users)
+      if (Array.isArray(remoteReviews)) {
         const localRev = DB._get(DB.KEYS.reviews) || [];
         const rawLiveRev = (() => { try { return JSON.parse(localStorage.getItem('vk_reviews')) || []; } catch { return []; } })();
         const currentRev = DB._mergeItems(localRev, rawLiveRev);
@@ -846,12 +848,20 @@ DB.seed();
           const msg = JSON.parse(e.data);
           if (msg.type && msg.type !== 'connected') {
             await DB.loadRemoteData();
+            // Always fire the specific entity event so modules re-render
             window.dispatchEvent(new CustomEvent(`vkreate:${msg.type}`));
+            // Also fire reviews-updated when any entity changes (covers cross-entity broadcasts)
+            if (msg.type === 'reviews-updated') {
+              window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+            }
             if (typeof App !== 'undefined' && App._refreshCurrentView) {
               App._refreshCurrentView();
             }
           }
         } catch (err) {}
+      };
+      evtSource.onerror = () => {
+        // SSE connection dropped — browser will auto-reconnect, no action needed
       };
     } catch (e) {}
   }
