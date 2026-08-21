@@ -10,10 +10,10 @@
     "rating": 5,
     "reviewText": "This is a test review for approval.",
     "text": "This is a test review for approval.",
-    "status": "pending",
+    "status": "rejected",
     "createdAt": "2026-08-21T14:46:54.384Z",
     "approvedAt": null,
-    "updatedAt": "2026-08-21T14:46:54.401Z",
+    "updatedAt": "2026-08-21T14:50:27.074Z",
     "studioResponse": ""
   },
   {
