@@ -7,10 +7,9 @@
     }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/server.js" },
-    { "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|webp|mp4|woff2?|json))", "dest": "/$1" },
-    { "src": "/(.*)\\.html", "dest": "/$1.html" },
-    { "src": "/", "dest": "/index.html" },
-    { "src": "/(.*)", "dest": "/$1.html" }
+    {
+      "src": "/(.*)",
+      "dest": "/server.js"
+    }
   ]
 }
