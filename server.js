@@ -421,6 +421,47 @@ app.use(express.static(__dirname, {
   }
 }));
 
+// Explicit routes for all HTML pages (needed in Vercel serverless environment)
+const HTML_PAGES = ['index', 'about', 'contact', 'projects', 'project', 'reviews', 'services'];
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+HTML_PAGES.forEach(page => {
+  app.get(`/${page}`, (req, res) => {
+    const filePath = path.join(__dirname, `${page}.html`);
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.sendFile(path.join(__dirname, 'index.html'));
+    }
+  });
+  app.get(`/${page}.html`, (req, res) => {
+    const filePath = path.join(__dirname, `${page}.html`);
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.sendFile(path.join(__dirname, 'index.html'));
+    }
+  });
+});
+
+// Admin panel
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin', 'index.html'));
+});
+app.get('/admin/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin', 'index.html'));
+});
+
+// Catch-all: serve index.html for any unmatched routes
+app.use((req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+
+
 if (require.main === module) {
   const server = app.listen(PORT, () => {
     console.log(`⚡ VKREATE Server running on http://localhost:${PORT}`);
