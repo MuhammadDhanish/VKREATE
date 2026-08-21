@@ -2,6 +2,18 @@
    VKREATE Admin — Data Layer (Unified API, Sync Engine & Fallback)
    ============================================================ */
 
+// Helper to resolve backend server API URL when running on dev static ports (e.g. live-server 5500)
+function getApiBaseUrl() {
+  if (typeof window !== 'undefined' && window.location) {
+    const h = window.location.hostname;
+    const p = window.location.port;
+    if ((h === 'localhost' || h === '127.0.0.1') && p !== '3000' && p !== '') {
+      return 'http://localhost:3000';
+    }
+  }
+  return '';
+}
+
 // BroadcastChannel for instant cross-tab sync in same browser
 const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('vk_sync') : null;
 
@@ -502,7 +514,7 @@ const DB = {
       if (!r.status) r.status = 'pending';
 
       try {
-        const res = await fetch('/api/reviews', {
+        const res = await fetch(getApiBaseUrl() + '/api/reviews', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(r)
@@ -538,7 +550,7 @@ const DB = {
       const updatedRecord = { ...l[i], ...data, updatedAt: new Date().toISOString() };
 
       try {
-        const res = await fetch(`/api/reviews/${id}`, {
+        const res = await fetch(getApiBaseUrl() + `/api/reviews/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedRecord)
@@ -565,7 +577,7 @@ const DB = {
     async delete(id)  {
       if (!id) return false;
       try {
-        const res = await fetch(`/api/reviews/${id}`, { method: 'DELETE' });
+        const res = await fetch(getApiBaseUrl() + `/api/reviews/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
         const json = await res.json();
         if (!json || !json.success) throw new Error(json?.error || 'Failed to delete review on server');
@@ -746,7 +758,7 @@ const DB = {
     // Helper to fetch from API or static JSON file
     const fetchEntity = async (apiEndpoint, staticPath) => {
       try {
-        const res = await fetch(apiEndpoint + '?t=' + Date.now());
+        const res = await fetch(getApiBaseUrl() + apiEndpoint + '?t=' + Date.now());
         if (res.ok) return await res.json();
       } catch (e) {}
 
@@ -828,7 +840,7 @@ DB.seed();
   // 3. SSE Server-Sent Events Listener (real-time from server)
   if (typeof EventSource !== 'undefined') {
     try {
-      const evtSource = new EventSource('/api/events');
+      const evtSource = new EventSource(getApiBaseUrl() + '/api/events');
       evtSource.onmessage = async (e) => {
         try {
           const msg = JSON.parse(e.data);

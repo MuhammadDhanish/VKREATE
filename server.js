@@ -235,7 +235,7 @@ app.post('/api/reviews', (req, res) => {
   res.json({ success: true, reviews, review });
 });
 
-app.put('/api/reviews/:id', (req, res) => {
+const updateReviewHandler = (req, res) => {
   const { id } = req.params;
   const updates = req.body;
   let reviews = readData('reviews');
@@ -253,7 +253,10 @@ app.put('/api/reviews/:id', (req, res) => {
   writeData('reviews', reviews);
   broadcastEvent('reviews-updated', reviews);
   res.json({ success: true, review: reviews[index] });
-});
+};
+
+app.put('/api/reviews/:id', updateReviewHandler);
+app.post('/api/reviews/:id', updateReviewHandler);
 
 app.delete('/api/reviews/:id', (req, res) => {
   const { id } = req.params;

@@ -133,40 +133,72 @@ const Reviews = {
           </button>
 
           <div style="display:flex;gap:8px;">
-            ${!isApproved ? `<button class="btn btn-sm" onclick="Reviews.approve('${r.id}')" style="background:#22C55E;color:#fff;border:none;">✓ Approve</button>` : ''}
-            ${!isRejected ? `<button class="btn btn-outline btn-sm" onclick="Reviews.reject('${r.id}')" style="color:#EF4444;border-color:#FCA5A5;">✕ Reject</button>` : ''}
-            <button class="btn btn-danger btn-sm" onclick="Reviews.delete('${r.id}')">🗑️ Delete</button>
+            ${!isApproved ? `<button class="btn btn-sm" onclick="Reviews.approve('${r.id}', this)" style="background:#22C55E;color:#fff;border:none;">✓ Approve</button>` : ''}
+            ${!isRejected ? `<button class="btn btn-outline btn-sm" onclick="Reviews.reject('${r.id}', this)" style="color:#EF4444;border-color:#FCA5A5;">✕ Reject</button>` : ''}
+            <button class="btn btn-danger btn-sm" onclick="Reviews.delete('${r.id}', this)">🗑️ Delete</button>
           </div>
         </div>
       </div>
     `;
   },
 
-  async approve(id) {
+  async approve(id, btn) {
+    if (btn && btn.dataset.loading === 'true') return;
+    const origText = btn ? btn.innerText : '';
+    if (btn) {
+      btn.dataset.loading = 'true';
+      btn.disabled = true;
+      btn.innerText = 'Approving...';
+    }
+
     const updated = await DB.reviews.approve(id);
     if (updated) {
       UI.toast('Review approved!', 'success');
       if (typeof App !== 'undefined') App.updateSidebar();
       this.render();
+    } else if (btn) {
+      btn.disabled = false;
+      btn.innerText = origText;
+      delete btn.dataset.loading;
     }
   },
 
-  async reject(id) {
+  async reject(id, btn) {
+    if (btn && btn.dataset.loading === 'true') return;
+    const origText = btn ? btn.innerText : '';
+    if (btn) {
+      btn.dataset.loading = 'true';
+      btn.disabled = true;
+      btn.innerText = 'Rejecting...';
+    }
+
     const updated = await DB.reviews.reject(id);
     if (updated) {
       UI.toast('Review set to rejected', 'warning');
       if (typeof App !== 'undefined') App.updateSidebar();
       this.render();
+    } else if (btn) {
+      btn.disabled = false;
+      btn.innerText = origText;
+      delete btn.dataset.loading;
     }
   },
 
-  delete(id) {
+  delete(id, btn) {
+    if (btn && btn.dataset.loading === 'true') return;
     UI.confirm('Delete Review', 'Are you sure you want to delete this review?', '🗑️', async () => {
+      if (btn) {
+        btn.dataset.loading = 'true';
+        btn.disabled = true;
+      }
       const ok = await DB.reviews.delete(id);
       if (ok) {
         UI.toast('Review deleted', 'info');
         if (typeof App !== 'undefined') App.updateSidebar();
         this.render();
+      } else if (btn) {
+        btn.disabled = false;
+        delete btn.dataset.loading;
       }
     }, true);
   },
@@ -190,15 +222,23 @@ const Reviews = {
 
     const footer = `
       <button class="btn btn-outline" onclick="UI.closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="Reviews.saveResponse('${r.id}')">Save &amp; Update Live Review</button>
+      <button class="btn btn-primary" onclick="Reviews.saveResponse('${r.id}', this)">Save &amp; Update Live Review</button>
     `;
 
     UI.modal('💬 Studio Response', body, footer, 'max-w-500');
   },
 
-  async saveResponse(id) {
+  async saveResponse(id, btn) {
     const textEl = document.getElementById('modal-studio-response');
     if (!textEl) return;
+
+    if (btn && btn.dataset.loading === 'true') return;
+    const origText = btn ? btn.innerText : '';
+    if (btn) {
+      btn.dataset.loading = 'true';
+      btn.disabled = true;
+      btn.innerText = 'Saving...';
+    }
 
     const text = textEl.value.trim();
     const updated = await DB.reviews.update(id, { studioResponse: text });
@@ -206,6 +246,10 @@ const Reviews = {
       UI.closeModal();
       UI.toast('Studio response saved successfully!', 'success');
       this.render();
+    } else if (btn) {
+      btn.disabled = false;
+      btn.innerText = origText;
+      delete btn.dataset.loading;
     }
   },
 
@@ -380,20 +424,4 @@ window.addEventListener('vkreate:reviews-updated', () => {
   if (typeof App !== 'undefined') App.updateSidebar();
 });
 
-// Continuous background loop sync — checks for newly added client reviews every 2 seconds
-if (!window._reviewsSyncLoopStarted) {
-  window._reviewsSyncLoopStarted = true;
-  let _lastReviewsLength = -1;
-  setInterval(() => {
-    try {
-      const all = DB.reviews.all() || [];
-      if (all.length !== _lastReviewsLength) {
-        _lastReviewsLength = all.length;
-        if (typeof App !== 'undefined') {
-          if (App._current === 'reviews') Reviews.render();
-          App.updateSidebar();
-        }
-      }
-    } catch(e) {}
-  }, 2000);
-}
+

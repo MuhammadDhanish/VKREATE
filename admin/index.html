@@ -389,13 +389,17 @@ const App = {
     const page = this._current || 'dashboard';
 
     // NEVER auto-wipe & re-render Settings on background sync/focus events!
-    // Re-rendering Settings while viewing destroys form inputs, focus, and causes layout shaking.
     if (page === 'settings') {
       return;
     }
 
-    // Prevent view re-rendering while user is actively filling forms or typing in inputs
-    if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+    // Prevent view re-rendering if a modal overlay is active
+    if (document.querySelector('.modal-overlay, #admin-add-review-modal, #admin-project-modal, #modal-overlay')) {
+      return;
+    }
+
+    // Prevent view re-rendering while user is actively filling forms or focused on interactive controls
+    if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(document.activeElement.tagName)) {
       return;
     }
 

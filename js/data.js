@@ -667,6 +667,17 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
 }
 
 // ============================================================
+function getApiBaseUrl() {
+  if (typeof window !== 'undefined' && window.location) {
+    const h = window.location.hostname;
+    const p = window.location.port;
+    if ((h === 'localhost' || h === '127.0.0.1') && p !== '3000' && p !== '') {
+      return 'http://localhost:3000';
+    }
+  }
+  return '';
+}
+
 // Remote Admin-Projects & Reviews Sync (API, SSE & JSON Fallback)
 // ============================================================
 const syncChannelLive = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('vk_sync') : null;
@@ -675,7 +686,7 @@ async function loadRemoteAdminProjects() {
   try {
     let remoteProjects = null;
     try {
-      const res = await fetch('/api/projects?t=' + Date.now());
+      const res = await fetch(getApiBaseUrl() + '/api/projects?t=' + Date.now());
       if (res.ok) remoteProjects = await res.json();
     } catch (e) {}
 
@@ -697,7 +708,7 @@ async function loadRemoteAdminProjects() {
 async function loadRemoteAdminReviews() {
   let remoteReviews = null;
   try {
-    const res = await fetch('/api/reviews?t=' + Date.now());
+    const res = await fetch(getApiBaseUrl() + '/api/reviews?t=' + Date.now());
     if (res.ok) remoteReviews = await res.json();
   } catch (e) {}
 
@@ -737,7 +748,7 @@ if (syncChannelLive) {
 
 if (typeof EventSource !== 'undefined') {
   try {
-    const evtSource = new EventSource('/api/events');
+    const evtSource = new EventSource(getApiBaseUrl() + '/api/events');
     evtSource.onmessage = (e) => {
       loadRemoteAdminProjects();
       loadRemoteAdminReviews();
