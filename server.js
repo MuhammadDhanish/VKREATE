@@ -10,10 +10,14 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Ensure uploads directory exists
+// Ensure uploads directory exists (safely guarded for serverless read-only environment)
 const UPLOADS_DIR = path.join(__dirname, 'assets', 'uploads');
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  }
+} catch (e) {
+  console.warn('Uploads dir initialization notice:', e.message);
 }
 
 // Data file paths
@@ -63,14 +67,13 @@ function readData(key) {
     }
     return JSON.parse(content);
   } catch (err) {
-    console.error(`Error reading ${key}:`, err);
+    console.error(`Error reading ${key}:`, err.message);
     if (key === 'settings') return DEFAULT_SETTINGS;
     return [];
   }
 }
 
-// Helper: Write JSON safely (atomic: temp file + rename, so a crash or
-// a concurrent reader never sees a truncated/corrupted JSON file)
+// Helper: Write JSON safely (atomic: temp file + rename, safe for read-only serverless)
 function writeData(key, data) {
   const filePath = FILES[key];
   const tmpPath = filePath + '.tmp';
@@ -79,18 +82,22 @@ function writeData(key, data) {
     fs.renameSync(tmpPath, filePath);
     return true;
   } catch (err) {
-    console.error(`Error writing ${key}:`, err);
+    console.error(`Error writing ${key}:`, err.message);
     try { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); } catch (e) {}
     return false;
   }
 }
 
-// Ensure files exist on startup
-['projects', 'reviews', 'inquiries', 'settings'].forEach(key => {
-  if (!fs.existsSync(FILES[key])) {
-    writeData(key, key === 'settings' ? DEFAULT_SETTINGS : []);
-  }
-});
+// Ensure files exist on startup (safely guarded)
+try {
+  ['projects', 'reviews', 'inquiries', 'settings'].forEach(key => {
+    if (!fs.existsSync(FILES[key])) {
+      writeData(key, key === 'settings' ? DEFAULT_SETTINGS : []);
+    }
+  });
+} catch (e) {
+  console.warn('Startup sync notice:', e.message);
+}
 
 // SSE Clients Registry
 let sseClients = [];
