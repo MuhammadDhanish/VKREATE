@@ -455,10 +455,19 @@ app.get('/admin/', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin', 'index.html'));
 });
 
-// Catch-all: serve index.html for any unmatched routes
-app.use((req, res) => {
+// Catch-all: serve index.html ONLY for HTML page routes, NOT for static assets
+// This prevents CSS/JS/image requests from being incorrectly served index.html
+app.use((req, res, next) => {
+  const ext = path.extname(req.path);
+  const isStaticAsset = ext && ext !== '.html';
+  if (isStaticAsset) {
+    // Don't intercept CSS, JS, images — let them 404 naturally
+    return res.status(404).send('Not found');
+  }
+  // Serve index.html for all HTML navigation routes
   res.sendFile(path.join(__dirname, 'index.html'));
 });
+
 
 
 
