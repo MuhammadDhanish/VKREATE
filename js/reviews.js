@@ -17,12 +17,23 @@
     return html;
   }
 
+  function getApiBaseUrl() {
+    if (typeof window !== 'undefined' && window.location) {
+      const h = window.location.hostname;
+      const p = window.location.port;
+      if ((h === 'localhost' || h === '127.0.0.1') && p !== '3000' && p !== '') {
+        return 'http://localhost:3000';
+      }
+    }
+    return '';
+  }
+
   let cachedApiReviews = null;
 
   // Fetch live reviews from Express backend API
   async function fetchLiveReviews() {
     try {
-      const res = await fetch('/api/reviews');
+      const res = await fetch(getApiBaseUrl() + '/api/reviews?t=' + Date.now());
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -439,7 +450,7 @@
       // 2. Post to Backend API
       (async () => {
         try {
-          const res = await fetch('/api/reviews', {
+          const res = await fetch(getApiBaseUrl() + '/api/reviews', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newReview)
