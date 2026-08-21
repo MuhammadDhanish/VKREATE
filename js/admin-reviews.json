@@ -13,7 +13,8 @@
     "status": "approved",
     "createdAt": "2026-08-21T14:11:00.797Z",
     "approvedAt": "2026-08-21T14:11:00.797Z",
-    "updatedAt": "2026-08-21T14:11:00.806Z"
+    "updatedAt": "2026-08-21T14:11:00.806Z",
+    "studioResponse": ""
   },
   {
     "clientName": "Test Customer Live",
@@ -28,6 +29,19 @@
     "updatedAt": "2026-08-21T13:25:10.697Z",
     "studioResponse": "",
     "approvedAt": "2026-08-21T13:25:10.634Z"
+  },
+  {
+    "id": "non-existent-fail-id-invalid",
+    "status": "approved",
+    "rating": 5,
+    "createdAt": "2026-08-21T09:15:01.918Z",
+    "updatedAt": "2026-08-21T11:27:32.022Z",
+    "studioResponse": "",
+    "clientName": "Anonymous Client",
+    "clientRole": "Client",
+    "clientEmail": "",
+    "reviewText": "",
+    "approvedAt": "2026-08-21T10:19:01.119Z"
   },
   {
     "id": "rev-pending-03",
