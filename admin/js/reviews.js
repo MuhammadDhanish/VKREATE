@@ -91,7 +91,7 @@ const Reviews = {
 
   setFilter(f) {
     this._filter = f;
-    this.render();
+    this.requestRender();
   },
 
   _reviewCard(r) {
@@ -165,7 +165,10 @@ const Reviews = {
     if (updated) {
       UI.toast('Review approved!', 'success');
       if (typeof App !== 'undefined') App.updateSidebar();
-      this.render();
+      // Clear loading state BEFORE render so _refreshCurrentView guard doesn't block
+      if (btn) { btn.dataset.loading = ''; delete btn.dataset.loading; }
+      // Defer render by one animation frame so button release event completes first
+      requestAnimationFrame(() => this.requestRender());
     } else if (btn) {
       btn.disabled = false;
       btn.innerText = origText;
@@ -186,7 +189,10 @@ const Reviews = {
     if (updated) {
       UI.toast('Review set to rejected', 'warning');
       if (typeof App !== 'undefined') App.updateSidebar();
-      this.render();
+      // Clear loading state BEFORE render
+      if (btn) { btn.dataset.loading = ''; delete btn.dataset.loading; }
+      // Defer render by one animation frame
+      requestAnimationFrame(() => this.requestRender());
     } else if (btn) {
       btn.disabled = false;
       btn.innerText = origText;
@@ -205,7 +211,9 @@ const Reviews = {
       if (ok) {
         UI.toast('Review deleted', 'info');
         if (typeof App !== 'undefined') App.updateSidebar();
-        this.render();
+        // Clear loading state BEFORE render
+        if (btn) { btn.dataset.loading = ''; delete btn.dataset.loading; }
+        requestAnimationFrame(() => this.requestRender());
       } else if (btn) {
         btn.disabled = false;
         delete btn.dataset.loading;

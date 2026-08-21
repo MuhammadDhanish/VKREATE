@@ -360,7 +360,7 @@ ul, ol { list-style: none; }
   position: relative;
 }
 .btn:active:not(:disabled) {
-  transform: scale(0.98);
+  opacity: 0.85;
 }
 .btn svg { width: 15px; height: 15px; flex-shrink: 0; }
 .btn-primary { background: var(--green-deep); color: #fff; border: 1px solid var(--green-deep); }
@@ -564,7 +564,7 @@ input:-webkit-autofill:active {
   border-radius: var(--r-sm);
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s var(--ease);
+  transition: background-color 0.2s var(--ease), color 0.15s var(--ease), border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
   user-select: none;
   min-height: 36px;
 }
