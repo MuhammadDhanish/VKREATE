@@ -14,6 +14,19 @@
     "approvedAt": "2026-08-21T13:25:10.634Z"
   },
   {
+    "id": "non-existent-fail-id-invalid",
+    "status": "approved",
+    "rating": 5,
+    "createdAt": "2026-08-21T09:15:01.918Z",
+    "updatedAt": "2026-08-21T11:27:32.022Z",
+    "studioResponse": "",
+    "clientName": "Anonymous Client",
+    "clientRole": "Client",
+    "clientEmail": "",
+    "reviewText": "",
+    "approvedAt": "2026-08-21T10:19:01.119Z"
+  },
+  {
     "id": "rev-pending-03",
     "clientName": "Suresh Menon",
     "clientRole": "Commercial Property Owner",
@@ -23,7 +36,9 @@
     "reviewText": "Outstanding craftsmanship on our executive workspace lounge in Calicut. The lighting accents and wood ribbing created an extraordinary corporate environment for our executive guests.",
     "status": "pending",
     "createdAt": "2025-08-18T18:20:00Z",
-    "studioResponse": ""
+    "studioResponse": "",
+    "approvedAt": "2026-08-21T10:25:30.617Z",
+    "updatedAt": "2026-08-21T10:25:30.626Z"
   },
   {
     "id": "rev-wings-02",
