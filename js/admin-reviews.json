@@ -1,5 +1,19 @@
 [
   {
+    "clientName": "Test Customer Live",
+    "clientRole": "Property Owner",
+    "clientEmail": "test.customer@vkreate.com",
+    "projectId": "general",
+    "rating": 5,
+    "reviewText": "This is an awesome live customer submission test review!",
+    "status": "approved",
+    "id": "rev-mt2z9tclht83x",
+    "createdAt": "2026-08-21T13:21:14.709Z",
+    "updatedAt": "2026-08-21T13:25:10.697Z",
+    "studioResponse": "",
+    "approvedAt": "2026-08-21T13:25:10.634Z"
+  },
+  {
     "id": "rev-pending-03",
     "clientName": "Suresh Menon",
     "clientRole": "Commercial Property Owner",
