@@ -45,13 +45,6 @@ const DB = {
       return false;
     }
   },
-  _broadcast(type, data) {
-    if (syncChannel) {
-      try { syncChannel.postMessage({ type, data }); } catch (e) {}
-    }
-    window.dispatchEvent(new Event('storage'));
-    window.dispatchEvent(new CustomEvent(`vkreate:${type}`));
-  },
   _getDeleted(key) {
     try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
   },
@@ -301,14 +294,15 @@ const DB = {
   },
 
   // ── Broadcast Event Helper ──────────────────────────────
+  // Notifies other tabs via BroadcastChannel and re-renders this tab via the
+  // custom event. GitHub deployment is intentionally NOT triggered here —
+  // every CRUD module calls GithubSync.push() explicitly after its action,
+  // and an implicit push from here would race with it (GitHub sha conflicts).
   _broadcast(type, data) {
     if (syncChannel) {
       try { syncChannel.postMessage({ type, data, timestamp: Date.now() }); } catch (e) {}
     }
     window.dispatchEvent(new CustomEvent(`vkreate:${type}`));
-    if (typeof GithubSync !== 'undefined' && GithubSync.push) {
-      GithubSync.push();
-    }
   },
 
   // ── Image Upload Helper ─────────────────────────────────
@@ -752,7 +746,29 @@ const DB = {
   },
 
   // ── Remote Sync Engine ─────────────────────────────────────
+  // Re-entrancy guard: SSE + focus + visibilitychange + BroadcastChannel can
+  // all fire at once; overlapping fetch storms caused re-render loops.
+  _loadInFlight: false,
+  _loadQueued: false,
+
   async loadRemoteData() {
+    if (this._loadInFlight) {
+      this._loadQueued = true;
+      return;
+    }
+    this._loadInFlight = true;
+    try {
+      await this._loadRemoteDataInner();
+    } finally {
+      this._loadInFlight = false;
+      if (this._loadQueued) {
+        this._loadQueued = false;
+        DB.loadRemoteData();
+      }
+    }
+  },
+
+  async _loadRemoteDataInner() {
     let updated = false;
 
     // Helper to fetch from API or static JSON file
@@ -797,7 +813,9 @@ const DB = {
       }
 
       if (Array.isArray(remoteInquiries)) {
-        DB._set(DB.KEYS.inquiries, remoteInquiries);
+        const deletedInq = DB._getDeleted(DB.KEYS.deletedInquiries) || [];
+        const filteredInq = remoteInquiries.filter(i => i && i.id && !deletedInq.includes(i.id));
+        DB._set(DB.KEYS.inquiries, filteredInq);
         updated = true;
       }
 
@@ -809,8 +827,11 @@ const DB = {
       console.warn("loadRemoteData error:", e);
     }
 
+    // IMPORTANT: dispatch only the entity custom events here. We must NOT
+    // dispatch a synthetic 'storage' event — the storage listener below calls
+    // loadRemoteData() again, which created an infinite fetch/re-render loop
+    // that made the admin panel unresponsive and reviews appear flaky.
     if (updated) {
-      window.dispatchEvent(new Event('storage'));
       window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
       window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
       window.dispatchEvent(new CustomEvent('vkreate:inquiries-updated'));

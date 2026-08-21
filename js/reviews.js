@@ -433,20 +433,9 @@
       const submitBtn = document.getElementById('pub-review-submit-btn');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
 
-      // 1. Always save to localStorage immediately (works offline / same-device admin)
-      try {
-        let existingAdmin = JSON.parse(localStorage.getItem('vk_admin_reviews')) || [];
-        existingAdmin.unshift(newReview);
-        localStorage.setItem('vk_admin_reviews', JSON.stringify(existingAdmin));
-
-        let existingLive = JSON.parse(localStorage.getItem('vk_reviews')) || [];
-        existingLive.unshift(newReview);
-        localStorage.setItem('vk_reviews', JSON.stringify(existingLive));
-      } catch (err) {
-        console.warn('LocalStorage save error:', err);
-      }
-
-      // 2. Await POST to backend API (this is the authoritative storage that admin panel reads)
+      // 1. POST to backend API — the ONLY authoritative storage.
+      // Nothing is written to localStorage until the server confirms success,
+      // so failed/rejected submissions can never leak into the admin panel.
       let serverSaved = false;
       try {
         const res = await fetch(getApiBaseUrl() + '/api/reviews', {
@@ -454,24 +443,47 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newReview)
         });
-        if (res.ok) {
-          const json = await res.json();
-          if (json && json.success) {
-            serverSaved = true;
-            // Use the server-assigned ID if different
-            if (json.review && json.review.id && json.review.id !== newReview.id) {
-              newReview.id = json.review.id;
-            }
+        const json = res.ok ? await res.json() : null;
+        if (res.ok && json && json.success) {
+          serverSaved = true;
+          // Use the server-assigned ID if different
+          if (json.review && json.review.id && json.review.id !== newReview.id) {
+            newReview.id = json.review.id;
           }
+          // Cache the confirmed review so it renders in this session;
+          // the SSE event / next fetch will reconcile with the full server list.
+          try {
+            const cached = JSON.parse(localStorage.getItem('vk_reviews')) || [];
+            if (!cached.some(r => r && r.id === newReview.id)) {
+              cached.unshift(newReview);
+              localStorage.setItem('vk_reviews', JSON.stringify(cached));
+            }
+          } catch (err) {}
+        } else if (res.status === 400) {
+          showError((json && json.error) ? json.error : 'Your review was rejected by the server. Please check the fields and try again.');
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
+          return;
         }
       } catch (e) {
-        console.warn('Review server submission failed (offline or static hosting):', e);
+        console.warn('Review server submission failed:', e);
       }
 
-      // 3. Post to Firebase Firestore if connected
+      // 2. Post to Firebase Firestore if connected (production fallback path)
+      let firebaseSaved = false;
       if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
-        FirebaseDB.db.collection('reviews').doc(newReview.id).set(newReview)
-          .catch(e => console.warn('Review Firestore sync warning:', e));
+        try {
+          await FirebaseDB.db.collection('reviews').doc(newReview.id).set(newReview);
+          firebaseSaved = true;
+        } catch (e) {
+          console.warn('Review Firestore sync warning:', e);
+        }
+      }
+
+      // 3. Honest result: success ONLY if a backend actually confirmed it.
+      if (!serverSaved && !firebaseSaved) {
+        showError('Could not reach the server — your review was NOT submitted. Please check your connection and try again, or email us directly.');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
+        return;
       }
 
       // 4. Notify all open tabs (admin panel will pick this up via BroadcastChannel / storage event)
@@ -482,35 +494,20 @@
           bc.close();
         } catch (e) {}
       }
-      window.dispatchEvent(new Event('storage'));
       window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
 
-      // 5. Show result to user
+      // 5. Show confirmed success to user
       if (modalBody) {
-        if (serverSaved) {
-          modalBody.innerHTML = `
-            <div style="text-align:center;padding:32px 16px;">
-              <div style="font-size:3rem;margin-bottom:16px;">🎉</div>
-              <h3 class="t-h3" style="color:var(--charcoal);margin-bottom:8px;">Thank You for Your Review!</h3>
-              <p class="t-body" style="color:var(--text-muted);font-size:0.9375rem;line-height:1.6;max-width:380px;margin:0 auto 24px auto;">
-                Your review has been submitted to the VKREATE Studio Admin team for verification and approval. It will appear on the website once approved.
-              </p>
-              <button type="button" class="btn btn-green" onclick="window.closeReviewModal()" style="padding:10px 24px;cursor:pointer;">Close</button>
-            </div>
-          `;
-        } else {
-          // Server not reachable (Netlify static / offline) — review saved in browser
-          modalBody.innerHTML = `
-            <div style="text-align:center;padding:32px 16px;">
-              <div style="font-size:3rem;margin-bottom:16px;">✅</div>
-              <h3 class="t-h3" style="color:var(--charcoal);margin-bottom:8px;">Review Received!</h3>
-              <p class="t-body" style="color:var(--text-muted);font-size:0.9375rem;line-height:1.6;max-width:380px;margin:0 auto 24px auto;">
-                Your review has been saved and sent to the admin team for approval. Thank you for sharing your experience with VKREATE!
-              </p>
-              <button type="button" class="btn btn-green" onclick="window.closeReviewModal()" style="padding:10px 24px;cursor:pointer;">Close</button>
-            </div>
-          `;
-        }
+        modalBody.innerHTML = `
+          <div style="text-align:center;padding:32px 16px;">
+            <div style="font-size:3rem;margin-bottom:16px;">🎉</div>
+            <h3 class="t-h3" style="color:var(--charcoal);margin-bottom:8px;">Thank You for Your Review!</h3>
+            <p class="t-body" style="color:var(--text-muted);font-size:0.9375rem;line-height:1.6;max-width:380px;margin:0 auto 24px auto;">
+              Your review has been submitted to the VKREATE Studio Admin team for verification and approval. It will appear on the website once approved.
+            </p>
+            <button type="button" class="btn btn-green" onclick="window.closeReviewModal()" style="padding:10px 24px;cursor:pointer;">Close</button>
+          </div>
+        `;
       }
 
       setTimeout(() => { window.closeReviewModal(); }, 4000);
@@ -527,7 +524,7 @@
   function setupSseListener() {
     if (typeof EventSource === 'undefined') return;
     try {
-      const evtSource = new EventSource('/api/events');
+      const evtSource = new EventSource(getApiBaseUrl() + '/api/events');
       evtSource.onmessage = function (event) {
         try {
           const payload = JSON.parse(event.data);

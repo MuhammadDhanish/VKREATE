@@ -1,1 +1,31 @@
-[]
+[
+  {
+    "clientName": "Third Test User",
+    "clientRole": "Restaurant Owner",
+    "clientEmail": "third@test.com",
+    "projectId": "lilaa-restaurant",
+    "rating": 4,
+    "reviewText": "Great transformation of our restaurant space. The arched design and warm lighting made all the difference for our guests.",
+    "status": "pending",
+    "id": "rev-mt39uiseqgdc5",
+    "createdAt": "2026-08-21T18:17:16.958Z",
+    "updatedAt": "2026-08-21T18:17:16.958Z"
+  },
+  {
+    "id": "rev-mt357q82kksl",
+    "clientName": "Fathima Beevi",
+    "author": "Fathima Beevi",
+    "clientRole": "Homeowner",
+    "role": "Homeowner",
+    "clientEmail": "fathima@example.com",
+    "projectId": "general",
+    "rating": 5,
+    "reviewText": "Second end-to-end test review: VKREATE redesigned our villa beautifully.",
+    "text": "Second end-to-end test review: VKREATE redesigned our villa beautifully.",
+    "status": "approved",
+    "createdAt": "2026-08-21T16:07:35.042Z",
+    "updatedAt": "2026-08-21T16:09:38.219Z",
+    "studioResponse": "",
+    "approvedAt": "2026-08-21T16:09:38.213Z"
+  }
+]

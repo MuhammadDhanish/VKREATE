@@ -357,9 +357,20 @@ const Reviews = {
   restoreSeedReviews() {
     try {
       const deletedIds = DB._getDeleted(DB.KEYS.deletedReviews) || [];
-      const defaults = DB._defaultReviews().filter(r => r && r.id && !deletedIds.includes(r.id));
-      DB.reviews.save(defaults);
-      UI.toast('✓ Restored missing sample reviews!', 'success');
+      // Merge missing seed reviews into the existing list — NEVER replace,
+      // replacing wiped real client reviews and the wipe then spread via sync.
+      const existing = DB.reviews.all() || [];
+      const existingIds = new Set(existing.map(r => r && r.id).filter(Boolean));
+      const missingSeeds = DB._defaultReviews().filter(r =>
+        r && r.id && !deletedIds.includes(r.id) && !existingIds.has(r.id)
+      );
+      if (missingSeeds.length === 0) {
+        UI.toast('All sample reviews already present.', 'info');
+        return;
+      }
+      const merged = [...existing, ...missingSeeds];
+      DB.reviews.save(merged);
+      UI.toast(`✓ Restored ${missingSeeds.length} missing sample review${missingSeeds.length !== 1 ? 's' : ''}!`, 'success');
       this.render();
       if (typeof App !== 'undefined') App.updateSidebar();
     } catch (e) {

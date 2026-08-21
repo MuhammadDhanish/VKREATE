@@ -69,14 +69,18 @@ function readData(key) {
   }
 }
 
-// Helper: Write JSON safely
+// Helper: Write JSON safely (atomic: temp file + rename, so a crash or
+// a concurrent reader never sees a truncated/corrupted JSON file)
 function writeData(key, data) {
   const filePath = FILES[key];
+  const tmpPath = filePath + '.tmp';
   try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+    fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf8');
+    fs.renameSync(tmpPath, filePath);
     return true;
   } catch (err) {
     console.error(`Error writing ${key}:`, err);
+    try { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); } catch (e) {}
     return false;
   }
 }
@@ -90,6 +94,12 @@ function writeData(key, data) {
 
 // SSE Clients Registry
 let sseClients = [];
+
+// API responses must never be cached by browsers or proxies — they are live data
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
 
 function broadcastEvent(type, data = {}) {
   const payload = `data: ${JSON.stringify({ type, data, timestamp: Date.now() })}\n\n`;
@@ -204,17 +214,32 @@ app.get('/api/reviews', (req, res) => {
   res.json(reviews);
 });
 
+// Minimal server-side validation so junk/bypassed payloads get a real 400
+function validateReview(review) {
+  if (typeof review !== 'object' || Array.isArray(review) || review === null) return false;
+  const name = review.clientName || review.author || review.name;
+  const text = review.reviewText || review.text || review.content;
+  if (!name || typeof name !== 'string' || name.trim().length < 2) return false;
+  if (!text || typeof text !== 'string' || text.trim().length < 5) return false;
+  const rating = Number(review.rating);
+  if (!rating || rating < 1 || rating > 5) return false;
+  return true;
+}
+
 app.post('/api/reviews', (req, res) => {
   let reviews = readData('reviews');
   const review = req.body;
 
   if (!review) {
-    return res.status(400).json({ error: 'No review data provided' });
+    return res.status(400).json({ success: false, error: 'No review data provided' });
   }
 
   if (Array.isArray(review)) {
     reviews = review;
   } else {
+    if (!validateReview(review)) {
+      return res.status(400).json({ success: false, error: 'Invalid review: name, rating (1-5) and review text are required' });
+    }
     if (!review.id) {
       review.id = 'rev-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     }
@@ -230,9 +255,11 @@ app.post('/api/reviews', (req, res) => {
     }
   }
 
-  writeData('reviews', reviews);
+  if (!writeData('reviews', reviews)) {
+    return res.status(500).json({ success: false, error: 'Failed to persist review to database' });
+  }
   broadcastEvent('reviews-updated', reviews);
-  res.json({ success: true, reviews, review });
+  res.status(201).json({ success: true, reviews, review });
 });
 
 const updateReviewHandler = (req, res) => {
@@ -244,13 +271,17 @@ const updateReviewHandler = (req, res) => {
   if (index < 0) {
     const newR = { id, status: 'pending', ...updates, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     reviews.unshift(newR);
-    writeData('reviews', reviews);
+    if (!writeData('reviews', reviews)) {
+      return res.status(500).json({ success: false, error: 'Failed to persist review to database' });
+    }
     broadcastEvent('reviews-updated', reviews);
     return res.json({ success: true, review: newR });
   }
 
   reviews[index] = { ...reviews[index], ...updates, updatedAt: new Date().toISOString() };
-  writeData('reviews', reviews);
+  if (!writeData('reviews', reviews)) {
+    return res.status(500).json({ success: false, error: 'Failed to persist review to database' });
+  }
   broadcastEvent('reviews-updated', reviews);
   res.json({ success: true, review: reviews[index] });
 };
@@ -262,7 +293,9 @@ app.delete('/api/reviews/:id', (req, res) => {
   const { id } = req.params;
   let reviews = readData('reviews');
   reviews = reviews.filter(r => r.id !== id);
-  writeData('reviews', reviews);
+  if (!writeData('reviews', reviews)) {
+    return res.status(500).json({ success: false, error: 'Failed to persist deletion to database' });
+  }
   broadcastEvent('reviews-updated', reviews);
   res.json({ success: true, id });
 });
@@ -382,8 +415,19 @@ app.use(express.static(__dirname, {
 }));
 
 if (require.main === module) {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`⚡ VKREATE Server running on http://localhost:${PORT}`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\n❌ Port ${PORT} is already in use — another copy of this server is still running.`);
+      console.error('   Fix: close the old terminal running the server (or run `taskkill /IM node.exe /F`), then start again.');
+      console.error(`   Or start on another port: set PORT=3001 && npm start\n`);
+    } else {
+      console.error('Server failed to start:', err);
+    }
+    process.exit(1);
   });
 }
 
