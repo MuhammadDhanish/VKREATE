@@ -1,5 +1,49 @@
 [
   {
+    "id": "rev-mt311tfhfana",
+    "clientName": "Glitch Test Client",
+    "author": "Glitch Test Client",
+    "clientRole": "Owner",
+    "role": "Owner",
+    "clientEmail": "",
+    "projectId": "general",
+    "rating": 5,
+    "reviewText": "Checking if buttons have glitches.",
+    "text": "Checking if buttons have glitches.",
+    "status": "approved",
+    "createdAt": "2026-08-21T14:11:00.797Z",
+    "approvedAt": "2026-08-21T14:11:00.797Z",
+    "updatedAt": "2026-08-21T14:11:00.806Z",
+    "studioResponse": ""
+  },
+  {
+    "clientName": "Test Customer Live",
+    "clientRole": "Property Owner",
+    "clientEmail": "test.customer@vkreate.com",
+    "projectId": "general",
+    "rating": 5,
+    "reviewText": "This is an awesome live customer submission test review!",
+    "status": "approved",
+    "id": "rev-mt2z9tclht83x",
+    "createdAt": "2026-08-21T13:21:14.709Z",
+    "updatedAt": "2026-08-21T13:25:10.697Z",
+    "studioResponse": "",
+    "approvedAt": "2026-08-21T13:25:10.634Z"
+  },
+  {
+    "id": "non-existent-fail-id-invalid",
+    "status": "approved",
+    "rating": 5,
+    "createdAt": "2026-08-21T09:15:01.918Z",
+    "updatedAt": "2026-08-21T11:27:32.022Z",
+    "studioResponse": "",
+    "clientName": "Anonymous Client",
+    "clientRole": "Client",
+    "clientEmail": "",
+    "reviewText": "",
+    "approvedAt": "2026-08-21T10:19:01.119Z"
+  },
+  {
     "id": "rev-pending-03",
     "clientName": "Suresh Menon",
     "clientRole": "Commercial Property Owner",
@@ -7,9 +51,11 @@
     "projectId": "corporate-lounge",
     "rating": 5,
     "reviewText": "Outstanding craftsmanship on our executive workspace lounge in Calicut. The lighting accents and wood ribbing created an extraordinary corporate environment for our executive guests.",
-    "status": "pending",
+    "status": "approved",
     "createdAt": "2025-08-18T18:20:00Z",
-    "studioResponse": ""
+    "studioResponse": "",
+    "approvedAt": "2026-08-21T14:08:14.563Z",
+    "updatedAt": "2026-08-21T14:08:14.607Z"
   },
   {
     "id": "rev-wings-02",
