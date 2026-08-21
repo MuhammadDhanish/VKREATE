@@ -437,13 +437,25 @@
       }
 
       // 2. Post to Backend API
-      fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newReview)
-      }).catch(e => console.warn('Review API sync warning:', e));
+      (async () => {
+        try {
+          const res = await fetch('/api/reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newReview)
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.review && json.review.id) {
+              newReview.id = json.review.id;
+            }
+          }
+        } catch (e) {
+          console.warn('Review API sync warning:', e);
+        }
+      })();
 
-      // 2. Post to BroadcastChannel
+      // 3. Post to BroadcastChannel
       if (typeof BroadcastChannel !== 'undefined') {
         try {
           const bc = new BroadcastChannel('vk_sync');
@@ -475,6 +487,12 @@
     });
   }
 
+  // Handle remote update events by invalidating memory cache & re-fetching
+  function onReviewsUpdated() {
+    cachedApiReviews = null;
+    fetchLiveReviews();
+  }
+
   // Setup SSE Real-time EventSource listener
   function setupSseListener() {
     if (typeof EventSource === 'undefined') return;
@@ -487,6 +505,7 @@
             cachedApiReviews = payload.data;
             try {
               localStorage.setItem('vk_admin_reviews', JSON.stringify(payload.data));
+              localStorage.setItem('vk_reviews', JSON.stringify(payload.data));
             } catch (e) {}
             renderReviews();
           }
@@ -516,7 +535,7 @@
   }
 
   // Listen to remote update events
-  window.addEventListener('vkreate:reviews-updated', renderReviews);
-  window.addEventListener('storage', renderReviews);
+  window.addEventListener('vkreate:reviews-updated', onReviewsUpdated);
+  window.addEventListener('storage', onReviewsUpdated);
 
 })();

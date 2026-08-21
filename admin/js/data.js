@@ -460,9 +460,9 @@ const DB = {
               if (!existing) {
                 itemMap.set(r.id, r);
               } else {
-                const status = (existing.status === 'approved' || existing.status === 'rejected') ? existing.status : r.status;
-                const studioResponse = existing.studioResponse || r.studioResponse || '';
-                itemMap.set(r.id, { ...r, ...existing, status, studioResponse });
+                const status = r.status || existing.status;
+                const studioResponse = r.studioResponse !== undefined ? r.studioResponse : (existing.studioResponse || '');
+                itemMap.set(r.id, { ...existing, ...r, status, studioResponse });
               }
             }
           });
@@ -496,53 +496,97 @@ const DB = {
       try { localStorage.setItem('vk_reviews', JSON.stringify(list)); } catch (e) {}
       DB._broadcast('reviews-updated', list);
     },
-    add(r) {
-      const l = this.all();
+    async add(r) {
       r.id = r.id || DB._id();
       r.createdAt = r.createdAt || new Date().toISOString();
       if (!r.status) r.status = 'pending';
-      l.unshift(r);
-      this.save(l);
 
-      fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(r)
-      }).catch(e => console.warn('API review add error:', e));
+      try {
+        const res = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(r)
+        });
+        if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
+        const json = await res.json();
+        if (!json || !json.success) throw new Error(json?.error || 'Failed to add review on server');
 
-      DB._broadcast('reviews-updated', l);
-      return r;
+        const serverReview = json.review || r;
+        const l = this.all();
+        const existingIdx = l.findIndex(x => x && x.id === serverReview.id);
+        if (existingIdx >= 0) {
+          l[existingIdx] = serverReview;
+        } else {
+          l.unshift(serverReview);
+        }
+        this.save(l);
+        DB._broadcast('reviews-updated', l);
+        return serverReview;
+      } catch (e) {
+        console.error('API review add error:', e);
+        if (typeof UI !== 'undefined' && UI.toast) {
+          UI.toast(`Failed to add review: ${e.message}`, 'error');
+        }
+        return null;
+      }
     },
-    update(id, data) {
+    async update(id, data) {
       const l = this.all();
       const i = l.findIndex(r => r && r.id === id);
       if (i < 0) return null;
-      l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
-      this.save(l);
 
-      fetch(`/api/reviews/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(l[i])
-      }).catch(e => console.warn('API review update error:', e));
+      const updatedRecord = { ...l[i], ...data, updatedAt: new Date().toISOString() };
 
-      DB._broadcast('reviews-updated', l);
-      return l[i];
+      try {
+        const res = await fetch(`/api/reviews/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedRecord)
+        });
+        if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
+        const json = await res.json();
+        if (!json || !json.success) throw new Error(json?.error || 'Failed to update review on server');
+
+        const serverReview = json.review || updatedRecord;
+        l[i] = serverReview;
+        this.save(l);
+        DB._broadcast('reviews-updated', l);
+        return serverReview;
+      } catch (e) {
+        console.error('API review update error:', e);
+        if (typeof UI !== 'undefined' && UI.toast) {
+          UI.toast(`Failed to save changes: ${e.message}`, 'error');
+        }
+        return null;
+      }
     },
     approve(id) { return this.update(id, { status: 'approved', approvedAt: new Date().toISOString() }); },
     reject(id)  { return this.update(id, { status: 'rejected' }); },
-    delete(id)  {
-      if (!id) return;
-      DB._addDeleted(DB.KEYS.deletedReviews, id);
-      const remaining = this.all().filter(r => r && r.id !== id);
-      this.save(remaining);
+    async delete(id)  {
+      if (!id) return false;
+      try {
+        const res = await fetch(`/api/reviews/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
+        const json = await res.json();
+        if (!json || !json.success) throw new Error(json?.error || 'Failed to delete review on server');
 
-      if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
-        FirebaseDB.db.collection('reviews').doc(id).delete().catch(e => console.warn('Firestore review delete warning:', e));
+        DB._addDeleted(DB.KEYS.deletedReviews, id);
+        const remaining = this.all().filter(r => r && r.id !== id);
+        this.save(remaining);
+
+        if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
+          FirebaseDB.db.collection('reviews').doc(id).delete().catch(e => console.warn('Firestore review delete warning:', e));
+        }
+
+        DB._broadcast('reviews-updated', remaining);
+        return true;
+      } catch (e) {
+        console.error('API review delete error:', e);
+        if (typeof UI !== 'undefined' && UI.toast) {
+          UI.toast(`Failed to delete review: ${e.message}`, 'error');
+        }
+        return false;
       }
-
-      fetch(`/api/reviews/${id}`, { method: 'DELETE' }).catch(e => console.warn('API review delete error:', e));
-      DB._broadcast('reviews-updated', remaining);
     },
     pending()   { return this.all().filter(r => r && r.status === 'pending'); },
     approved()  { return this.all().filter(r => r && r.status === 'approved'); },
@@ -678,8 +722,8 @@ const DB = {
           if (!existing) {
             itemMap.set(item.id, item);
           } else {
-            const status = (existing.status === 'approved' || existing.status === 'rejected') ? existing.status : (item.status || existing.status);
-            const studioResponse = existing.studioResponse || item.studioResponse || '';
+            const status = item.status || existing.status;
+            const studioResponse = item.studioResponse !== undefined ? item.studioResponse : (existing.studioResponse || '');
             const existingTime = new Date(existing.updatedAt || existing.approvedAt || existing.createdAt || 0).getTime();
             const remoteTime = new Date(item.updatedAt || item.approvedAt || item.createdAt || 0).getTime();
 

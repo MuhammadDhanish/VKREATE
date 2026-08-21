@@ -142,8 +142,8 @@ const Reviews = {
     `;
   },
 
-  approve(id) {
-    const updated = DB.reviews.approve(id);
+  async approve(id) {
+    const updated = await DB.reviews.approve(id);
     if (updated) {
       UI.toast('Review approved!', 'success');
       if (typeof App !== 'undefined') App.updateSidebar();
@@ -151,8 +151,8 @@ const Reviews = {
     }
   },
 
-  reject(id) {
-    const updated = DB.reviews.reject(id);
+  async reject(id) {
+    const updated = await DB.reviews.reject(id);
     if (updated) {
       UI.toast('Review set to rejected', 'warning');
       if (typeof App !== 'undefined') App.updateSidebar();
@@ -161,11 +161,13 @@ const Reviews = {
   },
 
   delete(id) {
-    UI.confirm('Delete Review', 'Are you sure you want to delete this review?', '🗑️', () => {
-      DB.reviews.delete(id);
-      UI.toast('Review deleted', 'info');
-      if (typeof App !== 'undefined') App.updateSidebar();
-      this.render();
+    UI.confirm('Delete Review', 'Are you sure you want to delete this review?', '🗑️', async () => {
+      const ok = await DB.reviews.delete(id);
+      if (ok) {
+        UI.toast('Review deleted', 'info');
+        if (typeof App !== 'undefined') App.updateSidebar();
+        this.render();
+      }
     }, true);
   },
 
@@ -194,15 +196,17 @@ const Reviews = {
     UI.modal('💬 Studio Response', body, footer, 'max-w-500');
   },
 
-  saveResponse(id) {
+  async saveResponse(id) {
     const textEl = document.getElementById('modal-studio-response');
     if (!textEl) return;
 
     const text = textEl.value.trim();
-    DB.reviews.update(id, { studioResponse: text });
-    UI.closeModal();
-    UI.toast('Studio response saved successfully!', 'success');
-    this.render();
+    const updated = await DB.reviews.update(id, { studioResponse: text });
+    if (updated) {
+      UI.closeModal();
+      UI.toast('Studio response saved successfully!', 'success');
+      this.render();
+    }
   },
 
   async deployLive() {

@@ -654,7 +654,8 @@ function applyAdminReviews(adminReviews, hasAdminSource = false) {
           date: dateFormatted,
           text: r.reviewText || r.text || '',
           verified: true,
-          status: 'approved'
+          status: 'approved',
+          studioResponse: r.studioResponse || ''
         });
       }
     });
@@ -714,11 +715,7 @@ async function loadRemoteAdminReviews() {
       localStorage.setItem('vk_reviews', JSON.stringify(remoteReviews));
     } catch (e) {}
 
-    VKREATE_DATA.reviews = remoteReviews.filter(r => {
-      if (!r) return false;
-      const isApproved = r.status === 'approved' || r.verified === true;
-      return isApproved && r.id !== 'mswstn7iv0g7w';
-    });
+    applyAdminReviews(remoteReviews, true);
   } else {
     VKREATE_DATA.reviews = [];
   }
