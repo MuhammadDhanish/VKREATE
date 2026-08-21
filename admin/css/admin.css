@@ -707,6 +707,7 @@ input:-webkit-autofill:active {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  pointer-events: none;
 }
 .toast {
   display: flex;
@@ -722,6 +723,7 @@ input:-webkit-autofill:active {
   min-width: 280px;
   max-width: 360px;
   animation: toastIn 0.3s var(--ease) both;
+  pointer-events: auto;
 }
 @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
 .toast.out { animation: toastOut 0.25s ease forwards; }

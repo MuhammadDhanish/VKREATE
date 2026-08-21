@@ -4,6 +4,16 @@
 
 const Reviews = {
   _filter: 'all',
+  _renderPending: false,
+
+  requestRender() {
+    if (this._renderPending) return;
+    this._renderPending = true;
+    requestAnimationFrame(() => {
+      this._renderPending = false;
+      this.render();
+    });
+  },
 
   render() {
     try {
@@ -413,13 +423,13 @@ const Reviews = {
 
 window.addEventListener('storage', () => {
   if (typeof App !== 'undefined' && App._current === 'reviews') {
-    Reviews.render();
+    Reviews.requestRender();
   }
   if (typeof App !== 'undefined') App.updateSidebar();
 });
 window.addEventListener('vkreate:reviews-updated', () => {
   if (typeof App !== 'undefined' && App._current === 'reviews') {
-    Reviews.render();
+    Reviews.requestRender();
   }
   if (typeof App !== 'undefined') App.updateSidebar();
 });

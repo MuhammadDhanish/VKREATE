@@ -153,26 +153,36 @@ const Inquiries = {
 
   openDetail(id) {
     const i = DB.inquiries.get(id);
-    UI.modal(`Inquiry — ${i.name}`, `
+    if (!i) return UI.toast('Inquiry not found.', 'error');
+    const name = UI.escapeHTML(i.name || 'Anonymous');
+    const email = UI.escapeHTML(i.email || '');
+    const phone = UI.escapeHTML(i.phone || '');
+    const industry = UI.escapeHTML(i.industry || '—');
+    const budget = UI.escapeHTML(i.projectBudget || '—');
+    const timeline = UI.escapeHTML(i.timeline || '—');
+    const brief = UI.escapeHTML(i.brief || 'No brief provided.');
+    const notes = UI.escapeHTML(i.notes || '');
+
+    UI.modal(`Inquiry — ${name}`, `
       <div style="display:grid;gap:16px">
 
         <!-- Contact info -->
         <div style="background:var(--bg);border-radius:var(--r-md);padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div>
             <div class="text-xs text-muted mb-4">Name</div>
-            <div class="fw-600">${i.name}</div>
+            <div class="fw-600">${name}</div>
           </div>
           <div>
             <div class="text-xs text-muted mb-4">Industry</div>
-            <div>${i.industry||'—'}</div>
+            <div>${industry}</div>
           </div>
           <div>
             <div class="text-xs text-muted mb-4">Email</div>
-            <div class="fw-600">${i.email}</div>
+            <div class="fw-600">${email}</div>
           </div>
           <div>
             <div class="text-xs text-muted mb-4">Phone</div>
-            <div>${i.phone||'—'}</div>
+            <div>${phone}</div>
           </div>
           <div>
             <div class="text-xs text-muted mb-4">Budget</div>

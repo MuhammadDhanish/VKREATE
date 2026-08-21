@@ -368,7 +368,7 @@ const DB = {
       if (updated) DB._set(DB.KEYS.projects, list);
       return list.filter(p => p && p.id && !deleted.includes(p.id));
     },
-    get(id) { return this.all().find(p => p && p.id === id) || null; },
+    get(id) { return this.all().find(p => p && p.id && (p.id === id || String(p.id) === String(id))) || null; },
     save(list) {
       DB._set(DB.KEYS.projects, list);
       DB._broadcast('projects-updated', list);
@@ -502,7 +502,7 @@ const DB = {
       });
       return result;
     },
-    get(id) { return this.all().find(r => r && r.id === id) || null; },
+    get(id) { return this.all().find(r => r && r.id && (r.id === id || String(r.id) === String(id))) || null; },
     save(list) {
       DB._set(DB.KEYS.reviews, list);
       try { localStorage.setItem('vk_reviews', JSON.stringify(list)); } catch (e) {}
@@ -621,7 +621,7 @@ const DB = {
       const deleted = DB._getDeleted(DB.KEYS.deletedInquiries);
       return list.filter(i => i && i.id && !deleted.includes(i.id));
     },
-    get(id) { return this.all().find(i => i.id === id) || null; },
+    get(id) { return this.all().find(i => i && i.id && (i.id === id || String(i.id) === String(id))) || null; },
     save(list) {
       DB._set(DB.KEYS.inquiries, list);
       DB._broadcast('inquiries-updated', list);
