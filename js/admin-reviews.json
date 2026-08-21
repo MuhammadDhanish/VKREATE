@@ -30,8 +30,12 @@
     "status": "approved",
     "createdAt": "2026-08-21T14:41:01.862Z",
     "approvedAt": "2026-08-21T14:41:01.863Z",
+<<<<<<< Updated upstream
     "updatedAt": "2026-08-21T14:41:01.949Z",
     "studioResponse": ""
+=======
+    "updatedAt": "2026-08-21T14:41:01.949Z"
+>>>>>>> Stashed changes
   },
   {
     "id": "rev-mt311tfhfana",
