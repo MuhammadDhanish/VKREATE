@@ -161,6 +161,33 @@ const Settings = {
           </div>
         </div>
 
+        <!-- GitHub Integration -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🔑 GitHub Integration &amp; Live Site Auto-Deploy</span>
+          </div>
+          <div class="card-body">
+            <form id="github-form" class="form-grid" style="gap:16px" onsubmit="Settings.saveGithubToken(event)">
+              <div class="form-group">
+                <label class="form-label" for="settings-gh-token">GitHub Personal Access Token (PAT)</label>
+                <div class="pw-wrap">
+                  <input class="form-control" id="settings-gh-token" name="ghToken" type="password" value="${typeof GithubSync !== 'undefined' ? UI.escapeHTML(GithubSync.getToken() || '') : ''}" placeholder="ghp_..." autocomplete="off">
+                  <button type="button" class="pw-toggle" onclick="Settings.togglePwVisibility('settings-gh-token')" title="Show/hide token" aria-label="Toggle token visibility">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+                <div class="form-hint" style="margin-top:6px;line-height:1.4">
+                  Need a token? <a href="https://github.com/settings/tokens" target="_blank" style="color:var(--green-deep);text-decoration:underline">Generate a GitHub Personal Access Token</a> with <code>repo</code> scope permissions.
+                </div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                <button type="submit" class="btn btn-primary">${UI.icon('check')} Save GitHub Token</button>
+                <button type="button" class="btn btn-outline" onclick="Settings.testGithubSync(this)">🚀 Test Deploy &amp; Sync</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
         <!-- Data Management -->
         <div class="card">
           <div class="card-header">
@@ -478,6 +505,34 @@ const Settings = {
     } catch (err) {
       console.warn('saveCredentials error:', err);
       UI.toast('❌ Server connection error while updating credentials', 'error');
+    }
+  },
+
+  saveGithubToken(e) {
+    e.preventDefault();
+    const tokenInput = document.getElementById('settings-gh-token');
+    const token = tokenInput ? tokenInput.value.trim() : '';
+    if (!token) {
+      return UI.toast('Please enter a valid GitHub token', 'warning');
+    }
+    if (typeof GithubSync !== 'undefined') {
+      GithubSync.setToken(token);
+      UI.toast('✅ GitHub token saved successfully!', 'success');
+    }
+  },
+
+  async testGithubSync(btnEl) {
+    if (typeof GithubSync === 'undefined') return;
+    if (btnEl) { btnEl.disabled = true; btnEl.textContent = 'Syncing…'; }
+    try {
+      const ok = await GithubSync.push({ silent: false });
+      if (!ok) {
+        UI.toast('⚠️ Deploy test failed. Verify GitHub token or internet connection.', 'error');
+      }
+    } catch (e) {
+      UI.toast('❌ Connection error during deploy test.', 'error');
+    } finally {
+      if (btnEl) { btnEl.disabled = false; btnEl.textContent = '🚀 Test Deploy & Sync'; }
     }
   },
 

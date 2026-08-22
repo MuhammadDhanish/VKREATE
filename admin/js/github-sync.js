@@ -53,11 +53,15 @@ const GithubSync = {
     return this._lastPushResult;
   },
 
+  _invalidTokenError: false,
+
   async _doPush(opts = {}) {
     const silent = !!opts.silent;
     const token = this.getToken();
+    this._invalidTokenError = false;
+
     if (!token) {
-      if (!silent) UI.toast('⚠️ No GitHub token set.', 'warning');
+      if (!silent) UI.toast('⚠️ No GitHub token set. Update token in Settings → GitHub Integration.', 'warning');
       return false;
     }
 
@@ -103,7 +107,11 @@ const GithubSync = {
         return true;
       } else {
         console.error('GithubSync.push failed for files:', failedFiles);
-        if (!silent) UI.toast(`❌ Deploy failed for: ${failedFiles.join(', ')}`, 'error');
+        if (this._invalidTokenError) {
+          if (!silent) UI.toast('❌ GitHub access token expired or invalid (HTTP 401). Update token in Admin Settings → GitHub Integration.', 'error');
+        } else {
+          if (!silent) UI.toast(`❌ Deploy failed for: ${failedFiles.join(', ')}`, 'error');
+        }
         return false;
       }
     } catch (e) {
@@ -142,6 +150,9 @@ const GithubSync = {
       let remoteData = null;
       let remoteDeletedIds = [];
       const getRes = await fetch(`https://api.github.com/repos/${this.REPO}/contents/${filePath}`, { headers });
+      if (getRes.status === 401 || getRes.status === 403) {
+        this._invalidTokenError = true;
+      }
       if (getRes.ok) {
         const fileData = await getRes.json();
         sha = fileData.sha;
@@ -226,6 +237,9 @@ const GithubSync = {
         body: JSON.stringify(body)
       });
       if (!putRes.ok) {
+        if (putRes.status === 401 || putRes.status === 403) {
+          this._invalidTokenError = true;
+        }
         console.error(`GitHub push failed for ${filePath}: HTTP ${putRes.status}`);
         return false;
       }

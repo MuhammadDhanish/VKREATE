@@ -553,6 +553,58 @@ app.put('/api/admin-credentials', requireAuth, (req, res) => {
   res.json({ success: true, message: 'Credentials updated successfully' });
 });
 
+app.post('/api/github-sync', requireAuth, async (req, res) => {
+  const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || req.body?.token;
+  if (!token) {
+    return res.status(400).json({ success: false, error: 'No GitHub PAT token configured on server or request body.' });
+  }
+
+  const repo = 'MuhammadDhanish/VKREATE';
+  const headers = {
+    'Authorization': `token ${token}`,
+    'Accept': 'application/vnd.github.v3+json',
+    'User-Agent': 'VKREATE-Server-Sync'
+  };
+
+  const files = [
+    { path: 'js/admin-reviews.json', data: readData('reviews') },
+    { path: 'js/admin-projects.json', data: readData('projects') },
+    { path: 'js/admin-inquiries.json', data: readData('inquiries') },
+    { path: 'js/admin-settings.json', data: readData('settings') }
+  ];
+
+  const results = [];
+  for (const f of files) {
+    try {
+      let sha = null;
+      const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${f.path}`, { headers });
+      if (getRes.ok) {
+        const getJson = await getRes.json();
+        sha = getJson.sha;
+      }
+
+      const body = {
+        message: `Server sync: ${f.path} [${new Date().toISOString()}]`,
+        content: Buffer.from(JSON.stringify(f.data, null, 2)).toString('base64'),
+        ...(sha ? { sha } : {})
+      };
+
+      const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${f.path}`, {
+        method: 'PUT',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      results.push({ path: f.path, status: putRes.status, ok: putRes.ok });
+    } catch (e) {
+      results.push({ path: f.path, status: 500, ok: false, error: e.message });
+    }
+  }
+
+  const allOk = results.every(r => r.ok);
+  res.json({ success: allOk, results });
+});
+
 // Settings
 app.get('/api/settings', (req, res) => {
   const settings = { ...readData('settings') };
