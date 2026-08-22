@@ -427,20 +427,17 @@ const App = {
       return;
     }
 
-    // Prevent background sync from destroying a button mid-click (data-loading guard)
-    if (document.querySelector('[data-loading="true"]')) {
-      return;
-    }
-
     const mod = PAGES[page]?.module;
     if (!mod) return;
 
-    // For Reviews page: use smart partial update (_refreshCards) if the page is
-    // already rendered — this avoids a full innerHTML wipe that destroys all buttons.
-    // Only fall back to full render() if the page skeleton doesn't exist yet.
-    if (page === 'reviews' && typeof mod._refreshCards === 'function') {
+    // For Reviews page: if any button is stuck in [data-loading="true"], force full render to self-heal
+    if (page === 'reviews') {
       const listEl = document.getElementById('reviews-list');
-      if (listEl) {
+      if (listEl && listEl.querySelector('[data-loading="true"]')) {
+        if (typeof mod.render === 'function') mod.render();
+        return;
+      }
+      if (listEl && typeof mod._refreshCards === 'function') {
         mod._refreshCards();
         if (typeof mod._refreshTabState === 'function') mod._refreshTabState();
         return;
@@ -486,13 +483,13 @@ App.init();
 setTimeout(() => {
   const appEl = document.getElementById('admin-app');
   if (appEl && !appEl.innerHTML.trim()) {
-    document.body.insertAdjacentHTML('afterbegin', `
+    appEl.innerHTML = `
       <div style="position:fixed;inset:0;background:#0f172a;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:sans-serif;z-index:999999;padding:20px;text-align:center;">
         <h2 style="margin-bottom:12px;">⚠️ Admin Panel Failed to Load Scripts</h2>
-        <p style="color:#94a3b8;max-width:440px;margin-bottom:20px;line-height:1.5;">Required scripts could not be executed properly. Please perform a hard-refresh (Ctrl+Shift+R or Cmd+Shift+R).</p>
+        <p style="color:#94a3b8;max-width:440px;margin-bottom:20px;line-height:1.5;">Admin panel failed to load its scripts. Hard-refresh with Ctrl+Shift+R.</p>
         <button onclick="location.reload(true)" style="background:#2563eb;color:#fff;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:600;">Hard Refresh Page</button>
       </div>
-    `);
+    `;
   }
 }, 3000);
 </script>

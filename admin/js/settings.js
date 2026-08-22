@@ -161,32 +161,7 @@ const Settings = {
           </div>
         </div>
 
-        <!-- GitHub Integration -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">🔑 GitHub Integration &amp; Live Site Auto-Deploy</span>
-          </div>
-          <div class="card-body">
-            <form id="github-form" class="form-grid" style="gap:16px" onsubmit="Settings.saveGithubToken(event)">
-              <div class="form-group">
-                <label class="form-label" for="settings-gh-token">GitHub Personal Access Token (PAT)</label>
-                <div class="pw-wrap">
-                  <input class="form-control" id="settings-gh-token" name="ghToken" type="password" value="${typeof GithubSync !== 'undefined' ? UI.escapeHTML(GithubSync.getToken() || '') : ''}" placeholder="ghp_..." autocomplete="off">
-                  <button type="button" class="pw-toggle" onclick="Settings.togglePwVisibility('settings-gh-token')" title="Show/hide token" aria-label="Toggle token visibility">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  </button>
-                </div>
-                <div class="form-hint" style="margin-top:6px;line-height:1.4">
-                  Need a token? <a href="https://github.com/settings/tokens" target="_blank" style="color:var(--green-deep);text-decoration:underline">Generate a GitHub Personal Access Token</a> with <code>repo</code> scope permissions.
-                </div>
-              </div>
-              <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-                <button type="submit" class="btn btn-primary">${UI.icon('check')} Save GitHub Token</button>
-                <button type="button" class="btn btn-outline" onclick="Settings.testGithubSync(this)">🚀 Test Deploy &amp; Sync</button>
-              </div>
-            </form>
-          </div>
-        </div>
+
 
         <!-- Data Management -->
         <div class="card">
@@ -411,35 +386,31 @@ const Settings = {
     el.type = el.type === 'password' ? 'text' : 'password';
   },
 
-  saveStudio(e) {
+  async saveStudio(e) {
     e.preventDefault();
     const f = e.target;
-    DB.settings.update('studio', {
+    const ok = await DB.settings.update('studio', {
       name: f.name.value.trim(), tagline: f.tagline.value.trim(),
       email: f.email.value.trim(), phone: f.phone.value.trim(),
       address: f.address.value.trim(),
       instagram: f.instagram.value.trim(), website: f.website.value.trim(),
     });
-    if (typeof GithubSync !== 'undefined' && GithubSync.afterMutation) {
-      GithubSync.afterMutation();
-    } else {
+    if (ok) {
       DB.afterMutation();
+      UI.toast('Studio information saved!', 'success');
     }
-    UI.toast('Studio information saved!', 'success');
   },
 
-  saveNotif() {
-    DB.settings.update('notifications', {
+  async saveNotif() {
+    const ok = await DB.settings.update('notifications', {
       newReview:  document.getElementById('notif-review')?.checked,
       newInquiry: document.getElementById('notif-inquiry')?.checked,
       notifEmail: document.getElementById('notif-email')?.value.trim(),
     });
-    if (typeof GithubSync !== 'undefined' && GithubSync.afterMutation) {
-      GithubSync.afterMutation();
-    } else {
+    if (ok) {
       DB.afterMutation();
+      UI.toast('Notification settings saved!', 'success');
     }
-    UI.toast('Notification settings saved!', 'success');
   },
 
   async testEmailNotif() {
@@ -627,7 +598,6 @@ const Settings = {
         if (window.GithubSync) await GithubSync.push();
       }, 300);
       UI.toast('Dashboard data reset successfully!', 'success');
-      window.dispatchEvent(new Event('storage'));
       window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
       window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
       App.navigate('dashboard');

@@ -59,6 +59,7 @@ const Auth = {
         if (res.ok && data && data.success) {
           const settings = DB.settings.get();
           DB.auth.session.set({
+            token: data.token || '',
             email: data.email || email,
             name: settings.studio?.name || data.name || 'Admin',
             remember

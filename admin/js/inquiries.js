@@ -155,23 +155,27 @@ const Inquiries = {
       </div>`;
   },
 
-  updateStatus(id, status) {
-    DB.inquiries.update(id, {
+  async updateStatus(id, status) {
+    const updated = await DB.inquiries.update(id, {
       status,
       respondedAt: ['contacted','quoted','won'].includes(status) ? new Date().toISOString() : null
     });
-    UI.toast(`Status updated to "${status}"`, 'success');
-    App.updateSidebar();
+    if (updated) {
+      UI.toast(`Status updated to "${status}"`, 'success');
+      App.updateSidebar();
+    }
   },
 
-  delete(id) {
+  async delete(id) {
     const i = DB.inquiries.get(id);
-    UI.confirm('Delete Inquiry', `Delete inquiry from <strong>${i.name}</strong>?`, '🗑️', () => {
-      DB.inquiries.delete(id);
-      UI.toast('Inquiry deleted.', 'success');
-      this._refresh();
-      if (window.App && App.updateSidebar) App.updateSidebar();
-      if (window.GithubSync) GithubSync.push();
+    if (!i) return;
+    UI.confirm('Delete Inquiry', `Delete inquiry from <strong>${UI.escapeHTML(i.name)}</strong>?`, '🗑️', async () => {
+      const ok = await DB.inquiries.delete(id);
+      if (ok) {
+        UI.toast('Inquiry deleted.', 'success');
+        this._refresh();
+        if (window.App && App.updateSidebar) App.updateSidebar();
+      }
     }, true);
   },
 

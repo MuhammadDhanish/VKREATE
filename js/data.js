@@ -746,16 +746,6 @@ if (syncChannelLive) {
   };
 }
 
-if (typeof EventSource !== 'undefined') {
-  try {
-    const evtSource = new EventSource(getApiBaseUrl() + '/api/events');
-    evtSource.onmessage = (e) => {
-      loadRemoteAdminProjects();
-      loadRemoteAdminReviews();
-    };
-  } catch (e) {}
-}
-
 window.addEventListener('storage', function (e) {
   loadRemoteAdminProjects();
   loadRemoteAdminReviews();

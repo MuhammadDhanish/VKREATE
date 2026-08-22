@@ -2,7 +2,6 @@
    VKREATE Admin — Data Layer (Unified API, Sync Engine & Fallback)
    ============================================================ */
 
-// Helper to resolve backend server API URL when running on dev static ports (e.g. live-server 5500)
 function getApiBaseUrl() {
   if (typeof window !== 'undefined' && window.location) {
     const h = window.location.hostname;
@@ -14,6 +13,21 @@ function getApiBaseUrl() {
   return '';
 }
 
+function getAuthHeaders(extraHeaders = {}) {
+  const headers = { 'Content-Type': 'application/json', ...extraHeaders };
+  try {
+    const raw = localStorage.getItem('vk_admin_session');
+    if (raw) {
+      const session = JSON.parse(raw);
+      if (session && session.token) {
+        headers['Authorization'] = `Bearer ${session.token}`;
+        headers['X-Admin-Session'] = session.token;
+      }
+    }
+  } catch (e) {}
+  return headers;
+}
+
 // BroadcastChannel for instant cross-tab sync in same browser
 const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('vk_sync') : null;
 
@@ -21,21 +35,17 @@ const DB = {
 
   // ── Keys ─────────────────────────────────────────────────
   KEYS: {
-    projects:          'vk_admin_projects',
-    reviews:           'vk_admin_reviews',
-    inquiries:         'vk_admin_inquiries',
-    settings:          'vk_admin_settings',
-    session:           'vk_admin_session',
-    deletedProjects:   'vk_admin_deleted_projects',
-    deletedReviews:    'vk_admin_deleted_reviews',
-    deletedInquiries:  'vk_admin_deleted_inquiries',
+    projects:   'vk_admin_projects',
+    reviews:    'vk_admin_reviews',
+    inquiries:  'vk_admin_inquiries',
+    settings:   'vk_admin_settings',
+    session:    'vk_admin_session',
   },
 
+  _lastLocalWrite: { reviews: 0, projects: 0, inquiries: 0, settings: 0 },
+
   afterMutation() {
-    window.dispatchEvent(new Event('storage'));
-    if (typeof GithubSync !== 'undefined' && GithubSync.push) {
-      return GithubSync.push();
-    }
+    // Custom events and BroadcastChannel manage sync
   },
 
   // ── Helpers ───────────────────────────────────────────────
@@ -50,17 +60,6 @@ const DB = {
       if (window.UI && UI.toast) UI.toast('Storage limit reached. Please use smaller image files.', 'error');
       console.warn('LocalStorage error:', e);
       return false;
-    }
-  },
-  _getDeleted(key) {
-    try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
-  },
-  _addDeleted(key, id) {
-    if (!id) return;
-    const list = this._getDeleted(key);
-    if (!list.includes(id)) {
-      list.push(id);
-      try { localStorage.setItem(key, JSON.stringify(list)); } catch {}
     }
   },
   _id() {
@@ -98,115 +97,44 @@ const DB = {
         industryLabel: 'Beauty & Wellness',
         location: 'Kochi, Kerala',
         area: '2,200 sq ft',
-        duration: '3 months',
+        duration: '3.5 months',
         completionDate: '2025-04-10',
-        budgetRange: '₹18L – ₹25L',
+        budgetRange: '₹20L – ₹30L',
         status: 'published',
-        thumbnail: '../assets/images/project_salon_3.png',
-        images: ['../assets/images/project_salon_3.png'],
-        challenge: 'Create a luxurious, Instagram-ready salon that feels intimate yet spacious.',
-        solution: 'Individual styling pods with LED mirrors, private pedicure suite, botanical murals.',
-        result: '45% increase in repeat bookings, high client retention.',
+        thumbnail: '../assets/images/project_lilaa_2.png',
+        images: ['../assets/images/project_lilaa_2.png'],
+        challenge: 'Design a serene luxury salon with private VIP suites and acoustic isolation.',
+        solution: 'Soft curved arches, warm brass accents, micro-cement walls, and indirect LED strip lighting.',
+        result: 'Awarded Regional Wellness Interior of the Year 2025.',
         processPhases: ['Discovery','Concept','Detailing','Execution','Handover'],
         testimonial: null,
-        metrics: { sqft: '2200', pods: 6, timeline: '3 months' },
-        tags: ['salon','beauty','wellness'],
-        createdAt: '2025-04-10T09:00:00Z',
-        updatedAt: '2025-05-20T11:00:00Z',
-      },
-      {
-        id: 'retail-jewellery',
-        name: 'Wings Jewellery & Retail Showroom',
-        industry: 'retail',
-        industryLabel: 'Jewellery & Retail',
-        location: 'Calicut, Kerala',
-        area: '1,800 sq ft',
-        duration: '2 months',
-        completionDate: '2025-02-14',
-        budgetRange: '₹12L – ₹18L',
-        status: 'published',
-        thumbnail: '../assets/images/project_jewellery_1.jpg',
-        images: ['../assets/images/project_jewellery_1.jpg', '../assets/images/project_jewellery_2.jpg'],
-        challenge: 'Stand out in a busy luxury mall corridor with limited square footage.',
-        solution: 'High-impact storefront featuring grand arched maroon grid glass windows, diamond-cut mirror wall.',
-        result: '40% increase in corridor foot traffic, 32% conversion lift.',
-        processPhases: ['Discovery','Concept','Detailing','Execution','Handover'],
-        testimonial: null,
-        metrics: { sqft: '1800', footTraffic: '+40%', timeline: '2 months' },
-        tags: ['retail','jewellery','showroom'],
-        createdAt: '2025-02-14T10:00:00Z',
-        updatedAt: '2025-03-01T09:00:00Z',
-      },
-      {
-        id: 'corporate-lounge',
-        name: 'Corporate VIP Reception & Lounge',
-        industry: 'office',
-        industryLabel: 'Offices & Workspaces',
-        location: 'Kochi, Kerala',
-        area: '2,900 sq ft',
-        duration: '2.5 months',
-        completionDate: '2025-01-20',
-        budgetRange: '₹15L – ₹20L',
-        status: 'published',
-        thumbnail: '../assets/images/project_lounge.png',
-        images: ['../assets/images/project_lounge.png', '../assets/images/project_lilaa_5.png'],
-        challenge: 'Design an executive reception and waiting lounge that conveys prestige, hospitality, and privacy.',
-        solution: 'Sculptural cream armchairs, warm indirect LED ceiling troffers, organic cloud pendant chandeliers.',
-        result: '98% executive visitor satisfaction, reinforced brand authority.',
-        processPhases: ['Discovery','Concept','Detailing','Execution','Handover'],
-        testimonial: null,
-        metrics: { sqft: '2900', satisfaction: '98%', timeline: '2.5 months' },
-        tags: ['office','corporate','lounge'],
-        createdAt: '2025-01-20T11:00:00Z',
-        updatedAt: '2025-02-05T14:00:00Z',
-      },
+        metrics: { sqft: '2200', seatingCapacity: 20, timeline: '3.5 months' },
+        tags: ['beauty','salon','wellness'],
+        createdAt: '2025-04-10T10:00:00Z',
+        updatedAt: '2025-05-01T08:30:00Z',
+      }
     ];
   },
-
   _defaultReviews() {
     return [
       {
-        id: 'rev-lilaa-01',
-        clientName: 'Anand Varma',
-        clientRole: 'Founder, Lilaa Restaurants',
-        clientEmail: 'anand@lilaarestaurants.com',
-        projectId: 'lilaa-restaurant',
-        rating: 5,
-        reviewText: "VKREATE transformed our vision into Kerala's most talked-about dining space. The arched alcoves, warm ambient lighting, and bespoke furniture elevated our brand experience significantly. Table turn rate increased 30% in the first month!",
-        status: 'approved',
-        createdAt: '2025-07-02T10:00:00Z',
-        approvedAt: '2025-07-02T12:00:00Z',
-        studioResponse: 'Thank you Anand! Designing Lilaa was an incredible experience for our entire interior architecture team.'
-      },
-      {
-        id: 'rev-wings-02',
+        id: 'rev-priya-nair-wings',
         clientName: 'Dr. Priya Nair',
         clientRole: 'Managing Director, Wings Salon & Spa',
         clientEmail: 'priya@wingsbeauty.in',
         projectId: 'luxury-salon',
+        industry: 'beauty',
         rating: 5,
         reviewText: 'Flawless execution from concept to completion. The layout optimization in our Kochi salon created a serene, high-end sanctuary that our VIP clients absolutely love. Highly recommend VKREATE for luxury wellness spaces.',
         status: 'approved',
-        createdAt: '2025-07-10T14:30:00Z',
-        approvedAt: '2025-07-10T16:00:00Z',
-        studioResponse: 'We are thrilled Dr. Priya! The curved glass arches and acoustic detailing in Wings remain one of our proudest accomplishments.'
-      },
-      {
-        id: 'rev-pending-03',
-        clientName: 'Suresh Menon',
-        clientRole: 'Commercial Property Owner',
-        clientEmail: 'suresh.menon@menongroup.com',
-        projectId: 'corporate-lounge',
-        rating: 5,
-        reviewText: 'Outstanding craftsmanship on our executive workspace lounge in Calicut. The lighting accents and wood ribbing created an extraordinary corporate environment for our executive guests.',
-        status: 'pending',
-        createdAt: '2025-08-18T18:20:00Z',
-        studioResponse: ''
+        studioResponse: 'We are thrilled Dr. Priya! The curved glass arches and acoustic detailing in Wings remain one of our proudest accomplishments.',
+        createdAt: '2025-07-10T09:00:00.000Z',
+        approvedAt: '2025-07-10T10:00:00.000Z'
       }
     ];
   },
 
-  // ── Seed ─────────────────────────────────────────────────
+  // Initial local seed if storage is empty
   seed() {
     if (!this._get(this.KEYS.projects)) {
       this._set(this.KEYS.projects, this._defaultProjects());
@@ -217,56 +145,18 @@ const DB = {
     if (!this._get(this.KEYS.inquiries)) {
       this._set(this.KEYS.inquiries, [
         {
-          id: this._id(),
-          name: 'Rajesh Kumar',
-          email: 'rajesh@grandhotel.com',
-          phone: '+91 98765 43210',
-          industry: 'Hospitality',
-          projectBudget: '₹50L – ₹75L',
-          timeline: '6 months',
-          brief: 'Looking to redesign our hotel lobby and 3 dining areas. 5-star property in Trivandrum.',
-          status: 'new',
-          notes: '',
-          createdAt: '2025-07-31T09:00:00Z',
-          respondedAt: null,
-        },
-        {
-          id: this._id(),
-          name: 'Meera Thomas',
-          email: 'meera@blossomcafe.in',
-          phone: '+91 94400 12345',
-          industry: 'Restaurants & Cafes',
-          projectBudget: '₹15L – ₹25L',
-          timeline: '3 months',
-          brief: 'Café design for a new 1,500 sq ft space in Kochi. Inspired by European café culture.',
-          status: 'contacted',
-          notes: 'Called on 28 July. Interested in a full concept presentation. Scheduled site visit for Aug 5.',
-          createdAt: '2025-07-25T14:30:00Z',
-          respondedAt: '2025-07-28T11:00:00Z',
-        },
-        {
-          id: this._id(),
-          name: 'Dr. Anil Sharma',
-          email: 'dr.anil@skincare.com',
-          phone: '+91 90001 23456',
-          industry: 'Beauty & Wellness',
-          projectBudget: '₹20L – ₹30L',
-          timeline: '4 months',
-          brief: 'Premium dermatology clinic in Bangalore. Need a modern clinical-yet-luxurious feel.',
-          status: 'quoted',
-          notes: 'Sent proposal on 20 July. Follow up scheduled for Aug 3.',
-          createdAt: '2025-07-15T11:00:00Z',
-          respondedAt: '2025-07-18T10:00:00Z',
-        },
-        {
-          id: this._id(),
-          name: 'Sanjay Pillai',
-          email: 'sanjay@fashionretail.in',
-          phone: '+91 80000 98765',
-          industry: 'Retail',
-          projectBudget: '₹35L – ₹45L',
-          timeline: '5 months',
-          brief: 'High-end fashion boutique in Kochi. 3,000 sq ft with a focus on premium materials.',
+          id: 'inq-001',
+          name: 'Anand Varma',
+          email: 'anand@varmagroup.com',
+          phone: '+91 98470 12345',
+          company: 'Varma Group',
+          projectType: 'restaurant',
+          projectTypeLabel: 'Restaurant / Cafe',
+          location: 'Kochi',
+          estimatedArea: '3,000 sq ft',
+          budgetRange: '₹35L – ₹50L',
+          expectedStartDate: '2025-09-01',
+          message: 'Looking for a complete interior design overhaul for our modern fusion restaurant.',
           status: 'won',
           notes: 'Contract signed on 10 July. Kickoff meeting scheduled for Aug 1.',
           createdAt: '2025-07-01T15:00:00Z',
@@ -297,10 +187,6 @@ const DB = {
   },
 
   // ── Broadcast Event Helper ──────────────────────────────
-  // Notifies other tabs via BroadcastChannel and re-renders this tab via the
-  // custom event. GitHub deployment is intentionally NOT triggered here —
-  // every CRUD module calls GithubSync.push() explicitly after its action,
-  // and an implicit push from here would race with it (GitHub sha conflicts).
   _broadcast(type, data) {
     if (syncChannel) {
       try { syncChannel.postMessage({ type, data, timestamp: Date.now() }); } catch (e) {}
@@ -310,7 +196,6 @@ const DB = {
 
   // ── Image Upload Helper ─────────────────────────────────
   async uploadImage(fileOrBase64, filename = '') {
-    // 1. Try backend API upload
     try {
       let base64Data = fileOrBase64;
       if (fileOrBase64 instanceof File) {
@@ -319,11 +204,12 @@ const DB = {
           reader.onload = (e) => resolve(e.target.result);
           reader.readAsDataURL(fileOrBase64);
         });
-        filename = fileOrBase64.name;
       }
-      const res = await fetch('/api/upload', {
+
+      const res = await fetch((getApiBaseUrl() || '') + '/api/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
+        credentials: 'include',
         body: JSON.stringify({ filename, base64Data })
       });
       if (res.ok) {
@@ -334,7 +220,6 @@ const DB = {
       console.warn('Backend image upload fallback to local storage / IDB:', e);
     }
 
-    // 2. Fallback to ImageDB (IndexedDB)
     if (typeof ImageDB !== 'undefined') {
       try {
         if (fileOrBase64 instanceof File) {
@@ -350,246 +235,232 @@ const DB = {
   // ── Projects CRUD ─────────────────────────────────────────
   projects: {
     all() {
-      const list = DB._get(DB.KEYS.projects) || [];
-      const defaults = (typeof DB._defaultProjects === 'function') ? DB._defaultProjects() : [];
-      const deleted = DB._getDeleted(DB.KEYS.deletedProjects);
-      let updated = false;
-
-      defaults.forEach(def => {
-        if (def && def.id && !deleted.includes(def.id) && !list.some(p => p && p.id === def.id)) {
-          list.push(def);
-          updated = true;
-        }
-      });
-
-      if (updated) DB._set(DB.KEYS.projects, list);
-      return list.filter(p => p && p.id && !deleted.includes(p.id));
+      return DB._get(DB.KEYS.projects) || [];
     },
-    get(id) { return this.all().find(p => p && p.id && (p.id === id || String(p.id) === String(id))) || null; },
-    save(list) {
-      DB._set(DB.KEYS.projects, list);
-      DB._broadcast('projects-updated', list);
+    get(id) {
+      return this.all().find(p => p && p.id && (p.id === id || String(p.id) === String(id))) || null;
     },
-    add(p) {
-      const l = this.all();
+    async add(p) {
       p.id = p.id || DB._id();
       p.createdAt = p.createdAt || new Date().toISOString();
       p.updatedAt = new Date().toISOString();
       if (!p.views) p.views = 0;
       if (!p.clicks) p.clicks = 0;
       if (!p.leads) p.leads = 0;
-      l.unshift(p);
+
+      const l = this.all();
+      const existingIdx = l.findIndex(x => x && x.id === p.id);
+      if (existingIdx >= 0) { l[existingIdx] = p; } else { l.unshift(p); }
+      DB._lastLocalWrite.projects = Date.now();
       DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
-
-      // Sync to API asynchronously
-      fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(p)
-      }).catch(e => console.warn('API sync error:', e));
-
       DB._broadcast('projects-updated', l);
+
+      try {
+        const res = await fetch((getApiBaseUrl() || '') + '/api/projects', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          credentials: 'include',
+          body: JSON.stringify(p)
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+      } catch (e) {
+        if (window.UI && UI.toast) UI.toast(`❌ Project add error: ${e.message}. Rolling back...`, 'error');
+        await DB.loadRemoteData();
+        return null;
+      }
       return p;
     },
-    update(id, data) {
+    async update(id, data) {
       const l = this.all();
       const i = l.findIndex(p => p && p.id === id);
       if (i < 0) return null;
       l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
+      DB._lastLocalWrite.projects = Date.now();
       DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
-
-      fetch(`/api/projects/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(l[i])
-      }).catch(e => console.warn('API update error:', e));
-
       DB._broadcast('projects-updated', l);
+
+      try {
+        const res = await fetch((getApiBaseUrl() || '') + `/api/projects/${id}`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          credentials: 'include',
+          body: JSON.stringify(l[i])
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+      } catch (e) {
+        if (window.UI && UI.toast) UI.toast(`❌ Project update error: ${e.message}. Rolling back...`, 'error');
+        await DB.loadRemoteData();
+        return null;
+      }
       return l[i];
     },
-    delete(id) {
-      const p = this.get(id);
-      DB._addDeleted(DB.KEYS.deletedProjects, id);
-      if (p && p.name) DB._addDeleted(DB.KEYS.deletedProjects, 'name:' + p.name.toLowerCase().trim());
+    async delete(id) {
       const remaining = this.all().filter(p => p && p.id !== id);
+      DB._lastLocalWrite.projects = Date.now();
       DB._set(DB.KEYS.projects, remaining);
-
-      fetch(`/api/projects/${id}`, { method: 'DELETE' }).catch(e => console.warn('API delete error:', e));
       DB._broadcast('projects-updated', remaining);
+
+      try {
+        const res = await fetch((getApiBaseUrl() || '') + `/api/projects/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+          credentials: 'include'
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+      } catch (e) {
+        if (window.UI && UI.toast) UI.toast(`❌ Project delete error: ${e.message}. Rolling back...`, 'error');
+        await DB.loadRemoteData();
+        return false;
+      }
+      return true;
     },
     published() { return this.all().filter(p => p && p.status === 'published'); },
-    drafts()    { return this.all().filter(p => p && p.status === 'draft'); },
+    byIndustry(ind) { return this.all().filter(p => p && p.industry === ind); },
+    stats() {
+      const all = this.all();
+      return {
+        total: all.length,
+        published: all.filter(p => p && p.status === 'published').length,
+        draft: all.filter(p => p && p.status === 'draft').length,
+        archived: all.filter(p => p && p.status === 'archived').length,
+        totalViews: all.reduce((sum, p) => sum + (p.views || 0), 0),
+        totalLeads: all.reduce((sum, p) => sum + (p.leads || 0), 0),
+      };
+    },
   },
 
   // ── Reviews CRUD ──────────────────────────────────────────
   reviews: {
     all() {
-      const rawDeleted = DB._getDeleted(DB.KEYS.deletedReviews) || [];
-      const deleted = rawDeleted.filter(d => typeof d === 'string' && !d.startsWith('name:') && !d.startsWith('proj:'));
-      const itemMap = new Map();
-
-      const normalize = (r) => {
-        if (!r || typeof r !== 'object') return null;
-        const statusRaw = (r.status || 'pending').toString().toLowerCase().trim();
-        const status = (statusRaw === 'approved' || statusRaw === 'published') ? 'approved' : (statusRaw === 'rejected' ? 'rejected' : 'pending');
-        return {
-          ...r,
-          id: r.id || DB._id(),
-          clientName: r.clientName || r.author || r.name || 'Anonymous Client',
-          clientRole: r.clientRole || r.role || 'Client',
-          clientEmail: r.clientEmail || r.email || '',
-          reviewText: r.reviewText || r.text || r.content || '',
-          rating: parseInt(r.rating || 5, 10),
-          status,
-          createdAt: r.createdAt || r.approvedAt || r.date || new Date().toISOString()
-        };
-      };
-
-      // 1. Read local admin reviews
-      try {
-        const localAdmin = DB._get(DB.KEYS.reviews) || [];
-        if (Array.isArray(localAdmin)) {
-          localAdmin.forEach(raw => {
-            const r = normalize(raw);
-            if (r && r.id && !deleted.includes(r.id)) {
-              itemMap.set(r.id, r);
-            }
-          });
-        }
-      } catch (e) {}
-
-      // 2. Read live reviews (timestamp-based merge: localAdmin wins unless rawLive is strictly newer)
-      try {
-        const rawLive = JSON.parse(localStorage.getItem('vk_reviews')) || [];
-        if (Array.isArray(rawLive)) {
-          rawLive.forEach(raw => {
-            const r = normalize(raw);
-            if (r && r.id && !deleted.includes(r.id)) {
-              const existing = itemMap.get(r.id);
-              if (!existing) {
-                itemMap.set(r.id, r);
-              } else {
-                const existingTime = new Date(existing.updatedAt || existing.approvedAt || existing.createdAt || 0).getTime();
-                const rawTime = new Date(r.updatedAt || r.approvedAt || r.createdAt || 0).getTime();
-                const merged = rawTime > existingTime ? { ...existing, ...r } : { ...r, ...existing };
-                itemMap.set(r.id, merged);
-              }
-            }
-          });
-        }
-      } catch (e) {}
-
-      // 3. Fallback merge with default seed reviews
-      try {
-        const defaults = DB._defaultReviews();
-        if (Array.isArray(defaults)) {
-          defaults.forEach(raw => {
-            const r = normalize(raw);
-            if (r && r.id && !deleted.includes(r.id) && !itemMap.has(r.id)) {
-              itemMap.set(r.id, r);
-            }
-          });
-        }
-      } catch (e) {}
-
-      // 4. Fallback merge with VKREATE_DATA reviews if available
-      try {
-        if (typeof window !== 'undefined' && window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.reviews)) {
-          window.VKREATE_DATA.reviews.forEach(raw => {
-            const r = normalize(raw);
-            if (r && r.id && !deleted.includes(r.id) && !itemMap.has(r.id)) {
-              itemMap.set(r.id, r);
-            }
-          });
-        }
-      } catch (e) {}
-
-      const result = Array.from(itemMap.values()).filter(r => r && r.id);
-      result.sort((a, b) => {
-        const tA = new Date(a.createdAt || a.approvedAt || a.date || 0).getTime();
-        const tB = new Date(b.createdAt || b.approvedAt || b.date || 0).getTime();
-        return tB - tA;
-      });
-      return result;
+      return DB._get(DB.KEYS.reviews) || [];
     },
-    get(id) { return this.all().find(r => r && r.id && (r.id === id || String(r.id) === String(id))) || null; },
-    save(list) {
-      DB._set(DB.KEYS.reviews, list);
-      const approvedOnly = list.filter(r => r && r.status === 'approved');
-      try { localStorage.setItem('vk_reviews', JSON.stringify(approvedOnly)); } catch (e) {}
-      DB._broadcast('reviews-updated', list);
+    get(id) {
+      return this.all().find(r => r && r.id && (r.id === id || String(r.id) === String(id))) || null;
+    },
+    _syncPublicMirror(list) {
+      try {
+        const approvedOnly = list
+          .filter(r => r && r.status === 'approved')
+          .map(r => ({
+            id: r.id,
+            clientName: r.clientName || r.author || 'Verified Client',
+            clientRole: r.clientRole || r.role || 'Client',
+            projectId: r.projectId || 'general',
+            industry: r.industry || r.industryLabel || '',
+            industryLabel: r.industryLabel || r.industry || '',
+            rating: r.rating || 5,
+            reviewText: r.reviewText || r.text || '',
+            studioResponse: r.studioResponse || '',
+            status: 'approved',
+            createdAt: r.createdAt || r.approvedAt || ''
+          }));
+        localStorage.setItem('vk_reviews', JSON.stringify({
+          cachedAt: Date.now(),
+          reviews: approvedOnly
+        }));
+      } catch (e) {}
     },
 
-    add(r) {
+    async add(r) {
       r.id = r.id || DB._id();
       r.createdAt = r.createdAt || new Date().toISOString();
       r.updatedAt = new Date().toISOString();
       if (!r.status) r.status = 'pending';
 
-      // 1. Save to localStorage immediately (instant UI — same as projects pattern)
       const l = this.all();
       const existingIdx = l.findIndex(x => x && x.id === r.id);
       if (existingIdx >= 0) { l[existingIdx] = r; } else { l.unshift(r); }
+
+      DB._lastLocalWrite.reviews = Date.now();
       DB._set(DB.KEYS.reviews, JSON.parse(JSON.stringify(l)));
-      const approvedOnly = l.filter(x => x && x.status === 'approved');
-      try { localStorage.setItem('vk_reviews', JSON.stringify(approvedOnly)); } catch (e) {}
-
-      // 2. Sync to API (same pattern as DB.projects.add — no getApiBaseUrl() guard)
-      fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(r)
-      }).catch(e => console.warn('API reviews add error:', e));
-
-      // 3. Broadcast for cross-tab sync
+      this._syncPublicMirror(l);
       DB._broadcast('reviews-updated', l);
+
+      try {
+        const res = await fetch((getApiBaseUrl() || '') + '/api/reviews', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          credentials: 'include',
+          body: JSON.stringify(r)
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+      } catch (e) {
+        if (window.UI && UI.toast) UI.toast(`❌ Review submission error: ${e.message}. Rolling back...`, 'error');
+        await DB.loadRemoteData();
+        return null;
+      }
       return r;
     },
 
-    update(id, data) {
+    async update(id, data) {
       const l = this.all();
       const i = l.findIndex(r => r && r.id === id);
       if (i < 0) return null;
       l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
 
-      // Phase out legacy aliases on update
       delete l[i].author;
       delete l[i].role;
       delete l[i].text;
 
-      // 1. Save to localStorage immediately (instant UI — same as projects pattern)
+      DB._lastLocalWrite.reviews = Date.now();
       DB._set(DB.KEYS.reviews, JSON.parse(JSON.stringify(l)));
-      const approvedOnly = l.filter(x => x && x.status === 'approved');
-      try { localStorage.setItem('vk_reviews', JSON.stringify(approvedOnly)); } catch (e) {}
-
-      // 2. Sync to API (same pattern as DB.projects.update — no getApiBaseUrl() guard)
-      fetch(`/api/reviews/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(l[i])
-      }).catch(e => console.warn('API reviews update error:', e));
-
-      // 3. Broadcast for cross-tab sync
+      this._syncPublicMirror(l);
       DB._broadcast('reviews-updated', l);
+
+      try {
+        const res = await fetch((getApiBaseUrl() || '') + `/api/reviews/${id}`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          credentials: 'include',
+          body: JSON.stringify(l[i])
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+      } catch (e) {
+        if (window.UI && UI.toast) UI.toast(`❌ Review update error: ${e.message}. Rolling back...`, 'error');
+        await DB.loadRemoteData();
+        return null;
+      }
       return l[i];
     },
 
-    delete(id) {
+    async delete(id) {
       if (!id) return false;
-
-      // 1. Tombstone + remove from localStorage (instant UI — same as projects pattern)
-      DB._addDeleted(DB.KEYS.deletedReviews, id);
       const remaining = this.all().filter(r => r && r.id !== id);
+      DB._lastLocalWrite.reviews = Date.now();
       DB._set(DB.KEYS.reviews, remaining);
-      const approvedOnly = remaining.filter(x => x && x.status === 'approved');
-      try { localStorage.setItem('vk_reviews', JSON.stringify(approvedOnly)); } catch (e) {}
-
-      // 2. Sync to API (same pattern as DB.projects.delete — no getApiBaseUrl() guard)
-      fetch(`/api/reviews/${id}`, { method: 'DELETE' })
-        .catch(e => console.warn('API reviews delete error:', e));
-
-      // 3. Broadcast for cross-tab sync
+      this._syncPublicMirror(remaining);
       DB._broadcast('reviews-updated', remaining);
+
+      try {
+        const res = await fetch((getApiBaseUrl() || '') + `/api/reviews/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+          credentials: 'include'
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+      } catch (e) {
+        if (window.UI && UI.toast) UI.toast(`❌ Review delete error: ${e.message}. Rolling back...`, 'error');
+        await DB.loadRemoteData();
+        return false;
+      }
       return true;
     },
 
@@ -613,55 +484,84 @@ const DB = {
   // ── Inquiries CRUD ────────────────────────────────────────
   inquiries: {
     all() {
-      const list = DB._get(DB.KEYS.inquiries) || [];
-      const deleted = DB._getDeleted(DB.KEYS.deletedInquiries);
-      return list.filter(i => i && i.id && !deleted.includes(i.id));
+      return DB._get(DB.KEYS.inquiries) || [];
     },
     get(id) { return this.all().find(i => i && i.id && (i.id === id || String(i.id) === String(id))) || null; },
-    save(list) {
-      DB._set(DB.KEYS.inquiries, list);
-      DB._broadcast('inquiries-updated', list);
-    },
-    add(item) {
-      const l = this.all();
+    async add(item) {
       item.id = item.id || DB._id();
       item.createdAt = item.createdAt || new Date().toISOString();
       item.status = item.status || 'new';
+
+      const l = this.all();
       l.unshift(item);
-      this.save(l);
-
-      fetch('/api/inquiries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(item)
-      }).catch(e => console.warn('API inquiry add error:', e));
-
+      DB._set(DB.KEYS.inquiries, l);
       DB._broadcast('inquiries-updated', l);
+
+      try {
+        const res = await fetch((getApiBaseUrl() || '') + '/api/inquiries', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          credentials: 'include',
+          body: JSON.stringify(item)
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+      } catch (e) {
+        if (window.UI && UI.toast) UI.toast(`❌ Inquiry submission error: ${e.message}. Rolling back...`, 'error');
+        await DB.loadRemoteData();
+        return null;
+      }
       return item;
     },
-    update(id, data) {
+    async update(id, data) {
       const l = this.all();
       const i = l.findIndex(x => x && x.id === id);
       if (i < 0) return null;
       l[i] = { ...l[i], ...data };
-      this.save(l);
-
-      fetch(`/api/inquiries/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(l[i])
-      }).catch(e => console.warn('API inquiry update error:', e));
-
+      DB._set(DB.KEYS.inquiries, l);
       DB._broadcast('inquiries-updated', l);
+
+      try {
+        const res = await fetch((getApiBaseUrl() || '') + `/api/inquiries/${id}`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          credentials: 'include',
+          body: JSON.stringify(l[i])
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+      } catch (e) {
+        if (window.UI && UI.toast) UI.toast(`❌ Inquiry update error: ${e.message}. Rolling back...`, 'error');
+        await DB.loadRemoteData();
+        return null;
+      }
       return l[i];
     },
-    delete(id) {
-      DB._addDeleted(DB.KEYS.deletedInquiries, id);
+    async delete(id) {
       const remaining = this.all().filter(i => i && i.id !== id);
-      this.save(remaining);
-
-      fetch(`/api/inquiries/${id}`, { method: 'DELETE' }).catch(e => console.warn('API inquiry delete error:', e));
+      DB._set(DB.KEYS.inquiries, remaining);
       DB._broadcast('inquiries-updated', remaining);
+
+      try {
+        const res = await fetch((getApiBaseUrl() || '') + `/api/inquiries/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+          credentials: 'include'
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+      } catch (e) {
+        if (window.UI && UI.toast) UI.toast(`❌ Inquiry delete error: ${e.message}. Rolling back...`, 'error');
+        await DB.loadRemoteData();
+        return false;
+      }
+      return true;
     },
     byStatus(s) { return this.all().filter(i => i.status === s); },
     stats() {
@@ -679,19 +579,32 @@ const DB = {
   // ── Settings ─────────────────────────────────────────────
   settings: {
     get() { return DB._get(DB.KEYS.settings) || {}; },
-    save(data) {
+    async save(data) {
       DB._set(DB.KEYS.settings, data);
-      fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      }).catch(e => console.warn('API settings save error:', e));
       DB._broadcast('settings-updated', data);
+
+      try {
+        const res = await fetch((getApiBaseUrl() || '') + '/api/settings', {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          credentials: 'include',
+          body: JSON.stringify(data)
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+      } catch (e) {
+        if (window.UI && UI.toast) UI.toast(`❌ Settings save error: ${e.message}. Rolling back...`, 'error');
+        await DB.loadRemoteData();
+        return false;
+      }
+      return true;
     },
     update(key, val) {
       const s = this.get();
       s[key] = { ...s[key], ...val };
-      this.save(s);
+      return this.save(s);
     },
   },
 
@@ -718,238 +631,124 @@ const DB = {
         if (!s) return false;
         const maxAge = s.remember ? (7 * 24 * 60 * 60 * 1000) : (8 * 60 * 60 * 1000);
         return (Date.now() - s.ts) < maxAge;
-      },
-    },
-  },
-
-  _mergeItems(existingList, remoteList, deletedIds = []) {
-    const itemMap = new Map();
-    if (Array.isArray(existingList)) {
-      existingList.forEach(item => {
-        if (item && item.id && !deletedIds.includes(item.id)) {
-          itemMap.set(item.id, item);
-        }
-      });
-    }
-    if (Array.isArray(remoteList)) {
-      remoteList.forEach(item => {
-        if (item && item.id && !deletedIds.includes(item.id)) {
-          const existing = itemMap.get(item.id);
-          if (!existing) {
-            itemMap.set(item.id, item);
-          } else {
-            const existingTime = new Date(existing.updatedAt || existing.approvedAt || existing.createdAt || 0).getTime();
-            const remoteTime = new Date(item.updatedAt || item.approvedAt || item.createdAt || 0).getTime();
-
-            if (remoteTime > existingTime) {
-              itemMap.set(item.id, { ...existing, ...item });
-            } else {
-              itemMap.set(item.id, { ...item, ...existing });
-            }
-          }
-        }
-      });
-    }
-    return Array.from(itemMap.values());
-  },
-
-  // ── Remote Sync Engine ─────────────────────────────────────
-  // Re-entrancy guard: SSE + focus + visibilitychange + BroadcastChannel can
-  // all fire at once; overlapping fetch storms caused re-render loops.
-  _loadInFlight: false,
-  _loadQueued: false,
-
-  async loadRemoteData() {
-    if (this._loadInFlight) {
-      this._loadQueued = true;
-      return;
-    }
-    this._loadInFlight = true;
-    try {
-      await this._loadRemoteDataInner();
-    } finally {
-      this._loadInFlight = false;
-      if (this._loadQueued) {
-        this._loadQueued = false;
-        DB.loadRemoteData();
       }
     }
   },
 
-  async _loadRemoteDataInner(silent = false) {
+  // ── Re-entrancy Guard for Remote Data Loading ───────────
+  _isLoadingRemote: false,
+
+  // Single Source of Truth Remote Data Loading
+  async loadRemoteData(silent = false) {
+    if (this._isLoadingRemote) return;
+    this._isLoadingRemote = true;
+
     let reviewsUpdated = false;
     let projectsUpdated = false;
     let inquiriesUpdated = false;
     let settingsUpdated = false;
 
-    // Helper: decode a GitHub API file response to its JSON content
-    const decodeGitHubFile = (fileData) => {
-      if (!fileData || !fileData.content) return null;
-      try {
-        const clean = fileData.content.replace(/\s/g, '');
-        const decoded = decodeURIComponent(escape(atob(clean)));
-        const parsed = JSON.parse(decoded);
-        return parsed;
-      } catch (e) {
-        return null;
-      }
-    };
-
-    // Helper: fetch directly from GitHub API (always fresh — bypasses Vercel CDN/filesystem)
-    // This is the PRIMARY source on Vercel because the serverless filesystem is read-only
-    // and writeData() silently fails there. pushReviewToGitHub() writes directly to GitHub,
-    // so reading from GitHub is the only way to see newly submitted reviews immediately.
-    const fetchFromGitHub = async (filePath) => {
-      try {
-        const token = (typeof GithubSync !== 'undefined') ? GithubSync.getToken() : null;
-        if (!token) return null;
-        const res = await fetch(
-          `https://api.github.com/repos/${GithubSync.REPO}/contents/${filePath}`,
-          {
-            headers: {
-              'Authorization': `token ${token}`,
-              'Accept': 'application/vnd.github.v3+json',
-              'Cache-Control': 'no-cache',
-            }
-          }
-        );
-        if (!res.ok) return null;
-        const data = await res.json();
-        return decodeGitHubFile(data);
-      } catch (e) {
-        return null;
-      }
-    };
-
-    // Helper to fetch entity data with fallback chain
-    const fetchEntity = async (apiEndpoint, staticPath) => {
-      const isLocalDev = (getApiBaseUrl() !== '');
-      const hasGhToken = (typeof GithubSync !== 'undefined') && GithubSync.hasToken();
-
-      const fetchApi = async () => {
-        try {
-          const apiUrl = (getApiBaseUrl() || '') + apiEndpoint + '?t=' + Date.now();
-          const res = await fetch(apiUrl);
-          if (res.ok) {
-            const data = await res.json();
-            if (Array.isArray(data) && data.length > 0) return data;
-            if (data && !Array.isArray(data) && typeof data === 'object' && Object.keys(data).length > 0) return data;
-          }
-        } catch (e) {}
-        return null;
-      };
-
-      const fetchGh = async () => fetchFromGitHub(staticPath);
-
-      const fetchStatic = async () => {
-        try {
-          let res = await fetch('../' + staticPath + '?t=' + Date.now());
-          if (!res.ok) res = await fetch(staticPath + '?t=' + Date.now());
-          if (res.ok) {
-            const data = await res.json();
-            if (Array.isArray(data) && data.length > 0) return data;
-            if (data && typeof data === 'object') return data;
-          }
-        } catch (e) {}
-        return null;
-      };
-
-      if (!isLocalDev && hasGhToken) {
-        let d = await fetchGh();
-        if (d) return d;
-        d = await fetchApi();
-        if (d) return d;
-        return await fetchStatic();
-      } else {
-        let d = await fetchApi();
-        if (d) return d;
-        d = await fetchGh();
-        if (d) return d;
-        return await fetchStatic();
-      }
-    };
-
     try {
-      const [remoteProjects, remoteReviews, remoteInquiries, remoteSettings] = await Promise.all([
-        fetchEntity('/api/projects', 'js/admin-projects.json'),
-        fetchEntity('/api/reviews', 'js/admin-reviews.json'),
-        fetchEntity('/api/inquiries', 'js/admin-inquiries.json'),
-        fetchEntity('/api/settings', 'js/admin-settings.json'),
+      const baseUrl = getApiBaseUrl() || '';
+      const opts = { headers: getAuthHeaders(), credentials: 'include' };
+      const [resProjects, resReviews, resInquiries, resSettings] = await Promise.all([
+        fetch(baseUrl + '/api/projects?t=' + Date.now(), opts).catch(() => null),
+        fetch(baseUrl + '/api/reviews?t=' + Date.now(), opts).catch(() => null),
+        fetch(baseUrl + '/api/inquiries?t=' + Date.now(), opts).catch(() => null),
+        fetch(baseUrl + '/api/settings?t=' + Date.now(), opts).catch(() => null),
       ]);
 
-      if (Array.isArray(remoteProjects) && remoteProjects.length > 0) {
-        const prevJson = JSON.stringify(DB._get(DB.KEYS.projects) || []);
-        const newJson = JSON.stringify(remoteProjects);
-        if (prevJson !== newJson) {
-          DB._set(DB.KEYS.projects, remoteProjects);
-          projectsUpdated = true;
-        }
-      }
-
-      let remoteDeletedIds = [];
-      let remoteReviewsList = [];
-      if (remoteReviews && typeof remoteReviews === 'object' && !Array.isArray(remoteReviews)) {
-        remoteDeletedIds = Array.isArray(remoteReviews.deletedIds) ? remoteReviews.deletedIds : [];
-        remoteReviewsList = Array.isArray(remoteReviews.reviews) ? remoteReviews.reviews : [];
-      } else if (Array.isArray(remoteReviews)) {
-        remoteReviewsList = remoteReviews;
-      }
-
-      if (remoteDeletedIds.length > 0) {
-        remoteDeletedIds.forEach(id => DB._addDeleted(DB.KEYS.deletedReviews, id));
-      }
-
-      if (remoteReviewsList.length > 0) {
-        const localRev = DB._get(DB.KEYS.reviews) || [];
-        const rawLiveRev = (() => { try { return JSON.parse(localStorage.getItem('vk_reviews')) || []; } catch { return []; } })();
-        const deletedIds = DB._getDeleted(DB.KEYS.deletedReviews) || [];
-
-        const currentRev = DB._mergeItems(localRev, rawLiveRev);
-        const mergedReviews = DB._mergeItems(currentRev, remoteReviewsList, deletedIds);
-
-        const mergedIds = new Set(mergedReviews.map(r => r && r.id).filter(Boolean));
-        currentRev.forEach(r => {
-          if (r && r.id && !deletedIds.includes(r.id) && !mergedIds.has(r.id)) {
-            mergedReviews.push(r);
+      if (resProjects && resProjects.ok) {
+        const projects = await resProjects.json().catch(() => null);
+        if (Array.isArray(projects)) {
+          if (Date.now() - (DB._lastLocalWrite.projects || 0) < 15000) {
+            const currentLocal = DB._get(DB.KEYS.projects) || [];
+            const localIdSet = new Set(currentLocal.map(p => p && p.id));
+            const newRemoteAdds = projects.filter(p => p && p.id && !localIdSet.has(p.id));
+            if (newRemoteAdds.length > 0) {
+              const merged = [...currentLocal, ...newRemoteAdds];
+              DB._set(DB.KEYS.projects, merged);
+              projectsUpdated = true;
+            }
+          } else {
+            const prevJson = JSON.stringify(DB._get(DB.KEYS.projects) || []);
+            const newJson = JSON.stringify(projects);
+            if (prevJson !== newJson) {
+              DB._set(DB.KEYS.projects, projects);
+              projectsUpdated = true;
+            }
           }
-        });
-
-        const prevJson = JSON.stringify(localRev);
-        const newJson  = JSON.stringify(mergedReviews);
-        if (prevJson !== newJson) {
-          DB._set(DB.KEYS.reviews, mergedReviews);
-          const approvedOnly = mergedReviews.filter(r => r && r.status === 'approved');
-          try { localStorage.setItem('vk_reviews', JSON.stringify(approvedOnly)); } catch (e) {}
-          reviewsUpdated = true;
         }
       }
 
-      if (Array.isArray(remoteInquiries)) {
-        const deletedInq = DB._getDeleted(DB.KEYS.deletedInquiries) || [];
-        const filteredInq = remoteInquiries.filter(i => i && i.id && !deletedInq.includes(i.id));
-        const prevJson = JSON.stringify(DB._get(DB.KEYS.inquiries) || []);
-        const newJson = JSON.stringify(filteredInq);
-        if (prevJson !== newJson) {
-          DB._set(DB.KEYS.inquiries, filteredInq);
-          inquiriesUpdated = true;
+      if (resReviews && resReviews.ok) {
+        const reviews = await resReviews.json().catch(() => null);
+        if (Array.isArray(reviews)) {
+          if (Date.now() - (DB._lastLocalWrite.reviews || 0) < 15000) {
+            const currentLocal = DB._get(DB.KEYS.reviews) || [];
+            const localIdSet = new Set(currentLocal.map(r => r && r.id));
+            const newRemoteAdds = reviews.filter(r => r && r.id && !localIdSet.has(r.id));
+            if (newRemoteAdds.length > 0) {
+              const merged = [...currentLocal, ...newRemoteAdds];
+              DB._set(DB.KEYS.reviews, merged);
+              DB.reviews._syncPublicMirror(merged);
+              reviewsUpdated = true;
+            }
+          } else {
+            const prevJson = JSON.stringify(DB._get(DB.KEYS.reviews) || []);
+            const newJson = JSON.stringify(reviews);
+            if (prevJson !== newJson) {
+              DB._set(DB.KEYS.reviews, reviews);
+              DB.reviews._syncPublicMirror(reviews);
+              reviewsUpdated = true;
+            }
+          }
         }
       }
 
-      if (remoteSettings && remoteSettings.studio) {
-        delete remoteSettings.credentials;
-        const currentLocalSettings = DB._get(DB.KEYS.settings) || {};
-        if (currentLocalSettings.credentials) {
-          remoteSettings.credentials = currentLocalSettings.credentials;
+      if (resInquiries && resInquiries.ok) {
+        const inquiries = await resInquiries.json().catch(() => null);
+        if (Array.isArray(inquiries)) {
+          if (Date.now() - (DB._lastLocalWrite.inquiries || 0) < 15000) {
+            const currentLocal = DB._get(DB.KEYS.inquiries) || [];
+            const localIdSet = new Set(currentLocal.map(i => i && i.id));
+            const newRemoteAdds = inquiries.filter(i => i && i.id && !localIdSet.has(i.id));
+            if (newRemoteAdds.length > 0) {
+              const merged = [...currentLocal, ...newRemoteAdds];
+              DB._set(DB.KEYS.inquiries, merged);
+              inquiriesUpdated = true;
+            }
+          } else {
+            const prevJson = JSON.stringify(DB._get(DB.KEYS.inquiries) || []);
+            const newJson = JSON.stringify(inquiries);
+            if (prevJson !== newJson) {
+              DB._set(DB.KEYS.inquiries, inquiries);
+              inquiriesUpdated = true;
+            }
+          }
         }
-        const prevJson = JSON.stringify(currentLocalSettings);
-        const newJson = JSON.stringify(remoteSettings);
-        if (prevJson !== newJson) {
-          DB._set(DB.KEYS.settings, remoteSettings);
-          settingsUpdated = true;
+      }
+
+      if (resSettings && resSettings.ok) {
+        const remoteSettings = await resSettings.json().catch(() => null);
+        if (remoteSettings && typeof remoteSettings === 'object') {
+          delete remoteSettings.credentials;
+          const currentLocalSettings = DB._get(DB.KEYS.settings) || {};
+          if (currentLocalSettings.credentials) {
+            remoteSettings.credentials = currentLocalSettings.credentials;
+          }
+          const prevJson = JSON.stringify(currentLocalSettings);
+          const newJson = JSON.stringify(remoteSettings);
+          if (prevJson !== newJson) {
+            DB._set(DB.KEYS.settings, remoteSettings);
+            settingsUpdated = true;
+          }
         }
       }
     } catch (e) {
       console.warn("loadRemoteData error:", e);
+    } finally {
+      this._isLoadingRemote = false;
     }
 
     if (!silent) {
@@ -966,74 +765,37 @@ DB.seed();
 
 // Setup Real-time Sync Listeners
 (function setupSyncListeners() {
-  // 1. BroadcastChannel Listener
+  // 1. BroadcastChannel Listener (re-reads localStorage on message)
   if (syncChannel) {
     syncChannel.onmessage = (event) => {
       if (event.data && event.data.type) {
-        DB.loadRemoteData();
         window.dispatchEvent(new CustomEvent(`vkreate:${event.data.type}`));
       }
     };
   }
 
   // 2. Storage event listener (cross-tab in same browser)
-  //    Guard against self-triggered loops: when our own code writes to localStorage
-  //    the 'storage' event only fires in OTHER tabs, not the same tab — EXCEPT on
-  //    some browsers. We use a flag to skip re-entrant calls from our own writes.
   window.addEventListener('storage', (e) => {
-    // Only react to vk_ keys written by OTHER tabs/windows
     if (!e.key || !e.key.startsWith('vk_')) return;
-    DB.loadRemoteData();
+    if (e.key === 'vk_admin_reviews') window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+    if (e.key === 'vk_admin_projects') window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
+    if (e.key === 'vk_admin_inquiries') window.dispatchEvent(new CustomEvent('vkreate:inquiries-updated'));
+    if (e.key === 'vk_admin_settings') window.dispatchEvent(new CustomEvent('vkreate:settings-updated'));
   });
-
-  // 3. SSE Server-Sent Events Listener (real-time from server)
-  if (typeof EventSource !== 'undefined') {
-    try {
-      const evtSource = new EventSource(getApiBaseUrl() + '/api/events');
-      evtSource.onmessage = async (e) => {
-        try {
-          const msg = JSON.parse(e.data);
-          if (msg.type && msg.type !== 'connected') {
-            await DB.loadRemoteData();
-          }
-        } catch (err) {}
-      };
-      evtSource.onerror = () => {
-        // SSE connection dropped — browser will auto-reconnect, no action needed
-      };
-    } catch (e) {}
-  }
-
-  // 4. Firebase Firestore Real-Time Listener
-  if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
-    try {
-      FirebaseDB.db.collection('reviews').onSnapshot((snapshot) => {
-        const firestoreReviews = [];
-        snapshot.forEach((doc) => {
-          if (doc.exists) firestoreReviews.push(doc.data());
-        });
-        if (firestoreReviews.length > 0) {
-          const currentLocal = DB._get(DB.KEYS.reviews) || [];
-          const merged = DB._mergeItems(currentLocal, firestoreReviews, DB._getDeleted(DB.KEYS.deletedReviews) || []);
-          DB._set(DB.KEYS.reviews, merged);
-          window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
-          if (typeof App !== 'undefined') App.updateSidebar();
-        }
-      });
-    } catch (e) {
-      console.warn('Firestore review listener warning:', e);
-    }
-  }
 
   // Initial load
   DB.loadRemoteData();
 
-  // Handle tab visibility change & focus (sync memory data silently without destroying DOM)
-  const handleFocus = async () => {
-    await DB.loadRemoteData();
-    if (typeof App !== 'undefined' && App.updateSidebar) {
-      App.updateSidebar();
-    }
+  // Debounced focus / visibility refetch
+  let focusDebounceTimer = null;
+  const handleFocus = () => {
+    if (focusDebounceTimer) clearTimeout(focusDebounceTimer);
+    focusDebounceTimer = setTimeout(async () => {
+      await DB.loadRemoteData();
+      if (typeof App !== 'undefined' && App.updateSidebar) {
+        App.updateSidebar();
+      }
+    }, 200);
   };
 
   window.addEventListener('focus', handleFocus);

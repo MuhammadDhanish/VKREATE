@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+const { ghRead, ghWrite, ensureDataBranch } = require('./lib/github-store');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,7 +12,7 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Ensure uploads directory exists (safely guarded for serverless read-only environment)
+// Initialize uploads directory safely for serverless environments
 const UPLOADS_DIR = path.join(__dirname, 'assets', 'uploads');
 try {
   if (!fs.existsSync(UPLOADS_DIR)) {
@@ -19,14 +21,6 @@ try {
 } catch (e) {
   console.warn('Uploads dir initialization notice:', e.message);
 }
-
-// Data file paths
-const FILES = {
-  projects: path.join(__dirname, 'js', 'admin-projects.json'),
-  reviews: path.join(__dirname, 'js', 'admin-reviews.json'),
-  inquiries: path.join(__dirname, 'js', 'admin-inquiries.json'),
-  settings: path.join(__dirname, 'js', 'admin-settings.json'),
-};
 
 // Default initial settings
 const DEFAULT_SETTINGS = {
@@ -47,9 +41,6 @@ const DEFAULT_SETTINGS = {
     notifEmail: 'admin@vkreate.com',
   }
 };
-
-const crypto = require('crypto');
-const os = require('os');
 
 // Server-side Admin Auth state (defaults to env vars)
 let SERVER_ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@vkreate.com';
@@ -94,7 +85,18 @@ function verifySession(token) {
 // Auth middleware
 function requireAuth(req, res, next) {
   const cookies = parseCookies(req);
-  const sessionToken = cookies.vk_admin_session;
+  let sessionToken = cookies.vk_admin_session;
+
+  if (!sessionToken && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith('Bearer ')) {
+      sessionToken = authHeader.slice(7).trim();
+    }
+  }
+  if (!sessionToken && req.headers['x-admin-session']) {
+    sessionToken = req.headers['x-admin-session'];
+  }
+
   const session = verifySession(sessionToken);
   if (!session) {
     return res.status(401).json({ success: false, error: 'Unauthorized: Session expired or invalid' });
@@ -103,243 +105,116 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// In-memory persistence store for serverless / read-only environments
-const MEMORY_STORE = {};
+// Ensure dedicated data branch exists on startup
+ensureDataBranch();
 
-function getTmpPath(key) {
-  return path.join(os.tmpdir(), `vk_admin_${key}.json`);
-}
-
-function mergeLists(baseList, newList) {
-  if (!Array.isArray(baseList)) baseList = [];
-  if (!Array.isArray(newList)) newList = [];
-  const map = new Map();
-  baseList.forEach(item => { if (item && item.id) map.set(item.id, item); });
-  newList.forEach(item => {
-    if (item && item.id) {
-      const existing = map.get(item.id);
-      map.set(item.id, existing ? { ...existing, ...item } : item);
-    }
-  });
-  return Array.from(map.values());
-}
-
-// Helper: Read JSON safely (merges in-memory, /tmp writable directory, and static file)
-function readData(key) {
-  if (MEMORY_STORE[key]) {
-    return MEMORY_STORE[key];
-  }
-
-  const filePath = FILES[key];
-  const tmpPath = getTmpPath(key);
-  let baseData = key === 'settings' ? DEFAULT_SETTINGS : [];
-
-  // 1. Read baseline file from project root
-  try {
-    if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, 'utf8');
-      if (content.trim()) {
-        const fileData = JSON.parse(content);
-        if (key === 'settings' && typeof fileData === 'object' && fileData !== null) {
-          baseData = {
-            ...DEFAULT_SETTINGS,
-            ...fileData,
-            studio: { ...DEFAULT_SETTINGS.studio, ...(fileData.studio || {}) },
-            notifications: { ...DEFAULT_SETTINGS.notifications, ...(fileData.notifications || {}) },
-            credentials: { ...DEFAULT_SETTINGS.credentials, ...(fileData.credentials || {}) }
-          };
-        } else {
-          baseData = fileData;
-        }
-      }
-    }
-  } catch (err) {}
-
-  // 2. Merge with writable /tmp directory if available
-  try {
-    if (fs.existsSync(tmpPath)) {
-      const tmpContent = fs.readFileSync(tmpPath, 'utf8');
-      if (tmpContent.trim()) {
-        const tmpData = JSON.parse(tmpContent);
-        if (key === 'settings' && typeof tmpData === 'object') {
-          baseData = { ...baseData, ...tmpData };
-        } else if (Array.isArray(tmpData)) {
-          baseData = mergeLists(baseData, tmpData);
-        }
-      }
-    }
-  } catch (err) {}
-
-  if (key === 'settings' && (!baseData || typeof baseData !== 'object')) {
-    baseData = DEFAULT_SETTINGS;
-  } else if (key !== 'settings' && !Array.isArray(baseData)) {
-    baseData = [];
-  }
-
-  MEMORY_STORE[key] = baseData;
-  return baseData;
-}
-
-// Helper: Write JSON safely (writes to in-memory + /tmp + project file)
-function writeData(key, data) {
-  MEMORY_STORE[key] = data;
-  const filePath = FILES[key];
-  const tmpPath = getTmpPath(key);
-
-  // 1. Write to /tmp directory (writable in Vercel serverless lambdas)
-  try {
-    fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf8');
-  } catch (e) {
-    console.warn(`Could not write /tmp for ${key}:`, e.message);
-  }
-
-  // 2. Try writing to project file (works on localhost dev)
-  try {
-    const fileTmp = filePath + '.tmp';
-    fs.writeFileSync(fileTmp, JSON.stringify(data, null, 2), 'utf8');
-    fs.renameSync(fileTmp, filePath);
-  } catch (err) {
-    // Read-only filesystem on Vercel is expected — /tmp and MEMORY_STORE succeeded
-  }
-
-  return true;
-}
-
-// Ensure files exist on startup (safely guarded)
-try {
-  ['projects', 'reviews', 'inquiries', 'settings'].forEach(key => {
-    readData(key);
-  });
-} catch (e) {
-  console.warn('Startup sync notice:', e.message);
-}
-
-// SSE Clients Registry
-let sseClients = [];
-
-// API responses must never be cached by browsers or proxies — they are live data
+// API responses must never be cached by browsers or proxies
 app.use('/api', (req, res, next) => {
   res.set('Cache-Control', 'no-store');
   next();
 });
 
-function broadcastEvent(type, data = {}) {
-  const payload = `data: ${JSON.stringify({ type, data, timestamp: Date.now() })}\n\n`;
-  sseClients.forEach(client => {
-    try {
-      client.res.write(payload);
-    } catch (e) {
-      // client disconnected
-    }
-  });
-}
-
-// ── SSE Endpoint ─────────────────────────────────────────────────
-app.get('/api/events', (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache, no-transform');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('X-Accel-Buffering', 'no');
-  res.flushHeaders();
-
-  const clientId = Date.now() + Math.random().toString(36).slice(2, 7);
-  const newClient = { id: clientId, res };
-  sseClients.push(newClient);
-
-  // Send immediate welcome ping
-  res.write(`data: ${JSON.stringify({ type: 'connected', id: clientId, timestamp: Date.now() })}\n\n`);
-
-  // Periodic heartbeat to prevent browser/proxy timeouts
-  const heartbeat = setInterval(() => {
-    try {
-      res.write(': heartbeat\n\n');
-    } catch (e) {
-      clearInterval(heartbeat);
-    }
-  }, 25000);
-
-  req.on('close', () => {
-    clearInterval(heartbeat);
-    sseClients = sseClients.filter(c => c.id !== clientId);
-  });
+// ── Projects API ────────────────────────────────────────────────
+app.get('/api/projects', async (req, res) => {
+  const data = await ghRead('js/admin-projects.json');
+  const deleted = new Set(data.deletedIds || []);
+  const active = (data.items || []).filter(item => item && item.id && !deleted.has(item.id));
+  res.json(active);
 });
 
-// ── API Routes ───────────────────────────────────────────────────
-
-// Projects
-app.get('/api/projects', (req, res) => {
-  const projects = readData('projects');
-  res.json(projects);
-});
-
-app.post('/api/projects', (req, res) => {
-  let projects = readData('projects');
-  const project = req.body;
-
-  if (!project) {
-    return res.status(400).json({ error: 'No payload provided' });
-  }
-
-  if (Array.isArray(project)) {
+app.post('/api/projects', requireAuth, async (req, res) => {
+  const item = req.body;
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
     return res.status(400).json({ success: false, error: 'Array payloads are not allowed' });
   }
 
-  if (!project.id) project.id = 'proj-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  project.createdAt = project.createdAt || new Date().toISOString();
-  project.updatedAt = new Date().toISOString();
+  if (!item.id) item.id = 'proj-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  item.createdAt = item.createdAt || new Date().toISOString();
+  item.updatedAt = new Date().toISOString();
 
-  const existingIndex = projects.findIndex(p => p.id === project.id);
-  if (existingIndex >= 0) {
-    projects[existingIndex] = { ...projects[existingIndex], ...project };
-  } else {
-    projects.unshift(project);
+  const result = await ghWrite('js/admin-projects.json', (doc) => {
+    const items = doc.items || [];
+    const idx = items.findIndex(p => p && p.id === item.id);
+    if (idx >= 0) items[idx] = { ...items[idx], ...item };
+    else items.unshift(item);
+    doc.items = items;
+    doc.deletedIds = (doc.deletedIds || []).filter(id => id !== item.id);
+    return doc;
+  });
+
+  if (!result.success) {
+    return res.status(500).json({ success: false, error: result.error });
   }
-
-  writeData('projects', projects);
-  broadcastEvent('projects-updated', projects);
-  res.json({ success: true, projects, project });
+  res.json({ success: true, project: item });
 });
 
-app.put('/api/projects/:id', (req, res) => {
+app.put('/api/projects/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const updates = req.body;
-  let projects = readData('projects');
-  const index = projects.findIndex(p => p.id === id);
+  const updates = req.body || {};
+  let updatedItem = null;
 
-  if (index < 0) {
-    const newP = { id, ...updates, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-    projects.unshift(newP);
-    writeData('projects', projects);
-    broadcastEvent('projects-updated', projects);
-    return res.json({ success: true, project: newP });
+  const result = await ghWrite('js/admin-projects.json', (doc) => {
+    const items = doc.items || [];
+    const idx = items.findIndex(p => p && p.id === id);
+    if (idx >= 0) {
+      items[idx] = { ...items[idx], ...updates, updatedAt: new Date().toISOString() };
+      updatedItem = items[idx];
+    } else {
+      updatedItem = { id, ...updates, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      items.unshift(updatedItem);
+    }
+    doc.items = items;
+    doc.deletedIds = (doc.deletedIds || []).filter(dId => dId !== id);
+    return doc;
+  });
+
+  if (!result.success) {
+    return res.status(500).json({ success: false, error: result.error });
   }
-
-  projects[index] = { ...projects[index], ...updates, updatedAt: new Date().toISOString() };
-  writeData('projects', projects);
-  broadcastEvent('projects-updated', projects);
-  res.json({ success: true, project: projects[index] });
+  res.json({ success: true, project: updatedItem });
 });
 
-app.delete('/api/projects/:id', (req, res) => {
+app.delete('/api/projects/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  let projects = readData('projects');
-  projects = projects.filter(p => p.id !== id);
-  writeData('projects', projects);
-  broadcastEvent('projects-updated', projects);
+  const result = await ghWrite('js/admin-projects.json', (doc) => {
+    doc.deletedIds = Array.from(new Set([...(doc.deletedIds || []), id]));
+    doc.items = (doc.items || []).filter(p => p && p.id !== id);
+    return doc;
+  });
+
+  if (!result.success) {
+    return res.status(500).json({ success: false, error: result.error });
+  }
   res.json({ success: true, id });
 });
 
-// Reviews API
-app.get('/api/reviews', (req, res) => {
-  const reviews = readData('reviews');
-  res.json(reviews);
+// ── Reviews API ────────────────────────────────────────────────
+app.get('/api/reviews', async (req, res) => {
+  const data = await ghRead('js/admin-reviews.json');
+  const deleted = new Set(data.deletedIds || []);
+  const active = (data.items || []).filter(item => item && item.id && !deleted.has(item.id));
+  res.json(active);
 });
 
-app.get('/api/reviews/public', (req, res) => {
-  const reviews = readData('reviews');
-  const approved = (Array.isArray(reviews) ? reviews : []).filter(r => r && r.status === 'approved');
-  res.json(approved);
+app.get('/api/reviews/public', async (req, res) => {
+  const data = await ghRead('js/admin-reviews.json');
+  const deleted = new Set(data.deletedIds || []);
+  const approvedMinimal = (data.items || [])
+    .filter(r => r && r.id && !deleted.has(r.id) && r.status === 'approved')
+    .map(r => ({
+      id: r.id,
+      clientName: r.clientName || r.author || 'Verified Client',
+      clientRole: r.clientRole || r.role || 'Client',
+      projectId: r.projectId || 'general',
+      industry: r.industry || r.industryLabel || '',
+      industryLabel: r.industryLabel || r.industry || '',
+      rating: r.rating || 5,
+      reviewText: r.reviewText || r.text || '',
+      studioResponse: r.studioResponse || '',
+      status: 'approved',
+      createdAt: r.createdAt || r.approvedAt || ''
+    }));
+  res.json(approvedMinimal);
 });
 
 // Server-side review validation helper
@@ -373,15 +248,10 @@ function validateReview(review, isUpdate = false) {
   }
 }
 
-app.post('/api/reviews', (req, res) => {
-  let reviews = readData('reviews');
+// PUBLIC endpoint for review submissions
+app.post('/api/reviews', async (req, res) => {
   const review = req.body;
-
-  if (!review) {
-    return res.status(400).json({ success: false, error: 'No review data provided' });
-  }
-
-  if (Array.isArray(review)) {
+  if (!review || typeof review !== 'object' || Array.isArray(review)) {
     return res.status(400).json({ success: false, error: 'Array payloads are not allowed' });
   }
 
@@ -389,83 +259,91 @@ app.post('/api/reviews', (req, res) => {
     return res.status(400).json({ success: false, error: 'Invalid review: name, rating (1-5) and review text are required' });
   }
 
-  // FORCE status to pending for all public submissions
-  review.status = 'pending';
+  const newReview = {
+    id: 'rev-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    clientName: (review.clientName || review.author || '').trim(),
+    clientRole: (review.clientRole || review.role || '').trim(),
+    clientEmail: (review.clientEmail || '').trim().toLowerCase(),
+    projectId: review.projectId || 'general',
+    rating: parseInt(review.rating, 10) || 5,
+    reviewText: (review.reviewText || review.text || '').trim(),
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
 
-  if (!review.id) {
-    review.id = 'rev-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  }
-  review.createdAt = review.createdAt || new Date().toISOString();
-  review.updatedAt = new Date().toISOString();
+  const result = await ghWrite('js/admin-reviews.json', (doc) => {
+    const items = doc.items || [];
+    items.unshift(newReview);
+    doc.items = items;
+    return doc;
+  });
 
-  const existingIndex = reviews.findIndex(r => r && r.id === review.id);
-  if (existingIndex >= 0) {
-    reviews[existingIndex] = { ...reviews[existingIndex], ...review };
-  } else {
-    reviews.unshift(review);
+  if (!result.success) {
+    return res.status(500).json({ success: false, error: result.error });
   }
-
-  if (!writeData('reviews', reviews)) {
-    return res.status(500).json({ success: false, error: 'Failed to persist review to database' });
-  }
-  broadcastEvent('reviews-updated', reviews);
-  res.status(201).json({ success: true, reviews, review });
+  res.status(201).json({ success: true, review: newReview });
 });
 
-const updateReviewHandler = (req, res) => {
+const updateReviewHandler = async (req, res) => {
   const { id } = req.params;
-  const updates = req.body;
+  const updates = req.body || {};
 
   if (!validateReview(updates, true)) {
     return res.status(400).json({ success: false, error: 'Invalid review update payload' });
   }
 
-  let reviews = readData('reviews');
-  const index = reviews.findIndex(r => r && r.id === id);
-
-  if (index < 0) {
-    const newR = { id, status: 'pending', ...updates, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-    reviews.unshift(newR);
-    if (!writeData('reviews', reviews)) {
-      return res.status(500).json({ success: false, error: 'Failed to persist review to database' });
+  let updatedItem = null;
+  const result = await ghWrite('js/admin-reviews.json', (doc) => {
+    const items = doc.items || [];
+    const idx = items.findIndex(r => r && r.id === id);
+    if (idx >= 0) {
+      items[idx] = { ...items[idx], ...updates, updatedAt: new Date().toISOString() };
+      updatedItem = items[idx];
+    } else {
+      const initialStatus = updates.status || 'approved';
+      updatedItem = { id, ...updates, status: initialStatus, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      items.unshift(updatedItem);
     }
-    broadcastEvent('reviews-updated', reviews);
-    return res.json({ success: true, review: newR });
-  }
+    doc.items = items;
+    doc.deletedIds = (doc.deletedIds || []).filter(dId => dId !== id);
+    return doc;
+  });
 
-  reviews[index] = { ...reviews[index], ...updates, updatedAt: new Date().toISOString() };
-  if (!writeData('reviews', reviews)) {
-    return res.status(500).json({ success: false, error: 'Failed to persist review to database' });
+  if (!result.success) {
+    return res.status(500).json({ success: false, error: result.error });
   }
-  broadcastEvent('reviews-updated', reviews);
-  res.json({ success: true, review: reviews[index] });
+  res.json({ success: true, review: updatedItem });
 };
 
-app.put('/api/reviews/:id', updateReviewHandler);
-app.post('/api/reviews/:id', updateReviewHandler);
+app.put('/api/reviews/:id', requireAuth, updateReviewHandler);
+app.post('/api/reviews/:id', requireAuth, updateReviewHandler);
 
-app.delete('/api/reviews/:id', (req, res) => {
+app.delete('/api/reviews/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  let reviews = readData('reviews');
-  reviews = reviews.filter(r => r && r.id !== id);
-  if (!writeData('reviews', reviews)) {
-    return res.status(500).json({ success: false, error: 'Failed to persist deletion to database' });
+  const result = await ghWrite('js/admin-reviews.json', (doc) => {
+    doc.deletedIds = Array.from(new Set([...(doc.deletedIds || []), id]));
+    doc.items = (doc.items || []).filter(r => r && r.id !== id);
+    return doc;
+  });
+
+  if (!result.success) {
+    return res.status(500).json({ success: false, error: result.error });
   }
-  broadcastEvent('reviews-updated', reviews);
   res.json({ success: true, id });
 });
 
-// Inquiries
-app.get('/api/inquiries', (req, res) => {
-  const inquiries = readData('inquiries');
-  res.json(inquiries);
+// ── Inquiries API ────────────────────────────────────────────────
+app.get('/api/inquiries', requireAuth, async (req, res) => {
+  const data = await ghRead('js/admin-inquiries.json');
+  const deleted = new Set(data.deletedIds || []);
+  const active = (data.items || []).filter(item => item && item.id && !deleted.has(item.id));
+  res.json(active);
 });
 
-app.post('/api/inquiries', (req, res) => {
-  let inquiries = readData('inquiries');
+app.post('/api/inquiries', async (req, res) => {
   const inquiry = req.body;
-
-  if (Array.isArray(inquiry)) {
+  if (!inquiry || typeof inquiry !== 'object' || Array.isArray(inquiry)) {
     return res.status(400).json({ success: false, error: 'Array payloads are not allowed' });
   }
 
@@ -473,45 +351,114 @@ app.post('/api/inquiries', (req, res) => {
   inquiry.createdAt = inquiry.createdAt || new Date().toISOString();
   inquiry.status = inquiry.status || 'new';
 
-  const existingIndex = inquiries.findIndex(i => i.id === inquiry.id);
-  if (existingIndex >= 0) {
-    inquiries[existingIndex] = { ...inquiries[existingIndex], ...inquiry };
-  } else {
-    inquiries.unshift(inquiry);
-  }
+  const result = await ghWrite('js/admin-inquiries.json', (doc) => {
+    const items = doc.items || [];
+    const idx = items.findIndex(i => i && i.id === inquiry.id);
+    if (idx >= 0) items[idx] = { ...items[idx], ...inquiry };
+    else items.unshift(inquiry);
+    doc.items = items;
+    doc.deletedIds = (doc.deletedIds || []).filter(id => id !== inquiry.id);
+    return doc;
+  });
 
-  writeData('inquiries', inquiries);
-  broadcastEvent('inquiries-updated', inquiries);
-  res.json({ success: true, inquiries, inquiry });
+  if (!result.success) {
+    return res.status(500).json({ success: false, error: result.error });
+  }
+  res.json({ success: true, inquiry });
 });
 
-app.put('/api/inquiries/:id', (req, res) => {
+app.put('/api/inquiries/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const updates = req.body;
-  let inquiries = readData('inquiries');
-  const index = inquiries.findIndex(i => i.id === id);
+  const updates = req.body || {};
+  let updatedInq = null;
 
-  if (index < 0) {
-    const newI = { id, status: 'new', ...updates, createdAt: new Date().toISOString() };
-    inquiries.unshift(newI);
-    writeData('inquiries', inquiries);
-    broadcastEvent('inquiries-updated', inquiries);
-    return res.json({ success: true, inquiry: newI });
+  const result = await ghWrite('js/admin-inquiries.json', (doc) => {
+    const items = doc.items || [];
+    const idx = items.findIndex(i => i && i.id === id);
+    if (idx >= 0) {
+      items[idx] = { ...items[idx], ...updates, updatedAt: new Date().toISOString() };
+      updatedInq = items[idx];
+    } else {
+      updatedInq = { id, status: 'new', ...updates, createdAt: new Date().toISOString() };
+      items.unshift(updatedInq);
+    }
+    doc.items = items;
+    doc.deletedIds = (doc.deletedIds || []).filter(dId => dId !== id);
+    return doc;
+  });
+
+  if (!result.success) {
+    return res.status(500).json({ success: false, error: result.error });
   }
-
-  inquiries[index] = { ...inquiries[index], ...updates };
-  writeData('inquiries', inquiries);
-  broadcastEvent('inquiries-updated', inquiries);
-  res.json({ success: true, inquiry: inquiries[index] });
+  res.json({ success: true, inquiry: updatedInq });
 });
 
-app.delete('/api/inquiries/:id', (req, res) => {
+app.delete('/api/inquiries/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  let inquiries = readData('inquiries');
-  inquiries = inquiries.filter(i => i.id !== id);
-  writeData('inquiries', inquiries);
-  broadcastEvent('inquiries-updated', inquiries);
+  const result = await ghWrite('js/admin-inquiries.json', (doc) => {
+    doc.deletedIds = Array.from(new Set([...(doc.deletedIds || []), id]));
+    doc.items = (doc.items || []).filter(i => i && i.id !== id);
+    return doc;
+  });
+
+  if (!result.success) {
+    return res.status(500).json({ success: false, error: result.error });
+  }
   res.json({ success: true, id });
+});
+
+// ── Settings API ────────────────────────────────────────────────
+app.get('/api/settings', async (req, res) => {
+  const data = await ghRead('js/admin-settings.json');
+  const settings = { ...DEFAULT_SETTINGS, ...(data.settings || {}) };
+  delete settings.credentials;
+  res.json(settings);
+});
+
+app.put('/api/settings', requireAuth, async (req, res) => {
+  const updates = { ...(req.body || {}) };
+  delete updates.credentials;
+
+  const result = await ghWrite('js/admin-settings.json', (doc) => {
+    const current = doc.settings || {};
+    doc.settings = {
+      ...DEFAULT_SETTINGS,
+      ...current,
+      ...updates,
+      studio: { ...DEFAULT_SETTINGS.studio, ...(current.studio || {}), ...(updates.studio || {}) },
+      notifications: { ...DEFAULT_SETTINGS.notifications, ...(current.notifications || {}), ...(updates.notifications || {}) }
+    };
+    delete doc.settings.credentials;
+    return doc;
+  });
+
+  if (!result.success) {
+    return res.status(500).json({ success: false, error: result.error });
+  }
+  res.json({ success: true, settings: result.data.settings });
+});
+
+app.post('/api/settings', requireAuth, async (req, res) => {
+  const updates = { ...(req.body || {}) };
+  delete updates.credentials;
+
+  const result = await ghWrite('js/admin-settings.json', (doc) => {
+    const current = doc.settings || {};
+    doc.settings = {
+      ...DEFAULT_SETTINGS,
+      ...current,
+      ...updates,
+      studio: { ...DEFAULT_SETTINGS.studio, ...(current.studio || {}), ...(updates.studio || {}) },
+      notifications: { ...DEFAULT_SETTINGS.notifications, ...(current.notifications || {}), ...(updates.notifications || {}) }
+    };
+    delete doc.settings.credentials;
+    return doc;
+  });
+
+  if (!result.success) {
+    return res.status(500).json({ success: false, error: result.error });
+  }
+  res.json({ success: true, settings: result.data.settings });
 });
 
 // ── Authentication API ───────────────────────────────────────────
@@ -527,7 +474,7 @@ app.post('/api/login', (req, res) => {
     const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
     const cookieHeader = `vk_admin_session=${token}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${isSecure ? '; Secure' : ''}`;
     res.setHeader('Set-Cookie', cookieHeader);
-    return res.json({ success: true, email: SERVER_ADMIN_EMAIL, name: 'Admin' });
+    return res.json({ success: true, token, email: SERVER_ADMIN_EMAIL, name: 'Admin' });
   } else {
     return res.status(401).json({ success: false, error: 'Invalid email or password' });
   }
@@ -551,87 +498,6 @@ app.put('/api/admin-credentials', requireAuth, (req, res) => {
     SERVER_ADMIN_PASSWORD = newPw;
   }
   res.json({ success: true, message: 'Credentials updated successfully' });
-});
-
-app.post('/api/github-sync', requireAuth, async (req, res) => {
-  const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || req.body?.token;
-  if (!token) {
-    return res.status(400).json({ success: false, error: 'No GitHub PAT token configured on server or request body.' });
-  }
-
-  const repo = 'MuhammadDhanish/VKREATE';
-  const headers = {
-    'Authorization': `token ${token}`,
-    'Accept': 'application/vnd.github.v3+json',
-    'User-Agent': 'VKREATE-Server-Sync'
-  };
-
-  const files = [
-    { path: 'js/admin-reviews.json', data: readData('reviews') },
-    { path: 'js/admin-projects.json', data: readData('projects') },
-    { path: 'js/admin-inquiries.json', data: readData('inquiries') },
-    { path: 'js/admin-settings.json', data: readData('settings') }
-  ];
-
-  const results = [];
-  for (const f of files) {
-    try {
-      let sha = null;
-      const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/${f.path}`, { headers });
-      if (getRes.ok) {
-        const getJson = await getRes.json();
-        sha = getJson.sha;
-      }
-
-      const body = {
-        message: `Server sync: ${f.path} [${new Date().toISOString()}]`,
-        content: Buffer.from(JSON.stringify(f.data, null, 2)).toString('base64'),
-        ...(sha ? { sha } : {})
-      };
-
-      const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/${f.path}`, {
-        method: 'PUT',
-        headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      results.push({ path: f.path, status: putRes.status, ok: putRes.ok });
-    } catch (e) {
-      results.push({ path: f.path, status: 500, ok: false, error: e.message });
-    }
-  }
-
-  const allOk = results.every(r => r.ok);
-  res.json({ success: allOk, results });
-});
-
-// Settings
-app.get('/api/settings', (req, res) => {
-  const settings = { ...readData('settings') };
-  delete settings.credentials;
-  res.json(settings);
-});
-
-app.put('/api/settings', requireAuth, (req, res) => {
-  const updates = { ...(req.body || {}) };
-  delete updates.credentials;
-  const current = { ...readData('settings') };
-  delete current.credentials;
-  const updated = { ...current, ...updates };
-  writeData('settings', updated);
-  broadcastEvent('settings-updated', updated);
-  res.json({ success: true, settings: updated });
-});
-
-app.post('/api/settings', requireAuth, (req, res) => {
-  const updates = { ...(req.body || {}) };
-  delete updates.credentials;
-  const current = { ...readData('settings') };
-  delete current.credentials;
-  const updated = { ...current, ...updates };
-  writeData('settings', updated);
-  broadcastEvent('settings-updated', updated);
-  res.json({ success: true, settings: updated });
 });
 
 // Image Upload
@@ -661,7 +527,7 @@ app.post('/api/upload', (req, res) => {
   }
 });
 
-// Static Files middleware with optimal caching headers
+// Static Files middleware
 app.use(express.static(__dirname, {
   maxAge: '1y',
   etag: true,
@@ -674,7 +540,7 @@ app.use(express.static(__dirname, {
   }
 }));
 
-// Explicit routes for all HTML pages (needed in Vercel serverless environment)
+// Explicit HTML page routes
 const HTML_PAGES = ['index', 'about', 'contact', 'projects', 'project', 'reviews', 'services'];
 
 app.get('/', (req, res) => {
@@ -708,21 +574,15 @@ app.get('/admin/', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin', 'index.html'));
 });
 
-// Catch-all: serve index.html ONLY for HTML page routes, NOT for static assets
-// This prevents CSS/JS/image requests from being incorrectly served index.html
+// Catch-all route for HTML navigation
 app.use((req, res, next) => {
   const ext = path.extname(req.path);
   const isStaticAsset = ext && ext !== '.html';
   if (isStaticAsset) {
-    // Don't intercept CSS, JS, images — let them 404 naturally
     return res.status(404).send('Not found');
   }
-  // Serve index.html for all HTML navigation routes
   res.sendFile(path.join(__dirname, 'index.html'));
 });
-
-
-
 
 if (require.main === module) {
   const server = app.listen(PORT, () => {
@@ -732,8 +592,6 @@ if (require.main === module) {
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
       console.error(`\n❌ Port ${PORT} is already in use — another copy of this server is still running.`);
-      console.error('   Fix: close the old terminal running the server (or run `taskkill /IM node.exe /F`), then start again.');
-      console.error(`   Or start on another port: set PORT=3001 && npm start\n`);
     } else {
       console.error('Server failed to start:', err);
     }

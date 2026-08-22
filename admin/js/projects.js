@@ -201,8 +201,6 @@ const Projects = {
     UI.toast(`Project preference set to Top #${r}!`, 'success');
     this._refreshTable();
     if (window.App && App.updateSidebar) App.updateSidebar();
-    window.dispatchEvent(new Event('storage'));
-    if (window.GithubSync) GithubSync.push();
   },
 
   _updatePrefButtons(rankVal) {
@@ -219,31 +217,27 @@ const Projects = {
     });
   },
 
-  toggleStatus(id, published) {
-    DB.projects.update(id, { status: published ? 'published' : 'draft' });
-    UI.toast(published ? 'Project published!' : 'Project moved to drafts.', published ? 'success' : 'info');
-    this.render();
-    if (typeof GithubSync !== 'undefined' && GithubSync.afterMutation) {
-      GithubSync.afterMutation();
-    } else {
+  async toggleStatus(id, published) {
+    const updated = await DB.projects.update(id, { status: published ? 'published' : 'draft' });
+    if (updated) {
+      UI.toast(published ? 'Project published!' : 'Project moved to drafts.', published ? 'success' : 'info');
+      this.render();
       DB.afterMutation();
     }
   },
 
-  delete(id) {
+  async delete(id) {
     const p = DB.projects.get(id);
     if (!p) return;
-    UI.confirm('Delete Project', `Delete "<strong>${p.name}</strong>"? This cannot be undone.`, '🗑️', () => {
-      DB.projects.delete(id);
-      UI.toast('Project deleted.', 'success');
-      this.render();
-      if (window.App && App.updateSidebar) App.updateSidebar();
-      if (typeof GithubSync !== 'undefined' && GithubSync.afterMutation) {
-        GithubSync.afterMutation();
-      } else {
+    UI.confirm('Delete Project', `Delete "<strong>${p.name}</strong>"? This cannot be undone.`, '🗑️', async () => {
+      const ok = await DB.projects.delete(id);
+      if (ok) {
+        UI.toast('Project deleted.', 'success');
+        this.render();
+        if (window.App && App.updateSidebar) App.updateSidebar();
         DB.afterMutation();
+        UI.closeModal();
       }
-      UI.closeModal();
     }, true);
   },
 
@@ -658,35 +652,33 @@ const Projects = {
 
     let savedOk = false;
     if (this._editId) {
-      const result = DB.projects.update(this._editId, data);
+      const result = await DB.projects.update(this._editId, data);
       savedOk = !!result;
       if (savedOk) {
         UI.toast('Project updated successfully!', 'success');
       } else {
-        // Storage may be full — try saving without images (idb refs are tiny, so this is about localStorage)
         const dataNoImages = { ...data, images: ['../assets/images/project_lilaa_1.jpg'], thumbnail: '../assets/images/project_lilaa_1.jpg', afterImage: '../assets/images/project_lilaa_1.jpg', beforeImage: '../assets/images/project_lilaa_1.jpg' };
-        const retry = DB.projects.update(this._editId, dataNoImages);
+        const retry = await DB.projects.update(this._editId, dataNoImages);
         if (retry) {
           UI.toast('Project updated (images skipped — storage full). Try clearing image cache.', 'info');
           savedOk = true;
         } else {
-          UI.toast('Save failed: storage is full. Go to Settings → Clear Image Cache.', 'error');
+          UI.toast('Save failed. Go to Settings → Clear Image Cache.', 'error');
           restore();
           return;
         }
       }
     } else {
-      const added = DB.projects.add(data);
+      const added = await DB.projects.add(data);
       savedOk = !!added;
       if (!savedOk) {
-        // Storage may be full — try saving without images
         const dataNoImages = { ...data, images: ['../assets/images/project_lilaa_1.jpg'], thumbnail: '../assets/images/project_lilaa_1.jpg', afterImage: '../assets/images/project_lilaa_1.jpg', beforeImage: '../assets/images/project_lilaa_1.jpg' };
-        const retry = DB.projects.add(dataNoImages);
+        const retry = await DB.projects.add(dataNoImages);
         if (retry) {
           UI.toast('Project created (images skipped — storage full). Try smaller images.', 'info');
           savedOk = true;
         } else {
-          UI.toast('Save failed: storage is full. Please clear browser storage or use smaller images.', 'error');
+          UI.toast('Save failed. Please clear browser storage or use smaller images.', 'error');
           restore();
           return;
         }

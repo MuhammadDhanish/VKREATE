@@ -43,21 +43,24 @@
       const res = await fetch(getApiBaseUrl() + '/api/reviews/public?t=' + Date.now());
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          cachedApiReviews = data.filter(r => r && r.status === 'approved');
+        if (Array.isArray(data)) {
+          cachedApiReviews = data.map(r => ({ ...r, status: r.status || 'approved' })).filter(r => r && r.status === 'approved');
           try {
-            localStorage.setItem('vk_reviews', JSON.stringify(cachedApiReviews));
+            localStorage.setItem('vk_reviews', JSON.stringify({
+              cachedAt: Date.now(),
+              reviews: cachedApiReviews
+            }));
           } catch (e) {}
           renderReviews();
           return;
         }
       }
     } catch (err) {
-      console.warn('Live API fetch skipped/failed, using local fallback:', err);
+      console.warn('Live API fetch skipped/failed, trying local fallback:', err);
     }
   }
 
-  // Get all approved reviews from API cache, localStorage, or VKREATE_DATA
+  // Get all approved reviews from API cache, localStorage (with 24h TTL), or VKREATE_DATA
   function getApprovedReviews() {
     let allReviews = [];
 
@@ -66,14 +69,17 @@
       allReviews = cachedApiReviews;
     }
 
-    // 2. Check localStorage vk_reviews if API cache is empty
+    // 2. Check localStorage vk_reviews if API cache is empty (24h max age)
     if (allReviews.length === 0) {
       try {
         const raw = localStorage.getItem('vk_reviews');
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            allReviews = parsed;
+          const list = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.reviews) ? parsed.reviews : []);
+          const cachedAt = parsed && parsed.cachedAt ? parsed.cachedAt : 0;
+          const maxAge = 24 * 60 * 60 * 1000;
+          if (list.length > 0 && (!cachedAt || (Date.now() - cachedAt) < maxAge)) {
+            allReviews = list;
           }
         }
       } catch (e) {}
@@ -84,11 +90,8 @@
       allReviews = window.VKREATE_DATA.reviews;
     }
 
-    // Filter approved reviews only
-    return allReviews.filter(r => {
-      if (!r) return false;
-      return r.status === 'approved' || r.verified === true;
-    });
+    // Filter approved reviews strictly
+    return allReviews.map(r => ({ ...r, status: r.status || 'approved' })).filter(r => r && r.status === 'approved');
   }
 
   // Populate projects dropdown in client submission modal
@@ -135,9 +138,13 @@
     let filtered = reviews;
     if (currentFilter !== 'all') {
       filtered = reviews.filter(r => {
-        const ind = (r.industry || '').toLowerCase();
+        const ind = (r.industry || r.industryLabel || '').toLowerCase();
         const pId = (r.projectId || '').toLowerCase();
-        return ind.includes(currentFilter) || pId.includes(currentFilter);
+        const pObj = (window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.projects))
+          ? window.VKREATE_DATA.projects.find(p => p && p.id === r.projectId)
+          : null;
+        const pInd = (pObj?.industry || pObj?.industryLabel || '').toLowerCase();
+        return ind.includes(currentFilter) || pId.includes(currentFilter) || pInd.includes(currentFilter);
       });
     }
 
@@ -445,13 +452,12 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newReview)
         });
-        const json = res.ok ? await res.json() : null;
+        const json = await res.json().catch(() => ({}));
         if (res.ok && json && json.success) {
           serverSaved = true;
           if (json.review && json.review.id) newReview.id = json.review.id;
         } else {
-          const json2 = await res.json().catch(() => ({}));
-          showError((json2 && json2.error) || 'Submission failed. Please check your input and try again.');
+          showError((json && json.error) || 'Submission failed. Please check your input and try again.');
           if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
           return;
         }
@@ -502,29 +508,6 @@
     fetchLiveReviews();
   }
 
-  // Setup SSE Real-time EventSource listener
-  function setupSseListener() {
-    if (typeof EventSource === 'undefined') return;
-    try {
-      const evtSource = new EventSource(getApiBaseUrl() + '/api/events');
-      evtSource.onmessage = function (event) {
-        try {
-          const payload = JSON.parse(event.data);
-          if (payload && payload.type === 'reviews-updated' && Array.isArray(payload.data)) {
-            const approvedOnly = payload.data.filter(r => r && r.status === 'approved');
-            cachedApiReviews = approvedOnly;
-            try {
-              localStorage.setItem('vk_reviews', JSON.stringify(approvedOnly));
-            } catch (e) {}
-            renderReviews();
-          }
-        } catch (err) {}
-      };
-    } catch (e) {
-      console.warn('SSE connection skipped/failed:', e);
-    }
-  }
-
   // Init Engine
   function initEngine() {
     populateProjectDropdown();
@@ -534,7 +517,6 @@
     setupModalControls();
     setupFormSubmit();
     fetchLiveReviews();
-    setupSseListener();
   }
 
   if (document.readyState === 'loading') {

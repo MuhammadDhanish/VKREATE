@@ -40,8 +40,8 @@ const Reviews = {
             <button type="button" class="btn btn-outline btn-sm" onclick="if(event)event.preventDefault();Reviews.refreshSync(this)" title="Force merge sync from localStorage, JSON, and Firestore">
               <span class="refresh-icon" style="display:inline-block;transition:transform 0.5s ease;">🔄</span> Refresh &amp; Sync
             </button>
-            <button type="button" class="btn btn-primary btn-sm" onclick="if(event)event.preventDefault();Reviews.deployLive()" title="Sync approved reviews &amp; studio responses to production live site">
-              🚀 Deploy to Live Site
+            <button type="button" class="btn btn-primary btn-sm" onclick="if(event)event.preventDefault();Reviews.deployLive()" title="Fetch fresh data from server database">
+              🔄 Refresh from Server
             </button>
           </div>
         </div>
@@ -90,7 +90,15 @@ const Reviews = {
       el.innerHTML = this._cardsHTML(this._filtered(allReviews, curFilter));
     } catch (err) {
       console.error('_refreshCards error:', err);
-      try { this.render(); } catch (_) {}
+      try {
+        this.render();
+      } catch (renderErr) {
+        console.error('Full render fallback error:', renderErr);
+        const listEl = document.getElementById('reviews-list');
+        if (listEl) {
+          listEl.innerHTML = `<div class="card" style="padding:24px;color:#DC2626;">⚠️ Failed to display reviews. Please refresh the page.</div>`;
+        }
+      }
     }
   },
 
@@ -128,10 +136,10 @@ const Reviews = {
         ⏳ Pending Approval ${stats.pending ? `<span class="badge badge-warning">${stats.pending}</span>` : '<span class="badge badge-gray">0</span>'}
       </button>
       <button type="button" class="tab-btn ${curFilter === 'approved' ? 'active' : ''}" onclick="Reviews.setFilter('approved')">
-        ✅ Approved <span class="badge ${curFilter === 'approved' ? 'badge-success' : 'badge-gray'}">${stats.approved || 0}</span>
+        ✅ Approved ${stats.approved ? `<span class="badge badge-success">${stats.approved}</span>` : '<span class="badge badge-gray">0</span>'}
       </button>
       <button type="button" class="tab-btn ${curFilter === 'rejected' ? 'active' : ''}" onclick="Reviews.setFilter('rejected')">
-        🚫 Rejected <span class="badge ${curFilter === 'rejected' ? 'badge-danger' : 'badge-gray'}">${stats.rejected || 0}</span>
+        🚫 Rejected ${stats.rejected ? `<span class="badge badge-danger">${stats.rejected}</span>` : '<span class="badge badge-gray">0</span>'}
       </button>
     `;
   },
@@ -150,7 +158,27 @@ const Reviews = {
           </div>
         </div>`;
     }
-    return `<div style="display:grid;gap:16px;">${filtered.map(r => this._reviewCard(r)).join('')}</div>`;
+
+    const cards = filtered.map(r => {
+      try {
+        return this._reviewCard(r);
+      } catch (err) {
+        console.error('Malformed review card error:', err, r);
+        const rId = (r && r.id) ? UI.escapeHTML(String(r.id)) : 'unknown';
+        return `
+          <div class="card" style="padding:16px;border-left:4px solid #EF4444;background:#FEF2F2;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <span class="text-xs fw-600" style="color:#DC2626;">⚠️ This review has malformed data and could not be displayed</span>
+                <div class="text-xs text-muted mt-4">Review ID: <code>${rId}</code></div>
+              </div>
+              <button type="button" class="btn btn-danger btn-sm" data-action="delete" data-id="${rId}">🗑️ Delete</button>
+            </div>
+          </div>`;
+      }
+    });
+
+    return `<div style="display:grid;gap:16px;">${cards.join('')}</div>`;
   },
 
   _reviewCard(r) {
@@ -213,64 +241,110 @@ const Reviews = {
 
   // ── CRUD Actions ───────────────────────────────────────────────────────
 
-  approve(id, btn) {
+  async approve(id, btn) {
     if (btn && btn.dataset.loading === 'true') return;
+    const origText = btn ? btn.innerText : '✓ Approve';
     if (btn) { btn.dataset.loading = 'true'; btn.disabled = true; btn.innerText = 'Approving...'; }
 
-    const updated = DB.reviews.approve(id);
-    if (btn) { btn.disabled = false; delete btn.dataset.loading; }
+    try {
+      const updated = await DB.reviews.approve(id);
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = origText;
+        delete btn.dataset.loading;
+      }
 
-    if (updated) {
-      UI.toast('Review approved!', 'success');
-      if (typeof App !== 'undefined') App.updateSidebar();
-      requestAnimationFrame(() => {
-        this._refreshCards();
-        this._refreshTabState();
-      });
-      window.dispatchEvent(new Event('storage'));
-      if (window.GithubSync) GithubSync.push({ silent: true });
-    } else if (btn) {
-      btn.innerText = 'Approve';
+      if (updated) {
+        UI.toast('Review approved!', 'success');
+        if (typeof App !== 'undefined') App.updateSidebar();
+        requestAnimationFrame(() => {
+          try {
+            this._refreshCards();
+            this._refreshTabState();
+          } catch (rErr) {
+            console.error('rAF refresh error:', rErr);
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Approve error:', e);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = origText;
+        delete btn.dataset.loading;
+      }
     }
   },
 
-  reject(id, btn) {
+  async reject(id, btn) {
     if (btn && btn.dataset.loading === 'true') return;
+    const origText = btn ? btn.innerText : '✕ Reject';
     if (btn) { btn.dataset.loading = 'true'; btn.disabled = true; btn.innerText = 'Rejecting...'; }
 
-    const updated = DB.reviews.reject(id);
-    if (btn) { btn.disabled = false; delete btn.dataset.loading; }
+    try {
+      const updated = await DB.reviews.reject(id);
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = origText;
+        delete btn.dataset.loading;
+      }
 
-    if (updated) {
-      UI.toast('Review rejected.', 'warning');
-      if (typeof App !== 'undefined') App.updateSidebar();
-      requestAnimationFrame(() => {
-        this._refreshCards();
-        this._refreshTabState();
-      });
-      window.dispatchEvent(new Event('storage'));
-      if (window.GithubSync) GithubSync.push({ silent: true });
-    } else if (btn) {
-      btn.innerText = 'Reject';
+      if (updated) {
+        UI.toast('Review rejected.', 'warning');
+        if (typeof App !== 'undefined') App.updateSidebar();
+        requestAnimationFrame(() => {
+          try {
+            this._refreshCards();
+            this._refreshTabState();
+          } catch (rErr) {
+            console.error('rAF refresh error:', rErr);
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Reject error:', e);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = origText;
+        delete btn.dataset.loading;
+      }
     }
   },
 
-  delete(id, btn) {
+  async delete(id, btn) {
     if (btn && btn.dataset.loading === 'true') return;
     const r = DB.reviews.get(id);
     const name = r ? (r.clientName || r.author || 'this review') : 'this review';
-    UI.confirm('Delete Review', `Delete review from "<strong>${UI.escapeHTML(name)}</strong>"? This cannot be undone.`, '🗑️', () => {
-      if (btn) { btn.disabled = false; delete btn.dataset.loading; }
-      const ok = DB.reviews.delete(id);
-      if (ok) {
-        UI.toast('Review deleted.', 'info');
-        if (typeof App !== 'undefined') App.updateSidebar();
-        requestAnimationFrame(() => {
-          this._refreshCards();
-          this._refreshTabState();
-        });
-        window.dispatchEvent(new Event('storage'));
-        if (window.GithubSync) GithubSync.push({ silent: true });
+    UI.confirm('Delete Review', `Delete review from "<strong>${UI.escapeHTML(name)}</strong>"? This cannot be undone.`, '🗑️', async () => {
+      if (btn) { btn.dataset.loading = 'true'; btn.disabled = true; }
+      try {
+        const ok = await DB.reviews.delete(id);
+        if (btn) {
+          btn.disabled = false;
+          delete btn.dataset.loading;
+        }
+
+        if (ok) {
+          UI.toast('Review deleted.', 'info');
+          if (typeof App !== 'undefined') App.updateSidebar();
+          requestAnimationFrame(() => {
+            try {
+              this._refreshCards();
+              this._refreshTabState();
+            } catch (rErr) {
+              console.error('rAF refresh error:', rErr);
+            }
+          });
+        }
+      } catch (e) {
+        console.error('Delete error:', e);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          delete btn.dataset.loading;
+        }
       }
     }, true);
   },
@@ -296,51 +370,237 @@ const Reviews = {
 
     const footer = `
       <button class="btn btn-outline" onclick="UI.closeModal()">Cancel</button>
-      <button class="btn btn-primary" id="save-studio-response-btn">Save &amp; Update Live Review</button>
+      <button class="btn btn-primary" id="save-studio-response-btn" data-id="${UI.escapeHTML(r.id)}">Save &amp; Update Live Review</button>
     `;
 
     UI.modal('💬 Studio Response', body, footer, 'max-w-500');
 
     const saveBtn = document.getElementById('save-studio-response-btn');
     if (saveBtn) {
-      saveBtn.onclick = (e) => {
+      saveBtn.onclick = async (e) => {
         e.preventDefault();
-        Reviews.saveResponse(r.id, saveBtn);
+        await Reviews.saveResponse(r.id, saveBtn);
       };
     }
   },
 
-  saveResponse(id, btn) {
+  async saveResponse(id, btn) {
     const textEl = document.getElementById('modal-studio-response');
     if (!textEl) return;
 
     if (btn && btn.dataset.loading === 'true') return;
-    const origText = btn ? btn.innerText : '';
+    const origText = btn ? btn.innerText : 'Save & Update Live Review';
     if (btn) { btn.dataset.loading = 'true'; btn.disabled = true; btn.innerText = 'Saving...'; }
 
-    const text = textEl.value.trim();
-    const updated = DB.reviews.update(id, { studioResponse: text });
-    if (btn) { btn.disabled = false; delete btn.dataset.loading; }
+    try {
+      const text = textEl.value.trim();
+      const updated = await DB.reviews.update(id, { studioResponse: text });
 
-    if (updated) {
-      UI.closeModal();
-      UI.toast('Studio response saved!', 'success');
-      this._refreshCards();
-      window.dispatchEvent(new Event('storage'));
-      if (window.GithubSync) GithubSync.push({ silent: true });
-    } else if (btn) {
-      btn.innerText = origText;
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = origText;
+        delete btn.dataset.loading;
+      }
+
+      if (updated) {
+        UI.closeModal();
+        UI.toast('Studio response saved!', 'success');
+        requestAnimationFrame(() => {
+          try {
+            this._refreshCards();
+          } catch (rErr) {
+            console.error('rAF refresh error:', rErr);
+          }
+        });
+      } else if (btn) {
+        btn.innerText = origText;
+      }
+    } catch (e) {
+      console.error('Save response error:', e);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = origText;
+        delete btn.dataset.loading;
+      }
+    }
+  },
+
+  async refreshSync(btn) {
+    const icon = btn ? btn.querySelector('.refresh-icon') : null;
+    if (btn) btn.disabled = true;
+    if (icon) icon.style.transform = 'rotate(360deg)';
+
+    try {
+      await DB.loadRemoteData();
+      this.render();
+      UI.toast('Reviews refreshed and synced!', 'success');
+    } catch (e) {
+      UI.toast('Failed to sync reviews.', 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+      if (icon) icon.style.transform = 'rotate(0deg)';
+    }
+  },
+
+  restoreSeedReviews() {
+    UI.confirm(
+      'Reset Reviews',
+      'This will reset all reviews to default demo reviews. Any newly added reviews will be cleared from local view. Proceed?',
+      '🔄',
+      async () => {
+        const seedData = DB._defaultReviews ? DB._defaultReviews() : [];
+        DB._set(DB.KEYS.reviews, seedData);
+        DB.reviews._syncPublicMirror(seedData);
+        this.render();
+        UI.toast('Reviews reset to demo state.', 'info');
+        window.dispatchEvent(new Event('storage'));
+      },
+      true
+    );
+  },
+
+  openAddModal() {
+    const projects = (window.VKREATE_DATA && window.VKREATE_DATA.projects) ? window.VKREATE_DATA.projects : DB.projects.all();
+    const projOptions = projects.map(p =>
+      `<option value="${p.id}">${UI.escapeHTML(p.name)} (${UI.escapeHTML(p.industryLabel || p.industry || 'Project')})</option>`
+    ).join('');
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'admin-add-review-modal';
+    overlay.innerHTML = `
+      <div class="modal max-w-500" style="padding:28px;">
+        <div class="modal__header" style="margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+          <h2 class="modal__title">✍️ Write / Add Client Review</h2>
+          <button class="modal__close" type="button" id="close-add-modal-btn">✕</button>
+        </div>
+        <form id="adm-add-review-form" onsubmit="Reviews.submitAddForm(event)">
+          <div class="form-group mb-16">
+            <label class="form-label" for="adm-rev-name">Client Name *</label>
+            <input id="adm-rev-name" type="text" class="form-control" placeholder="e.g. Dr. Priya Nair" required autocomplete="off">
+          </div>
+          <div class="form-group mb-16">
+            <label class="form-label" for="adm-rev-role">Client Role / Title</label>
+            <input id="adm-rev-role" type="text" class="form-control" placeholder="e.g. Managing Director, Wings Salon" autocomplete="off">
+          </div>
+          <div class="form-group mb-16">
+            <label class="form-label" for="adm-rev-email">Client Email (Optional)</label>
+            <input id="adm-rev-email" type="email" class="form-control" placeholder="e.g. client@example.com" autocomplete="off">
+          </div>
+          <div class="form-group mb-16">
+            <label class="form-label" for="adm-rev-project">Associated Project</label>
+            <select id="adm-rev-project" class="form-control">
+              <option value="general">General Studio Review</option>
+              ${projOptions}
+            </select>
+          </div>
+          <div class="form-group mb-16">
+            <label class="form-label" for="adm-rev-rating">Star Rating *</label>
+            <select id="adm-rev-rating" class="form-control">
+              <option value="5" selected>★★★★★ (5 Stars — Excellent)</option>
+              <option value="4">★★★★☆ (4 Stars — Very Good)</option>
+              <option value="3">★★★☆☆ (3 Stars — Good)</option>
+              <option value="2">★★☆☆☆ (2 Stars — Fair)</option>
+              <option value="1">★☆☆☆☆ (1 Star — Poor)</option>
+            </select>
+          </div>
+          <div class="form-group mb-20">
+            <label class="form-label" for="adm-rev-text">Review Testimonial Text *</label>
+            <textarea id="adm-rev-text" class="form-control" rows="4" placeholder="Type the client's testimonial message..." required></textarea>
+          </div>
+          <div class="form-group mb-24">
+            <label class="form-label" for="adm-rev-status">Initial Status</label>
+            <select id="adm-rev-status" class="form-control">
+              <option value="approved" selected>✅ Approved (Publish to Live Site Immediately)</option>
+              <option value="pending">⏳ Pending Approval</option>
+            </select>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:12px;">
+            <button type="button" class="btn btn-outline btn-sm" id="cancel-add-modal-btn">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm">Save &amp; Publish Review</button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const removeModal = () => {
+      overlay.remove();
+      document.removeEventListener('keydown', escHandler);
+    };
+
+    const escHandler = (e) => {
+      if (e.key === 'Escape') removeModal();
+    };
+
+    document.addEventListener('keydown', escHandler);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) removeModal(); });
+    overlay.querySelector('#close-add-modal-btn')?.addEventListener('click', removeModal);
+    overlay.querySelector('#cancel-add-modal-btn')?.addEventListener('click', removeModal);
+  },
+
+  async submitAddForm(e) {
+    e.preventDefault();
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = 'Saving...'; }
+
+    try {
+      const name      = (document.getElementById('adm-rev-name')?.value    || '').trim();
+      const role      = (document.getElementById('adm-rev-role')?.value    || '').trim();
+      const email     = (document.getElementById('adm-rev-email')?.value   || '').trim();
+      const rating    = parseInt(document.getElementById('adm-rev-rating')?.value  || '5', 10);
+      const projectId = document.getElementById('adm-rev-project')?.value  || 'general';
+      const text      = (document.getElementById('adm-rev-text')?.value    || '').trim();
+      const status    = document.getElementById('adm-rev-status')?.value   || 'approved';
+
+      if (!name || name.length < 2) {
+        UI.toast('Client name must be at least 2 characters.', 'warning');
+        document.getElementById('adm-rev-name')?.focus();
+        return;
+      }
+      if (!text || text.length < 5) {
+        UI.toast('Review text must be at least 5 characters.', 'warning');
+        document.getElementById('adm-rev-text')?.focus();
+        return;
+      }
+
+      const newRev = {
+        id:          'rev-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        clientName:  name,
+        clientRole:  role || 'Client',
+        clientEmail: email,
+        projectId,
+        rating,
+        reviewText:  text,
+        status,
+        createdAt:   new Date().toISOString(),
+        approvedAt:  status === 'approved' ? new Date().toISOString() : null,
+      };
+
+      const modal = document.getElementById('admin-add-review-modal');
+      if (modal) modal.remove();
+
+      const added = await DB.reviews.add(newRev);
+      if (added) {
+        UI.toast(`✓ Review from ${UI.escapeHTML(name)} added!`, 'success');
+        if (typeof App !== 'undefined') App.updateSidebar();
+
+        this._filter = 'all';
+        this._refreshTabState();
+        this._refreshCards();
+      }
+    } finally {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Save & Publish Review'; }
     }
   },
 
   // ── Deploy & Sync ──────────────────────────────────────────────────────
 
   async deployLive() {
-    if (typeof GithubSync !== 'undefined' && GithubSync.push) {
-      await GithubSync.push({ silent: false });
-    } else {
-      UI.toast('Local storage reviews synced across tabs!', 'info');
-    }
+    await DB.loadRemoteData();
+    this.render();
+    if (window.UI && UI.toast) UI.toast('Refreshed data from server database!', 'success');
   },
 
   async refreshSync(btn) {
