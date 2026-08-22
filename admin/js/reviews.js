@@ -513,23 +513,7 @@ const Reviews = {
 // Expose Reviews globally on window object for inline onclick handlers
 window.Reviews = Reviews;
 
-// Delegated event listener for robust button click handling
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('[data-rev-action]');
-  if (!btn) return;
 
-  const action = btn.dataset.revAction;
-  const id = btn.dataset.revId;
 
-  if (action === 'approve' && id) {
-    Reviews.approve(id, btn);
-  } else if (action === 'reject' && id) {
-    Reviews.reject(id, btn);
-  } else if (action === 'delete' && id) {
-    Reviews.delete(id, btn);
-  } else if (action === 'response' && id) {
-    Reviews.openResponseModal(id);
-  }
-});
 
 
