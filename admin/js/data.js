@@ -514,108 +514,74 @@ const DB = {
       try { localStorage.setItem('vk_reviews', JSON.stringify(list)); } catch (e) {}
       DB._broadcast('reviews-updated', list);
     },
-    async add(r) {
+
+    add(r) {
       r.id = r.id || DB._id();
       r.createdAt = r.createdAt || new Date().toISOString();
+      r.updatedAt = new Date().toISOString();
       if (!r.status) r.status = 'pending';
 
-      // Try the backend API (only available when local Node server is running)
-      const apiBase = getApiBaseUrl();
-      if (apiBase) {
-        try {
-          const res = await fetch(apiBase + '/api/reviews', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(r)
-          });
-          if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
-          const json = await res.json();
-          if (!json || !json.success) throw new Error(json?.error || 'Failed to add review on server');
-          const serverReview = json.review || r;
-          const l = this.all();
-          const existingIdx = l.findIndex(x => x && x.id === serverReview.id);
-          if (existingIdx >= 0) { l[existingIdx] = serverReview; } else { l.unshift(serverReview); }
-          this.save(l);
-          DB._broadcast('reviews-updated', l);
-          return serverReview;
-        } catch (e) {
-          console.warn('API review add failed, falling back to localStorage:', e);
-        }
-      }
-
-      // Fallback: save directly to localStorage (works on Vercel/static)
+      // 1. Save to localStorage immediately (instant UI — same as projects pattern)
       const l = this.all();
       const existingIdx = l.findIndex(x => x && x.id === r.id);
       if (existingIdx >= 0) { l[existingIdx] = r; } else { l.unshift(r); }
-      this.save(l);
+      DB._set(DB.KEYS.reviews, JSON.parse(JSON.stringify(l)));
+      try { localStorage.setItem('vk_reviews', JSON.stringify(l)); } catch (e) {}
+
+      // 2. Sync to API (same pattern as DB.projects.add — no getApiBaseUrl() guard)
+      fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(r)
+      }).catch(e => console.warn('API reviews add error:', e));
+
+      // 3. Broadcast for cross-tab sync
       DB._broadcast('reviews-updated', l);
       return r;
     },
-    async update(id, data) {
+
+    update(id, data) {
       const l = this.all();
       const i = l.findIndex(r => r && r.id === id);
       if (i < 0) return null;
+      l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
 
-      const updatedRecord = { ...l[i], ...data, updatedAt: new Date().toISOString() };
+      // 1. Save to localStorage immediately (instant UI — same as projects pattern)
+      DB._set(DB.KEYS.reviews, JSON.parse(JSON.stringify(l)));
+      try { localStorage.setItem('vk_reviews', JSON.stringify(l)); } catch (e) {}
 
-      // Try the backend API (only available when local Node server is running)
-      const apiBase = getApiBaseUrl();
-      if (apiBase) {
-        try {
-          const res = await fetch(apiBase + `/api/reviews/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedRecord)
-          });
-          if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
-          const json = await res.json();
-          if (!json || !json.success) throw new Error(json?.error || 'Failed to update review on server');
-          const serverReview = json.review || updatedRecord;
-          l[i] = serverReview;
-          this.save(l);
-          DB._broadcast('reviews-updated', l);
-          return serverReview;
-        } catch (e) {
-          console.warn('API review update failed, falling back to localStorage:', e);
-        }
-      }
+      // 2. Sync to API (same pattern as DB.projects.update — no getApiBaseUrl() guard)
+      fetch(`/api/reviews/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(l[i])
+      }).catch(e => console.warn('API reviews update error:', e));
 
-      // Fallback: save directly to localStorage (works on Vercel/static)
-      l[i] = updatedRecord;
-      this.save(l);
+      // 3. Broadcast for cross-tab sync
       DB._broadcast('reviews-updated', l);
-      return updatedRecord;
+      return l[i];
     },
-    approve(id) { return this.update(id, { status: 'approved', approvedAt: new Date().toISOString() }); },
-    reject(id)  { return this.update(id, { status: 'rejected' }); },
-    async delete(id)  {
+
+    delete(id) {
       if (!id) return false;
 
-      // Try the backend API (only available when local Node server is running)
-      const apiBase = getApiBaseUrl();
-      if (apiBase) {
-        try {
-          const res = await fetch(apiBase + `/api/reviews/${id}`, { method: 'DELETE' });
-          if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
-          const json = await res.json();
-          if (!json || !json.success) throw new Error(json?.error || 'Failed to delete review on server');
-        } catch (e) {
-          console.warn('API review delete failed, falling back to localStorage:', e);
-        }
-      }
-
-      // Fallback: delete directly from localStorage (works on Vercel/static)
+      // 1. Tombstone + remove from localStorage (instant UI — same as projects pattern)
       DB._addDeleted(DB.KEYS.deletedReviews, id);
       const remaining = this.all().filter(r => r && r.id !== id);
-      this.save(remaining);
+      DB._set(DB.KEYS.reviews, remaining);
+      try { localStorage.setItem('vk_reviews', JSON.stringify(remaining)); } catch (e) {}
 
-      if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
-        FirebaseDB.db.collection('reviews').doc(id).delete().catch(e => console.warn('Firestore review delete warning:', e));
-      }
+      // 2. Sync to API (same pattern as DB.projects.delete — no getApiBaseUrl() guard)
+      fetch(`/api/reviews/${id}`, { method: 'DELETE' })
+        .catch(e => console.warn('API reviews delete error:', e));
 
+      // 3. Broadcast for cross-tab sync
       DB._broadcast('reviews-updated', remaining);
       return true;
     },
+
+    approve(id) { return this.update(id, { status: 'approved', approvedAt: new Date().toISOString() }); },
+    reject(id)  { return this.update(id, { status: 'rejected' }); },
     pending()   { return this.all().filter(r => r && r.status === 'pending'); },
     approved()  { return this.all().filter(r => r && r.status === 'approved'); },
     stats() {

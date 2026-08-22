@@ -193,72 +193,71 @@ const Reviews = {
 
   // ── CRUD Actions ───────────────────────────────────────────────────────
 
-  async approve(id, btn) {
+  approve(id, btn) {
     if (btn && btn.dataset.loading === 'true') return;
-    const origText = btn ? btn.innerText : '';
     if (btn) { btn.dataset.loading = 'true'; btn.disabled = true; btn.innerText = 'Approving...'; }
 
-    const updated = await DB.reviews.approve(id);
+    // Synchronous — same pattern as Projects.toggleStatus()
+    const updated = DB.reviews.approve(id);
     if (updated) {
       UI.toast('Review approved!', 'success');
       if (typeof App !== 'undefined') App.updateSidebar();
-      // Clear loading guard BEFORE refresh so _refreshCurrentView doesn't block
       if (btn) { delete btn.dataset.loading; }
-      // Partial DOM update — only cards, matching Projects._refreshTable() pattern
+      // Partial DOM update — matches Projects._refreshTable() pattern
       requestAnimationFrame(() => {
         this._refreshCards();
         this._refreshTabState();
       });
-      // Auto-push to GitHub/live site — same as Projects.toggleStatus() and setRank()
+      // Cross-tab sync + GitHub push — same as Projects.setRank() and toggleStatus()
+      window.dispatchEvent(new Event('storage'));
       if (window.GithubSync) GithubSync.push();
     } else if (btn) {
       btn.disabled = false;
-      btn.innerText = origText;
+      btn.innerText = 'Approve';
       delete btn.dataset.loading;
     }
   },
 
-  async reject(id, btn) {
+  reject(id, btn) {
     if (btn && btn.dataset.loading === 'true') return;
-    const origText = btn ? btn.innerText : '';
     if (btn) { btn.dataset.loading = 'true'; btn.disabled = true; btn.innerText = 'Rejecting...'; }
 
-    const updated = await DB.reviews.reject(id);
+    // Synchronous — same pattern as Projects.toggleStatus()
+    const updated = DB.reviews.reject(id);
     if (updated) {
-      UI.toast('Review set to rejected', 'warning');
+      UI.toast('Review rejected.', 'warning');
       if (typeof App !== 'undefined') App.updateSidebar();
       if (btn) { delete btn.dataset.loading; }
       requestAnimationFrame(() => {
         this._refreshCards();
         this._refreshTabState();
       });
-      // Auto-push to GitHub — matches Projects pattern
+      window.dispatchEvent(new Event('storage'));
       if (window.GithubSync) GithubSync.push();
     } else if (btn) {
       btn.disabled = false;
-      btn.innerText = origText;
+      btn.innerText = 'Reject';
       delete btn.dataset.loading;
     }
   },
 
   delete(id, btn) {
     if (btn && btn.dataset.loading === 'true') return;
-    UI.confirm('Delete Review', 'Are you sure you want to delete this review?', '🗑️', async () => {
-      if (btn) { btn.dataset.loading = 'true'; btn.disabled = true; }
-      const ok = await DB.reviews.delete(id);
+    const r = DB.reviews.get(id);
+    const name = r ? (r.clientName || r.author || 'this review') : 'this review';
+    UI.confirm('Delete Review', `Delete review from "<strong>${UI.escapeHTML(name)}</strong>"? This cannot be undone.`, '🗑️', () => {
+      // Synchronous — same pattern as Projects.delete()
+      const ok = DB.reviews.delete(id);
       if (ok) {
-        UI.toast('Review deleted', 'info');
+        UI.toast('Review deleted.', 'info');
         if (typeof App !== 'undefined') App.updateSidebar();
-        if (btn) { delete btn.dataset.loading; }
         requestAnimationFrame(() => {
           this._refreshCards();
           this._refreshTabState();
         });
-        // Auto-push to GitHub — matches Projects.delete() pattern
+        // Cross-tab sync + GitHub push — same as Projects.delete()
+        window.dispatchEvent(new Event('storage'));
         if (window.GithubSync) GithubSync.push();
-      } else if (btn) {
-        btn.disabled = false;
-        delete btn.dataset.loading;
       }
     }, true);
   },
@@ -290,7 +289,7 @@ const Reviews = {
     UI.modal('💬 Studio Response', body, footer, 'max-w-500');
   },
 
-  async saveResponse(id, btn) {
+  saveResponse(id, btn) {
     const textEl = document.getElementById('modal-studio-response');
     if (!textEl) return;
 
@@ -299,13 +298,15 @@ const Reviews = {
     if (btn) { btn.dataset.loading = 'true'; btn.disabled = true; btn.innerText = 'Saving...'; }
 
     const text = textEl.value.trim();
-    const updated = await DB.reviews.update(id, { studioResponse: text });
+    // Synchronous — same pattern as DB.projects.update()
+    const updated = DB.reviews.update(id, { studioResponse: text });
     if (updated) {
       UI.closeModal();
-      UI.toast('Studio response saved successfully!', 'success');
+      UI.toast('Studio response saved!', 'success');
       // Partial update only — no full page destroy
       this._refreshCards();
-      // Auto-push to GitHub so live site gets the response immediately
+      // Cross-tab sync + GitHub push — same as Projects pattern
+      window.dispatchEvent(new Event('storage'));
       if (window.GithubSync) GithubSync.push();
     } else if (btn) {
       btn.disabled = false;
@@ -451,7 +452,7 @@ const Reviews = {
     document.body.appendChild(overlay);
   },
 
-  async submitAddForm(e) {
+  submitAddForm(e) {
     e.preventDefault();
     const name      = (document.getElementById('adm-rev-name')?.value    || '').trim();
     const role      = (document.getElementById('adm-rev-role')?.value    || '').trim();
@@ -461,8 +462,14 @@ const Reviews = {
     const text      = (document.getElementById('adm-rev-text')?.value    || '').trim();
     const status    = document.getElementById('adm-rev-status')?.value   || 'approved';
 
-    if (!name || !text) {
-      UI.toast('Please provide a client name and review text.', 'warning');
+    if (!name) {
+      UI.toast('Please provide a client name.', 'warning');
+      document.getElementById('adm-rev-name')?.focus();
+      return;
+    }
+    if (!text) {
+      UI.toast('Please provide review text.', 'warning');
+      document.getElementById('adm-rev-text')?.focus();
       return;
     }
 
@@ -482,21 +489,23 @@ const Reviews = {
       approvedAt:  status === 'approved' ? new Date().toISOString() : null,
     };
 
-    // Close modal first so the user sees progress
+    // Close modal first — same as Projects.submitDirect()
     const modal = document.getElementById('admin-add-review-modal');
     if (modal) modal.remove();
 
-    await DB.reviews.add(newRev);
+    // Save locally + fire API + broadcast — same as DB.projects.add()
+    DB.reviews.add(newRev);
 
-    UI.toast(`✓ Review from ${name} added successfully!`, 'success');
+    UI.toast(`✓ Review from ${UI.escapeHTML(name)} added!`, 'success');
     if (typeof App !== 'undefined') App.updateSidebar();
 
-    // Reset filter to show all reviews so new card is always visible (matches Projects pattern)
+    // Show the newly created review immediately — reset to All tab
     this._filter = 'all';
     this._refreshTabState();
     this._refreshCards();
 
-    // Auto-push to GitHub — matches Projects.submitDirect() behaviour
+    // Cross-tab sync + GitHub push — same as Projects.submitDirect()
+    window.dispatchEvent(new Event('storage'));
     if (window.GithubSync) GithubSync.push();
   },
 };
