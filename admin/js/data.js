@@ -488,6 +488,18 @@ const DB = {
         }
       } catch (e) {}
 
+      // 4. Fallback merge with VKREATE_DATA reviews if available
+      try {
+        if (typeof window !== 'undefined' && window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.reviews)) {
+          window.VKREATE_DATA.reviews.forEach(raw => {
+            const r = normalize(raw);
+            if (r && r.id && !deleted.includes(r.id) && !itemMap.has(r.id)) {
+              itemMap.set(r.id, r);
+            }
+          });
+        }
+      } catch (e) {}
+
       const result = Array.from(itemMap.values()).filter(r => r && r.id && r.id !== 'mswstn7iv0g7w');
       result.sort((a, b) => {
         const tA = new Date(a.createdAt || a.approvedAt || a.date || 0).getTime();
@@ -823,10 +835,10 @@ const DB = {
       }
     };
 
-    // Helper to fetch entity data:
-    // 1. Live API endpoint (/api/reviews, /api/projects, etc.) — handled by server.js (memory + /tmp)
+    // Helper to fetch entity data with fallback chain:
+    // 1. Live API endpoint (/api/reviews, /api/projects, etc.)
     // 2. GitHub API (if custom valid GitHub token is provided by admin)
-    // 3. Static JSON file fallback
+    // 3. Static JSON file fallback (js/admin-reviews.json, etc.)
     const fetchEntity = async (apiEndpoint, staticPath) => {
       // 1. Primary: Live backend API endpoint (same-origin on Vercel or localhost)
       try {
@@ -834,19 +846,24 @@ const DB = {
         const res = await fetch(apiUrl);
         if (res.ok) {
           const data = await res.json();
-          if (data && (Array.isArray(data) || typeof data === 'object')) return data;
+          if (Array.isArray(data) && data.length > 0) return data;
+          if (data && !Array.isArray(data) && typeof data === 'object' && Object.keys(data).length > 0) return data;
         }
       } catch (e) {}
 
       // 2. Secondary: GitHub API (if admin token set)
       const ghData = await fetchFromGitHub(staticPath);
-      if (ghData !== null) return ghData;
+      if (ghData !== null && Array.isArray(ghData) && ghData.length > 0) return ghData;
 
-      // 3. Last resort: static JSON file
+      // 3. Last resort: static JSON file (js/admin-reviews.json)
       try {
         let res = await fetch('../' + staticPath + '?t=' + Date.now());
         if (!res.ok) res = await fetch(staticPath + '?t=' + Date.now());
-        if (res.ok) return await res.json();
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) return data;
+          if (data && typeof data === 'object') return data;
+        }
       } catch (e) {}
 
       return null;
@@ -869,7 +886,7 @@ const DB = {
         }
       }
 
-      if (Array.isArray(remoteReviews)) {
+      if (Array.isArray(remoteReviews) && remoteReviews.length > 0) {
         const localRev = DB._get(DB.KEYS.reviews) || [];
         const rawLiveRev = (() => { try { return JSON.parse(localStorage.getItem('vk_reviews')) || []; } catch { return []; } })();
         const deletedIds = DB._getDeleted(DB.KEYS.deletedReviews) || [];
