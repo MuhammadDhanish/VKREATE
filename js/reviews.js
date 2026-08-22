@@ -30,44 +30,52 @@
 
   let cachedApiReviews = null;
 
-  // ── GitHub push helper (mirrors GithubSync._pushFile from admin) ─────────
-  // Pushes a single new pending review into js/admin-reviews.json on GitHub.
-  // This is the ONLY way for a visitor's submission to reach the admin panel
-  // on a static Vercel deployment (no shared server or DB between devices).
-  const GH_REPO  = 'MuhammadDhanish/VKREATE';
-  const GH_FILE  = 'js/admin-reviews.json';
-  const GH_TOKEN = ['ghp_zlTiF9lE82XK', 'zPM9jev8uj0iSDhH', 'sY3pqtYl'].join('');
+  // ── GitHub push helper ───────────────────────────────────────────────────
+  const GH_REPO = 'MuhammadDhanish/VKREATE';
+  const GH_FILE = 'js/admin-reviews.json';
+  // Use the same token key as the admin panel (same domain = same localStorage)
+  // Falls back to the hardcoded default if admin hasn't overridden it.
+  const GH_TOKEN_KEY  = 'vk_github_token';
+  const GH_TOKEN_DEFAULT = ['ghp_zlTiF9lE82XK', 'zPM9jev8uj0iSDhH', 'sY3pqtYl'].join('');
+  function getGHToken() {
+    try { return localStorage.getItem(GH_TOKEN_KEY) || GH_TOKEN_DEFAULT; } catch (e) { return GH_TOKEN_DEFAULT; }
+  }
 
-  async function pushReviewToGitHub(newReview) {
+  // Push a pending review into admin-reviews.json on GitHub.
+  // Retries once on 409 Conflict (SHA race condition).
+  async function pushReviewToGitHub(newReview, _retry) {
     try {
+      const token = getGHToken();
       const headers = {
-        'Authorization': `token ${GH_TOKEN}`,
+        'Authorization': `token ${token}`,
         'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json',
       };
       const apiUrl = `https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`;
 
-      // 1. Fetch current file from GitHub to get sha + existing reviews
+      // 1. GET current file SHA + content
       const getRes = await fetch(apiUrl, { headers });
-      if (!getRes.ok) throw new Error(`GitHub GET failed: ${getRes.status}`);
+      if (!getRes.ok) {
+        console.error(`pushReviewToGitHub: GET failed ${getRes.status}`);
+        return false;
+      }
       const fileData = await getRes.json();
       const sha = fileData.sha;
 
-      // 2. Decode existing reviews array
+      // 2. Decode existing reviews, prepend new one
       let existing = [];
       try {
-        const clean = fileData.content.replace(/\s/g, '');
+        const clean = (fileData.content || '').replace(/\s/g, '');
         const decoded = decodeURIComponent(escape(atob(clean)));
-        existing = JSON.parse(decoded);
-        if (!Array.isArray(existing)) existing = [];
+        const parsed = JSON.parse(decoded);
+        if (Array.isArray(parsed)) existing = parsed;
       } catch (e) {}
 
-      // 3. Prepend new review (skip if duplicate id)
       if (!existing.some(r => r && r.id === newReview.id)) {
         existing.unshift(newReview);
       }
 
-      // 4. Encode and push
+      // 3. Encode and PUT
       const jsonStr = JSON.stringify(existing, null, 2);
       const bytes = new TextEncoder().encode(jsonStr);
       let bin = '';
@@ -78,15 +86,27 @@
         method: 'PUT',
         headers,
         body: JSON.stringify({
-          message: `New client review pending: ${newReview.clientName} [${new Date().toISOString()}]`,
+          message: `New client review: ${newReview.clientName} [${new Date().toISOString()}]`,
           content: encoded,
           sha,
         }),
       });
-      if (!putRes.ok) throw new Error(`GitHub PUT failed: ${putRes.status}`);
+
+      if (putRes.status === 409 && !_retry) {
+        // SHA conflict — another push happened concurrently. Retry once with fresh SHA.
+        console.warn('pushReviewToGitHub: SHA conflict, retrying...');
+        await new Promise(r => setTimeout(r, 800));
+        return pushReviewToGitHub(newReview, true);
+      }
+
+      if (!putRes.ok) {
+        const errBody = await putRes.text().catch(() => '');
+        console.error(`pushReviewToGitHub: PUT failed ${putRes.status}`, errBody);
+        return false;
+      }
       return true;
     } catch (e) {
-      console.warn('pushReviewToGitHub failed:', e);
+      console.error('pushReviewToGitHub exception:', e);
       return false;
     }
   }
@@ -494,7 +514,8 @@
       const submitBtn = document.getElementById('pub-review-submit-btn');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
 
-      // 1. POST to backend API (only runs on localhost with Node server)
+      // ── Storage chain ───────────────────────────────────────────────────────
+      // 1. Local Node API (localhost dev only)
       let serverSaved = false;
       const apiBase = getApiBaseUrl();
       if (apiBase) {
@@ -507,83 +528,51 @@
           const json = res.ok ? await res.json() : null;
           if (res.ok && json && json.success) {
             serverSaved = true;
-            if (json.review && json.review.id && json.review.id !== newReview.id) {
-              newReview.id = json.review.id;
-            }
+            if (json.review && json.review.id) newReview.id = json.review.id;
           } else if (res.status === 400) {
-            showError((json && json.error) ? json.error : 'Your review was rejected by the server. Please check the fields and try again.');
+            const json2 = await res.json().catch(() => ({}));
+            showError((json2 && json2.error) || 'Review rejected. Please check your input.');
             if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
             return;
           }
-        } catch (e) {
-          console.warn('Review server submission failed:', e);
-        }
+        } catch (e) { console.warn('Local API POST failed:', e); }
       }
 
-      // 2. Post to Firebase Firestore if connected
+      // 2. Firebase Firestore (if connected)
       let firebaseSaved = false;
       if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
         try {
           await FirebaseDB.db.collection('reviews').doc(newReview.id).set(newReview);
           firebaseSaved = true;
-        } catch (e) {
-          console.warn('Review Firestore sync warning:', e);
-        }
+        } catch (e) { console.warn('Firestore save failed:', e); }
       }
 
-      // 3. PRIMARY path on Vercel: POST directly to /api/reviews so the running
-      //    server.js writes the review to its admin-reviews.json on disk instantly.
-      //    This is what the admin panel's loadRemoteData() reads via GET /api/reviews.
-      //    Also push to GitHub so future deployments include the pending review.
+      // 3. GitHub API — PRIMARY path on Vercel
+      //    Vercel filesystem is read-only, so /api/reviews POST fails silently.
+      //    Pushing directly to GitHub is the only way the admin panel can see it.
       let githubSaved = false;
       if (!serverSaved && !firebaseSaved) {
-        // 3a. POST to the Vercel server's /api/reviews endpoint (no apiBase prefix = same origin)
-        try {
-          const res = await fetch('/api/reviews', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newReview)
-          });
-          const json = res.ok ? await res.json() : null;
-          if (res.ok && json && json.success) {
-            serverSaved = true;
-          }
-        } catch (e) {
-          console.warn('Vercel /api/reviews POST failed, trying GitHub push:', e);
-        }
-
-        // 3b. Also push to GitHub so the file is updated for future deployments
-        if (!serverSaved) {
-          githubSaved = await pushReviewToGitHub(newReview);
-        } else {
-          // Push async in background so GitHub is also up to date (for git history)
-          pushReviewToGitHub(newReview).catch(() => {});
+        githubSaved = await pushReviewToGitHub(newReview);
+        if (!githubSaved) {
+          // GitHub push failed — show a real error so user knows to retry
+          showError('Could not save your review right now. Please try again in a moment.');
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
+          return;
         }
       }
 
-      // 4. Last-resort: cache in visitor's localStorage (same-browser session only)
-      let localSaved = false;
+      // 4. Cache in localStorage for this session
       try {
         const lsKey = 'vk_admin_reviews';
         let existing = [];
-        try { existing = JSON.parse(localStorage.getItem(lsKey)) || []; } catch (e) {}
+        try { existing = JSON.parse(localStorage.getItem(lsKey)) || []; } catch (_) {}
         if (!Array.isArray(existing)) existing = [];
         if (!existing.some(r => r && r.id === newReview.id)) {
           existing.unshift(newReview);
           localStorage.setItem(lsKey, JSON.stringify(existing));
           localStorage.setItem('vk_reviews', JSON.stringify(existing));
         }
-        localSaved = true;
-      } catch (e) {
-        console.warn('localStorage review save failed:', e);
-      }
-
-      // 5. Fail only if absolutely nothing worked
-      if (!serverSaved && !firebaseSaved && !githubSaved && !localSaved) {
-        showError('Could not submit your review. Please check your connection and try again, or email us directly.');
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
-        return;
-      }
+      } catch (_) {}
 
       // 4. Notify all open tabs (admin panel will pick this up via BroadcastChannel / storage event)
       if (typeof BroadcastChannel !== 'undefined') {
