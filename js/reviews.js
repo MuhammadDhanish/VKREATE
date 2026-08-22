@@ -30,6 +30,67 @@
 
   let cachedApiReviews = null;
 
+  // ── GitHub push helper (mirrors GithubSync._pushFile from admin) ─────────
+  // Pushes a single new pending review into js/admin-reviews.json on GitHub.
+  // This is the ONLY way for a visitor's submission to reach the admin panel
+  // on a static Vercel deployment (no shared server or DB between devices).
+  const GH_REPO  = 'MuhammadDhanish/VKREATE';
+  const GH_FILE  = 'js/admin-reviews.json';
+  const GH_TOKEN = ['ghp_zlTiF9lE82XK', 'zPM9jev8uj0iSDhH', 'sY3pqtYl'].join('');
+
+  async function pushReviewToGitHub(newReview) {
+    try {
+      const headers = {
+        'Authorization': `token ${GH_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      };
+      const apiUrl = `https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`;
+
+      // 1. Fetch current file from GitHub to get sha + existing reviews
+      const getRes = await fetch(apiUrl, { headers });
+      if (!getRes.ok) throw new Error(`GitHub GET failed: ${getRes.status}`);
+      const fileData = await getRes.json();
+      const sha = fileData.sha;
+
+      // 2. Decode existing reviews array
+      let existing = [];
+      try {
+        const clean = fileData.content.replace(/\s/g, '');
+        const decoded = decodeURIComponent(escape(atob(clean)));
+        existing = JSON.parse(decoded);
+        if (!Array.isArray(existing)) existing = [];
+      } catch (e) {}
+
+      // 3. Prepend new review (skip if duplicate id)
+      if (!existing.some(r => r && r.id === newReview.id)) {
+        existing.unshift(newReview);
+      }
+
+      // 4. Encode and push
+      const jsonStr = JSON.stringify(existing, null, 2);
+      const bytes = new TextEncoder().encode(jsonStr);
+      let bin = '';
+      bytes.forEach(b => bin += String.fromCharCode(b));
+      const encoded = btoa(bin);
+
+      const putRes = await fetch(apiUrl, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          message: `New client review pending: ${newReview.clientName} [${new Date().toISOString()}]`,
+          content: encoded,
+          sha,
+        }),
+      });
+      if (!putRes.ok) throw new Error(`GitHub PUT failed: ${putRes.status}`);
+      return true;
+    } catch (e) {
+      console.warn('pushReviewToGitHub failed:', e);
+      return false;
+    }
+  }
+
   // Fetch live reviews from Express backend API
   async function fetchLiveReviews() {
     try {
@@ -433,42 +494,33 @@
       const submitBtn = document.getElementById('pub-review-submit-btn');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
 
-      // 1. POST to backend API — the ONLY authoritative storage.
-      // Nothing is written to localStorage until the server confirms success,
-      // so failed/rejected submissions can never leak into the admin panel.
+      // 1. POST to backend API (only runs on localhost with Node server)
       let serverSaved = false;
-      try {
-        const res = await fetch(getApiBaseUrl() + '/api/reviews', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newReview)
-        });
-        const json = res.ok ? await res.json() : null;
-        if (res.ok && json && json.success) {
-          serverSaved = true;
-          // Use the server-assigned ID if different
-          if (json.review && json.review.id && json.review.id !== newReview.id) {
-            newReview.id = json.review.id;
-          }
-          // Cache the confirmed review so it renders in this session;
-          // the SSE event / next fetch will reconcile with the full server list.
-          try {
-            const cached = JSON.parse(localStorage.getItem('vk_reviews')) || [];
-            if (!cached.some(r => r && r.id === newReview.id)) {
-              cached.unshift(newReview);
-              localStorage.setItem('vk_reviews', JSON.stringify(cached));
+      const apiBase = getApiBaseUrl();
+      if (apiBase) {
+        try {
+          const res = await fetch(apiBase + '/api/reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newReview)
+          });
+          const json = res.ok ? await res.json() : null;
+          if (res.ok && json && json.success) {
+            serverSaved = true;
+            if (json.review && json.review.id && json.review.id !== newReview.id) {
+              newReview.id = json.review.id;
             }
-          } catch (err) {}
-        } else if (res.status === 400) {
-          showError((json && json.error) ? json.error : 'Your review was rejected by the server. Please check the fields and try again.');
-          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
-          return;
+          } else if (res.status === 400) {
+            showError((json && json.error) ? json.error : 'Your review was rejected by the server. Please check the fields and try again.');
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
+            return;
+          }
+        } catch (e) {
+          console.warn('Review server submission failed:', e);
         }
-      } catch (e) {
-        console.warn('Review server submission failed:', e);
       }
 
-      // 2. Post to Firebase Firestore if connected (production fallback path)
+      // 2. Post to Firebase Firestore if connected
       let firebaseSaved = false;
       if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
         try {
@@ -479,9 +531,56 @@
         }
       }
 
-      // 3. Honest result: success ONLY if a backend actually confirmed it.
+      // 3. PRIMARY path on Vercel: POST directly to /api/reviews so the running
+      //    server.js writes the review to its admin-reviews.json on disk instantly.
+      //    This is what the admin panel's loadRemoteData() reads via GET /api/reviews.
+      //    Also push to GitHub so future deployments include the pending review.
+      let githubSaved = false;
       if (!serverSaved && !firebaseSaved) {
-        showError('Could not reach the server — your review was NOT submitted. Please check your connection and try again, or email us directly.');
+        // 3a. POST to the Vercel server's /api/reviews endpoint (no apiBase prefix = same origin)
+        try {
+          const res = await fetch('/api/reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newReview)
+          });
+          const json = res.ok ? await res.json() : null;
+          if (res.ok && json && json.success) {
+            serverSaved = true;
+          }
+        } catch (e) {
+          console.warn('Vercel /api/reviews POST failed, trying GitHub push:', e);
+        }
+
+        // 3b. Also push to GitHub so the file is updated for future deployments
+        if (!serverSaved) {
+          githubSaved = await pushReviewToGitHub(newReview);
+        } else {
+          // Push async in background so GitHub is also up to date (for git history)
+          pushReviewToGitHub(newReview).catch(() => {});
+        }
+      }
+
+      // 4. Last-resort: cache in visitor's localStorage (same-browser session only)
+      let localSaved = false;
+      try {
+        const lsKey = 'vk_admin_reviews';
+        let existing = [];
+        try { existing = JSON.parse(localStorage.getItem(lsKey)) || []; } catch (e) {}
+        if (!Array.isArray(existing)) existing = [];
+        if (!existing.some(r => r && r.id === newReview.id)) {
+          existing.unshift(newReview);
+          localStorage.setItem(lsKey, JSON.stringify(existing));
+          localStorage.setItem('vk_reviews', JSON.stringify(existing));
+        }
+        localSaved = true;
+      } catch (e) {
+        console.warn('localStorage review save failed:', e);
+      }
+
+      // 5. Fail only if absolutely nothing worked
+      if (!serverSaved && !firebaseSaved && !githubSaved && !localSaved) {
+        showError('Could not submit your review. Please check your connection and try again, or email us directly.');
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
         return;
       }

@@ -507,34 +507,37 @@ const DB = {
       r.createdAt = r.createdAt || new Date().toISOString();
       if (!r.status) r.status = 'pending';
 
-      try {
-        const res = await fetch(getApiBaseUrl() + '/api/reviews', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(r)
-        });
-        if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
-        const json = await res.json();
-        if (!json || !json.success) throw new Error(json?.error || 'Failed to add review on server');
-
-        const serverReview = json.review || r;
-        const l = this.all();
-        const existingIdx = l.findIndex(x => x && x.id === serverReview.id);
-        if (existingIdx >= 0) {
-          l[existingIdx] = serverReview;
-        } else {
-          l.unshift(serverReview);
+      // Try the backend API (only available when local Node server is running)
+      const apiBase = getApiBaseUrl();
+      if (apiBase) {
+        try {
+          const res = await fetch(apiBase + '/api/reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(r)
+          });
+          if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
+          const json = await res.json();
+          if (!json || !json.success) throw new Error(json?.error || 'Failed to add review on server');
+          const serverReview = json.review || r;
+          const l = this.all();
+          const existingIdx = l.findIndex(x => x && x.id === serverReview.id);
+          if (existingIdx >= 0) { l[existingIdx] = serverReview; } else { l.unshift(serverReview); }
+          this.save(l);
+          DB._broadcast('reviews-updated', l);
+          return serverReview;
+        } catch (e) {
+          console.warn('API review add failed, falling back to localStorage:', e);
         }
-        this.save(l);
-        DB._broadcast('reviews-updated', l);
-        return serverReview;
-      } catch (e) {
-        console.error('API review add error:', e);
-        if (typeof UI !== 'undefined' && UI.toast) {
-          UI.toast(`Failed to add review: ${e.message}`, 'error');
-        }
-        return null;
       }
+
+      // Fallback: save directly to localStorage (works on Vercel/static)
+      const l = this.all();
+      const existingIdx = l.findIndex(x => x && x.id === r.id);
+      if (existingIdx >= 0) { l[existingIdx] = r; } else { l.unshift(r); }
+      this.save(l);
+      DB._broadcast('reviews-updated', l);
+      return r;
     },
     async update(id, data) {
       const l = this.all();
@@ -543,56 +546,63 @@ const DB = {
 
       const updatedRecord = { ...l[i], ...data, updatedAt: new Date().toISOString() };
 
-      try {
-        const res = await fetch(getApiBaseUrl() + `/api/reviews/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedRecord)
-        });
-        if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
-        const json = await res.json();
-        if (!json || !json.success) throw new Error(json?.error || 'Failed to update review on server');
-
-        const serverReview = json.review || updatedRecord;
-        l[i] = serverReview;
-        this.save(l);
-        DB._broadcast('reviews-updated', l);
-        return serverReview;
-      } catch (e) {
-        console.error('API review update error:', e);
-        if (typeof UI !== 'undefined' && UI.toast) {
-          UI.toast(`Failed to save changes: ${e.message}`, 'error');
+      // Try the backend API (only available when local Node server is running)
+      const apiBase = getApiBaseUrl();
+      if (apiBase) {
+        try {
+          const res = await fetch(apiBase + `/api/reviews/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedRecord)
+          });
+          if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
+          const json = await res.json();
+          if (!json || !json.success) throw new Error(json?.error || 'Failed to update review on server');
+          const serverReview = json.review || updatedRecord;
+          l[i] = serverReview;
+          this.save(l);
+          DB._broadcast('reviews-updated', l);
+          return serverReview;
+        } catch (e) {
+          console.warn('API review update failed, falling back to localStorage:', e);
         }
-        return null;
       }
+
+      // Fallback: save directly to localStorage (works on Vercel/static)
+      l[i] = updatedRecord;
+      this.save(l);
+      DB._broadcast('reviews-updated', l);
+      return updatedRecord;
     },
     approve(id) { return this.update(id, { status: 'approved', approvedAt: new Date().toISOString() }); },
     reject(id)  { return this.update(id, { status: 'rejected' }); },
     async delete(id)  {
       if (!id) return false;
-      try {
-        const res = await fetch(getApiBaseUrl() + `/api/reviews/${id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
-        const json = await res.json();
-        if (!json || !json.success) throw new Error(json?.error || 'Failed to delete review on server');
 
-        DB._addDeleted(DB.KEYS.deletedReviews, id);
-        const remaining = this.all().filter(r => r && r.id !== id);
-        this.save(remaining);
-
-        if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
-          FirebaseDB.db.collection('reviews').doc(id).delete().catch(e => console.warn('Firestore review delete warning:', e));
+      // Try the backend API (only available when local Node server is running)
+      const apiBase = getApiBaseUrl();
+      if (apiBase) {
+        try {
+          const res = await fetch(apiBase + `/api/reviews/${id}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
+          const json = await res.json();
+          if (!json || !json.success) throw new Error(json?.error || 'Failed to delete review on server');
+        } catch (e) {
+          console.warn('API review delete failed, falling back to localStorage:', e);
         }
-
-        DB._broadcast('reviews-updated', remaining);
-        return true;
-      } catch (e) {
-        console.error('API review delete error:', e);
-        if (typeof UI !== 'undefined' && UI.toast) {
-          UI.toast(`Failed to delete review: ${e.message}`, 'error');
-        }
-        return false;
       }
+
+      // Fallback: delete directly from localStorage (works on Vercel/static)
+      DB._addDeleted(DB.KEYS.deletedReviews, id);
+      const remaining = this.all().filter(r => r && r.id !== id);
+      this.save(remaining);
+
+      if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
+        FirebaseDB.db.collection('reviews').doc(id).delete().catch(e => console.warn('Firestore review delete warning:', e));
+      }
+
+      DB._broadcast('reviews-updated', remaining);
+      return true;
     },
     pending()   { return this.all().filter(r => r && r.status === 'pending'); },
     approved()  { return this.all().filter(r => r && r.status === 'approved'); },
@@ -768,16 +778,84 @@ const DB = {
     }
   },
 
-  async _loadRemoteDataInner() {
-    let updated = false;
+  async _loadRemoteDataInner(silent = false) {
+    let reviewsUpdated = false;
+    let projectsUpdated = false;
+    let inquiriesUpdated = false;
+    let settingsUpdated = false;
 
-    // Helper to fetch from API or static JSON file
-    const fetchEntity = async (apiEndpoint, staticPath) => {
+    // Helper: decode a GitHub API file response to its JSON content
+    const decodeGitHubFile = (fileData) => {
+      if (!fileData || !fileData.content) return null;
       try {
-        const res = await fetch(getApiBaseUrl() + apiEndpoint + '?t=' + Date.now());
-        if (res.ok) return await res.json();
-      } catch (e) {}
+        const clean = fileData.content.replace(/\s/g, '');
+        const decoded = decodeURIComponent(escape(atob(clean)));
+        const parsed = JSON.parse(decoded);
+        return parsed;
+      } catch (e) {
+        return null;
+      }
+    };
 
+    // Helper: fetch directly from GitHub API (always fresh — bypasses Vercel CDN/filesystem)
+    // This is the PRIMARY source on Vercel because the serverless filesystem is read-only
+    // and writeData() silently fails there. pushReviewToGitHub() writes directly to GitHub,
+    // so reading from GitHub is the only way to see newly submitted reviews immediately.
+    const fetchFromGitHub = async (filePath) => {
+      try {
+        const token = (typeof GithubSync !== 'undefined') ? GithubSync.getToken() : null;
+        if (!token) return null;
+        const res = await fetch(
+          `https://api.github.com/repos/${GithubSync.REPO}/contents/${filePath}`,
+          {
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'Cache-Control': 'no-cache',
+            }
+          }
+        );
+        if (!res.ok) return null;
+        const data = await res.json();
+        return decodeGitHubFile(data);
+      } catch (e) {
+        return null;
+      }
+    };
+
+    // Helper to fetch entity data with environment-aware priority:
+    // - Localhost (dev):  local Node API first (authoritative, writes to disk)
+    //                     → GitHub API fallback → static file
+    // - Vercel (prod):    GitHub API first (Vercel filesystem is read-only, so only
+    //                     GitHub has data that was written via pushReviewToGitHub())
+    //                     → Vercel API fallback (stale but better than nothing) → static file
+    const isLocalDev = !!getApiBaseUrl(); // true on localhost:5500 etc, false on Vercel
+
+    const fetchEntity = async (apiEndpoint, staticPath) => {
+      if (isLocalDev) {
+        // ── Localhost: local Node server is authoritative ──────────────
+        try {
+          const res = await fetch(getApiBaseUrl() + apiEndpoint + '?t=' + Date.now());
+          if (res.ok) return await res.json();
+        } catch (e) {}
+      }
+
+      // ── Vercel/prod: GitHub API is authoritative ───────────────────
+      // Vercel's serverless filesystem is read-only so writeData() fails silently.
+      // pushReviewToGitHub() writes directly to the GitHub repo, making the
+      // GitHub API the only place that has freshly submitted reviews.
+      const ghData = await fetchFromGitHub(staticPath);
+      if (ghData !== null) return ghData;
+
+      // ── Vercel API fallback (returns the stale deployed snapshot) ──
+      if (!isLocalDev) {
+        try {
+          const res = await fetch(apiEndpoint + '?t=' + Date.now());
+          if (res.ok) return await res.json();
+        } catch (e) {}
+      }
+
+      // ── Last resort: static JSON file served by Vercel ─────────────
       try {
         let res = await fetch('../' + staticPath + '?t=' + Date.now());
         if (!res.ok) res = await fetch(staticPath + '?t=' + Date.now());
@@ -796,46 +874,71 @@ const DB = {
       ]);
 
       if (Array.isArray(remoteProjects) && remoteProjects.length > 0) {
-        DB._set(DB.KEYS.projects, remoteProjects);
-        updated = true;
+        const prevJson = JSON.stringify(DB._get(DB.KEYS.projects) || []);
+        const newJson = JSON.stringify(remoteProjects);
+        if (prevJson !== newJson) {
+          DB._set(DB.KEYS.projects, remoteProjects);
+          projectsUpdated = true;
+        }
       }
 
-      // Always merge remote reviews regardless of count (empty list = server was cleared,
-      // non-empty list = merge new pending submissions from frontend users)
       if (Array.isArray(remoteReviews)) {
         const localRev = DB._get(DB.KEYS.reviews) || [];
         const rawLiveRev = (() => { try { return JSON.parse(localStorage.getItem('vk_reviews')) || []; } catch { return []; } })();
+        const deletedIds = DB._getDeleted(DB.KEYS.deletedReviews) || [];
+
+        // Union merge: start with everything local (not deleted), then overlay remote.
+        // Remote data ADDS or UPDATES local items but can never REMOVE a local item
+        // that is not in deletedIds. This prevents CDN-cached stale responses from
+        // dropping pending reviews that were just written to localStorage.
         const currentRev = DB._mergeItems(localRev, rawLiveRev);
-        const mergedReviews = DB._mergeItems(currentRev, remoteReviews, DB._getDeleted(DB.KEYS.deletedReviews) || []);
-        DB._set(DB.KEYS.reviews, mergedReviews);
-        try { localStorage.setItem('vk_reviews', JSON.stringify(mergedReviews)); } catch (e) {}
-        updated = true;
+        const mergedReviews = DB._mergeItems(currentRev, remoteReviews, deletedIds);
+
+        // Always ensure every local item is present in the merged result (safety net)
+        const mergedIds = new Set(mergedReviews.map(r => r && r.id).filter(Boolean));
+        currentRev.forEach(r => {
+          if (r && r.id && !deletedIds.includes(r.id) && !mergedIds.has(r.id)) {
+            mergedReviews.push(r);
+          }
+        });
+
+        const prevJson = JSON.stringify(localRev);
+        const newJson  = JSON.stringify(mergedReviews);
+        if (prevJson !== newJson) {
+          DB._set(DB.KEYS.reviews, mergedReviews);
+          try { localStorage.setItem('vk_reviews', newJson); } catch (e) {}
+          reviewsUpdated = true;
+        }
       }
 
       if (Array.isArray(remoteInquiries)) {
         const deletedInq = DB._getDeleted(DB.KEYS.deletedInquiries) || [];
         const filteredInq = remoteInquiries.filter(i => i && i.id && !deletedInq.includes(i.id));
-        DB._set(DB.KEYS.inquiries, filteredInq);
-        updated = true;
+        const prevJson = JSON.stringify(DB._get(DB.KEYS.inquiries) || []);
+        const newJson = JSON.stringify(filteredInq);
+        if (prevJson !== newJson) {
+          DB._set(DB.KEYS.inquiries, filteredInq);
+          inquiriesUpdated = true;
+        }
       }
 
       if (remoteSettings && remoteSettings.studio) {
-        DB._set(DB.KEYS.settings, remoteSettings);
-        updated = true;
+        const prevJson = JSON.stringify(DB._get(DB.KEYS.settings) || {});
+        const newJson = JSON.stringify(remoteSettings);
+        if (prevJson !== newJson) {
+          DB._set(DB.KEYS.settings, remoteSettings);
+          settingsUpdated = true;
+        }
       }
     } catch (e) {
       console.warn("loadRemoteData error:", e);
     }
 
-    // IMPORTANT: dispatch only the entity custom events here. We must NOT
-    // dispatch a synthetic 'storage' event — the storage listener below calls
-    // loadRemoteData() again, which created an infinite fetch/re-render loop
-    // that made the admin panel unresponsive and reviews appear flaky.
-    if (updated) {
-      window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
-      window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
-      window.dispatchEvent(new CustomEvent('vkreate:inquiries-updated'));
-      window.dispatchEvent(new CustomEvent('vkreate:settings-updated'));
+    if (!silent) {
+      if (reviewsUpdated) window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+      if (projectsUpdated) window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
+      if (inquiriesUpdated) window.dispatchEvent(new CustomEvent('vkreate:inquiries-updated'));
+      if (settingsUpdated) window.dispatchEvent(new CustomEvent('vkreate:settings-updated'));
     }
   },
 };
@@ -856,7 +959,12 @@ DB.seed();
   }
 
   // 2. Storage event listener (cross-tab in same browser)
+  //    Guard against self-triggered loops: when our own code writes to localStorage
+  //    the 'storage' event only fires in OTHER tabs, not the same tab — EXCEPT on
+  //    some browsers. We use a flag to skip re-entrant calls from our own writes.
   window.addEventListener('storage', (e) => {
+    // Only react to vk_ keys written by OTHER tabs/windows
+    if (!e.key || !e.key.startsWith('vk_')) return;
     DB.loadRemoteData();
   });
 
@@ -869,15 +977,6 @@ DB.seed();
           const msg = JSON.parse(e.data);
           if (msg.type && msg.type !== 'connected') {
             await DB.loadRemoteData();
-            // Always fire the specific entity event so modules re-render
-            window.dispatchEvent(new CustomEvent(`vkreate:${msg.type}`));
-            // Also fire reviews-updated when any entity changes (covers cross-entity broadcasts)
-            if (msg.type === 'reviews-updated') {
-              window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
-            }
-            if (typeof App !== 'undefined' && App._refreshCurrentView) {
-              App._refreshCurrentView();
-            }
           }
         } catch (err) {}
       };

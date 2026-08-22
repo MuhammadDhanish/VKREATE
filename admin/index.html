@@ -6,6 +6,7 @@
   <title>VKREATE — Admin Panel</title>
   <meta name="description" content="VKREATE Design Studio admin dashboard — manage projects, reviews, and inquiries.">
   <meta name="robots" content="noindex, nofollow">
+  <base href="/admin/">
   <link rel="stylesheet" href="css/admin.css">
 
 </head>
@@ -28,7 +29,8 @@ const UI = {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   },
 
   // ── Toast notifications ───────────────────────────────────
@@ -164,21 +166,21 @@ const UI = {
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-<script src="../js/firebase-config.js"></script>
+<script src="/js/firebase-config.js"></script>
 
 <!-- ── Image Storage (IndexedDB) ──────────────────────────── -->
 <script src="js/imagedb.js?v=20260821_v11"></script>
 <!-- ── GitHub Sync Engine ─────────────────────────────────── -->
-<script src="js/github-sync.js?v=20260821_v11"></script>
+<script src="js/github-sync.js?v=20260822_v12"></script>
 <!-- ── Data layer ──────────────────────────────────────────── -->
-<script src="js/data.js?v=20260821_v11"></script>
+<script src="js/data.js?v=20260822_v12"></script>
 <!-- ── Feature modules ────────────────────────────────────── -->
-<script src="js/auth.js?v=20260821_v11"></script>
-<script src="js/dashboard.js?v=20260821_v11"></script>
-<script src="js/projects.js?v=20260821_v11"></script>
-<script src="js/reviews.js?v=20260821_v11"></script>
-<script src="js/inquiries.js?v=20260821_v11"></script>
-<script src="js/settings.js?v=20260821_v11"></script>
+<script src="js/auth.js?v=20260822_v12"></script>
+<script src="js/dashboard.js?v=20260822_v12"></script>
+<script src="js/projects.js?v=20260822_v12"></script>
+<script src="js/reviews.js?v=20260822_v12"></script>
+<script src="js/inquiries.js?v=20260822_v12"></script>
+<script src="js/settings.js?v=20260822_v12"></script>
 
 <!-- ── App Shell & Router ──────────────────────────────────── -->
 <script>
@@ -409,15 +411,39 @@ const App = {
     }
 
     const mod = PAGES[page]?.module;
-    if (mod && typeof mod.render === 'function') {
+    if (!mod) return;
+
+    // For Reviews page: use smart partial update (_refreshCards) if the page is
+    // already rendered — this avoids a full innerHTML wipe that destroys all buttons.
+    // Only fall back to full render() if the page skeleton doesn't exist yet.
+    if (page === 'reviews' && typeof mod._refreshCards === 'function') {
+      const listEl = document.getElementById('reviews-list');
+      if (listEl) {
+        mod._refreshCards();
+        if (typeof mod._refreshTabState === 'function') mod._refreshTabState();
+        return;
+      }
+    }
+
+    if (typeof mod.render === 'function') {
       mod.render();
     }
   }
 };
 
 // ── Sync Event Listeners ────────────────────────────────────
+// Use a debounce flag to prevent double-renders when multiple events fire together
+let _syncRefreshPending = false;
+function _scheduleSyncRefresh() {
+  if (_syncRefreshPending) return;
+  _syncRefreshPending = true;
+  requestAnimationFrame(() => {
+    _syncRefreshPending = false;
+    App._refreshCurrentView();
+  });
+}
 ['vkreate:projects-updated', 'vkreate:reviews-updated', 'vkreate:inquiries-updated', 'vkreate:settings-updated', 'storage'].forEach(evt => {
-  window.addEventListener(evt, () => App._refreshCurrentView());
+  window.addEventListener(evt, _scheduleSyncRefresh);
 });
 
 // ── Boot ────────────────────────────────────────────────────
