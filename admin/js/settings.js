@@ -583,3 +583,6 @@ const Settings = {
     }
   },
 };
+
+window.Settings = Settings;
+

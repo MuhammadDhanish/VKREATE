@@ -262,3 +262,6 @@ const Dashboard = {
     return events.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0)).slice(0, 10);
   },
 };
+
+window.Dashboard = Dashboard;
+

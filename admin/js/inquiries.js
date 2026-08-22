@@ -247,3 +247,6 @@ const Inquiries = {
     UI.downloadCSV(rows, 'vkreate-inquiries.csv');
   },
 };
+
+window.Inquiries = Inquiries;
+

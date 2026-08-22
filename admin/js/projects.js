@@ -683,3 +683,6 @@ const Projects = {
     this.submitDirect();
   },
 };
+
+window.Projects = Projects;
+
