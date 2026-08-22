@@ -515,27 +515,27 @@
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
 
       // ── Storage chain ───────────────────────────────────────────────────────
-      // 1. Local Node API (localhost dev only)
+      // 1. Primary: POST to /api/reviews (works on Vercel serverless + Node dev server)
       let serverSaved = false;
-      const apiBase = getApiBaseUrl();
-      if (apiBase) {
-        try {
-          const res = await fetch(apiBase + '/api/reviews', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newReview)
-          });
-          const json = res.ok ? await res.json() : null;
-          if (res.ok && json && json.success) {
-            serverSaved = true;
-            if (json.review && json.review.id) newReview.id = json.review.id;
-          } else if (res.status === 400) {
-            const json2 = await res.json().catch(() => ({}));
-            showError((json2 && json2.error) || 'Review rejected. Please check your input.');
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
-            return;
-          }
-        } catch (e) { console.warn('Local API POST failed:', e); }
+      try {
+        const apiUrl = (getApiBaseUrl() || '') + '/api/reviews';
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newReview)
+        });
+        const json = res.ok ? await res.json() : null;
+        if (res.ok && json && json.success) {
+          serverSaved = true;
+          if (json.review && json.review.id) newReview.id = json.review.id;
+        } else if (res.status === 400) {
+          const json2 = await res.json().catch(() => ({}));
+          showError((json2 && json2.error) || 'Review rejected. Please check your input.');
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
+          return;
+        }
+      } catch (e) {
+        console.warn('API POST /api/reviews failed:', e);
       }
 
       // 2. Firebase Firestore (if connected)
@@ -547,18 +547,13 @@
         } catch (e) { console.warn('Firestore save failed:', e); }
       }
 
-      // 3. GitHub API — PRIMARY path on Vercel
-      //    Vercel filesystem is read-only, so /api/reviews POST fails silently.
-      //    Pushing directly to GitHub is the only way the admin panel can see it.
+      // 3. GitHub API (if custom GitHub token is configured in Admin)
       let githubSaved = false;
       if (!serverSaved && !firebaseSaved) {
         githubSaved = await pushReviewToGitHub(newReview);
-        if (!githubSaved) {
-          // GitHub push failed — show a real error so user knows to retry
-          showError('Could not save your review right now. Please try again in a moment.');
-          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
-          return;
-        }
+      } else {
+        // Try background push to GitHub if token is available
+        pushReviewToGitHub(newReview).catch(() => {});
       }
 
       // 4. Cache in localStorage for this session

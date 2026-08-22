@@ -823,39 +823,26 @@ const DB = {
       }
     };
 
-    // Helper to fetch entity data with environment-aware priority:
-    // - Localhost (dev):  local Node API first (authoritative, writes to disk)
-    //                     → GitHub API fallback → static file
-    // - Vercel (prod):    GitHub API first (Vercel filesystem is read-only, so only
-    //                     GitHub has data that was written via pushReviewToGitHub())
-    //                     → Vercel API fallback (stale but better than nothing) → static file
-    const isLocalDev = !!getApiBaseUrl(); // true on localhost:5500 etc, false on Vercel
-
+    // Helper to fetch entity data:
+    // 1. Live API endpoint (/api/reviews, /api/projects, etc.) — handled by server.js (memory + /tmp)
+    // 2. GitHub API (if custom valid GitHub token is provided by admin)
+    // 3. Static JSON file fallback
     const fetchEntity = async (apiEndpoint, staticPath) => {
-      if (isLocalDev) {
-        // ── Localhost: local Node server is authoritative ──────────────
-        try {
-          const res = await fetch(getApiBaseUrl() + apiEndpoint + '?t=' + Date.now());
-          if (res.ok) return await res.json();
-        } catch (e) {}
-      }
+      // 1. Primary: Live backend API endpoint (same-origin on Vercel or localhost)
+      try {
+        const apiUrl = (getApiBaseUrl() || '') + apiEndpoint + '?t=' + Date.now();
+        const res = await fetch(apiUrl);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && (Array.isArray(data) || typeof data === 'object')) return data;
+        }
+      } catch (e) {}
 
-      // ── Vercel/prod: GitHub API is authoritative ───────────────────
-      // Vercel's serverless filesystem is read-only so writeData() fails silently.
-      // pushReviewToGitHub() writes directly to the GitHub repo, making the
-      // GitHub API the only place that has freshly submitted reviews.
+      // 2. Secondary: GitHub API (if admin token set)
       const ghData = await fetchFromGitHub(staticPath);
       if (ghData !== null) return ghData;
 
-      // ── Vercel API fallback (returns the stale deployed snapshot) ──
-      if (!isLocalDev) {
-        try {
-          const res = await fetch(apiEndpoint + '?t=' + Date.now());
-          if (res.ok) return await res.json();
-        } catch (e) {}
-      }
-
-      // ── Last resort: static JSON file served by Vercel ─────────────
+      // 3. Last resort: static JSON file
       try {
         let res = await fetch('../' + staticPath + '?t=' + Date.now());
         if (!res.ok) res = await fetch(staticPath + '?t=' + Date.now());

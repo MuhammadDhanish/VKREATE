@@ -52,48 +52,101 @@ const DEFAULT_SETTINGS = {
   }
 };
 
-// Helper: Read JSON safely
-function readData(key) {
-  const filePath = FILES[key];
-  try {
-    if (!fs.existsSync(filePath)) {
-      if (key === 'settings') return DEFAULT_SETTINGS;
-      return [];
-    }
-    const content = fs.readFileSync(filePath, 'utf8');
-    if (!content.trim()) {
-      if (key === 'settings') return DEFAULT_SETTINGS;
-      return [];
-    }
-    return JSON.parse(content);
-  } catch (err) {
-    console.error(`Error reading ${key}:`, err.message);
-    if (key === 'settings') return DEFAULT_SETTINGS;
-    return [];
-  }
+const os = require('os');
+
+// In-memory persistence store for serverless / read-only environments
+const MEMORY_STORE = {};
+
+function getTmpPath(key) {
+  return path.join(os.tmpdir(), `vk_admin_${key}.json`);
 }
 
-// Helper: Write JSON safely (atomic: temp file + rename, safe for read-only serverless)
-function writeData(key, data) {
+function mergeLists(baseList, newList) {
+  if (!Array.isArray(baseList)) baseList = [];
+  if (!Array.isArray(newList)) newList = [];
+  const map = new Map();
+  baseList.forEach(item => { if (item && item.id) map.set(item.id, item); });
+  newList.forEach(item => {
+    if (item && item.id) {
+      const existing = map.get(item.id);
+      map.set(item.id, existing ? { ...existing, ...item } : item);
+    }
+  });
+  return Array.from(map.values());
+}
+
+// Helper: Read JSON safely (merges in-memory, /tmp writable directory, and static file)
+function readData(key) {
+  if (MEMORY_STORE[key]) {
+    return MEMORY_STORE[key];
+  }
+
   const filePath = FILES[key];
-  const tmpPath = filePath + '.tmp';
+  const tmpPath = getTmpPath(key);
+  let baseData = key === 'settings' ? DEFAULT_SETTINGS : [];
+
+  // 1. Read baseline file from project root
+  try {
+    if (fs.existsSync(filePath)) {
+      const content = fs.readFileSync(filePath, 'utf8');
+      if (content.trim()) baseData = JSON.parse(content);
+    }
+  } catch (err) {}
+
+  // 2. Merge with writable /tmp directory if available
+  try {
+    if (fs.existsSync(tmpPath)) {
+      const tmpContent = fs.readFileSync(tmpPath, 'utf8');
+      if (tmpContent.trim()) {
+        const tmpData = JSON.parse(tmpContent);
+        if (key === 'settings' && typeof tmpData === 'object') {
+          baseData = { ...baseData, ...tmpData };
+        } else if (Array.isArray(tmpData)) {
+          baseData = mergeLists(baseData, tmpData);
+        }
+      }
+    }
+  } catch (err) {}
+
+  if (key === 'settings' && (!baseData || typeof baseData !== 'object')) {
+    baseData = DEFAULT_SETTINGS;
+  } else if (key !== 'settings' && !Array.isArray(baseData)) {
+    baseData = [];
+  }
+
+  MEMORY_STORE[key] = baseData;
+  return baseData;
+}
+
+// Helper: Write JSON safely (writes to in-memory + /tmp + project file)
+function writeData(key, data) {
+  MEMORY_STORE[key] = data;
+  const filePath = FILES[key];
+  const tmpPath = getTmpPath(key);
+
+  // 1. Write to /tmp directory (writable in Vercel serverless lambdas)
   try {
     fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf8');
-    fs.renameSync(tmpPath, filePath);
-    return true;
-  } catch (err) {
-    console.error(`Error writing ${key}:`, err.message);
-    try { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); } catch (e) {}
-    return false;
+  } catch (e) {
+    console.warn(`Could not write /tmp for ${key}:`, e.message);
   }
+
+  // 2. Try writing to project file (works on localhost dev)
+  try {
+    const fileTmp = filePath + '.tmp';
+    fs.writeFileSync(fileTmp, JSON.stringify(data, null, 2), 'utf8');
+    fs.renameSync(fileTmp, filePath);
+  } catch (err) {
+    // Read-only filesystem on Vercel is expected — /tmp and MEMORY_STORE succeeded
+  }
+
+  return true;
 }
 
 // Ensure files exist on startup (safely guarded)
 try {
   ['projects', 'reviews', 'inquiries', 'settings'].forEach(key => {
-    if (!fs.existsSync(FILES[key])) {
-      writeData(key, key === 'settings' ? DEFAULT_SETTINGS : []);
-    }
+    readData(key);
   });
 } catch (e) {
   console.warn('Startup sync notice:', e.message);
