@@ -455,7 +455,7 @@ const DB = {
         }
       } catch (e) {}
 
-      // 2. Read live reviews
+      // 2. Read live reviews (timestamp-based merge: localAdmin wins unless rawLive is strictly newer)
       try {
         const rawLive = JSON.parse(localStorage.getItem('vk_reviews')) || [];
         if (Array.isArray(rawLive)) {
@@ -466,9 +466,10 @@ const DB = {
               if (!existing) {
                 itemMap.set(r.id, r);
               } else {
-                const status = r.status || existing.status;
-                const studioResponse = r.studioResponse !== undefined ? r.studioResponse : (existing.studioResponse || '');
-                itemMap.set(r.id, { ...existing, ...r, status, studioResponse });
+                const existingTime = new Date(existing.updatedAt || existing.approvedAt || existing.createdAt || 0).getTime();
+                const rawTime = new Date(r.updatedAt || r.approvedAt || r.createdAt || 0).getTime();
+                const merged = rawTime > existingTime ? { ...existing, ...r } : { ...r, ...existing };
+                itemMap.set(r.id, merged);
               }
             }
           });
@@ -716,15 +717,13 @@ const DB = {
           if (!existing) {
             itemMap.set(item.id, item);
           } else {
-            const status = item.status || existing.status;
-            const studioResponse = item.studioResponse !== undefined ? item.studioResponse : (existing.studioResponse || '');
             const existingTime = new Date(existing.updatedAt || existing.approvedAt || existing.createdAt || 0).getTime();
             const remoteTime = new Date(item.updatedAt || item.approvedAt || item.createdAt || 0).getTime();
 
-            if (remoteTime >= existingTime) {
-              itemMap.set(item.id, { ...existing, ...item, status, studioResponse });
+            if (remoteTime > existingTime) {
+              itemMap.set(item.id, { ...existing, ...item });
             } else {
-              itemMap.set(item.id, { ...item, ...existing, status, studioResponse });
+              itemMap.set(item.id, { ...item, ...existing });
             }
           }
         }
