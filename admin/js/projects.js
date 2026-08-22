@@ -4,6 +4,7 @@
 
 const Projects = {
 
+  _submitting: false,
   _filter: { search: '', industry: 'all', status: 'all' },
   _editId: null,
   _images: [],       // Array of { ref: 'idb:key' | 'data:...' | 'path', preview: dataUrl }
@@ -222,7 +223,11 @@ const Projects = {
     DB.projects.update(id, { status: published ? 'published' : 'draft' });
     UI.toast(published ? 'Project published!' : 'Project moved to drafts.', published ? 'success' : 'info');
     this.render();
-    window.dispatchEvent(new Event('storage'));
+    if (typeof GithubSync !== 'undefined' && GithubSync.afterMutation) {
+      GithubSync.afterMutation();
+    } else {
+      DB.afterMutation();
+    }
   },
 
   delete(id) {
@@ -233,9 +238,12 @@ const Projects = {
       UI.toast('Project deleted.', 'success');
       this.render();
       if (window.App && App.updateSidebar) App.updateSidebar();
-      window.dispatchEvent(new Event('storage'));
-      // Push to GitHub so Vercel redeploys and all visitors see the change
-      if (window.GithubSync) GithubSync.push();
+      if (typeof GithubSync !== 'undefined' && GithubSync.afterMutation) {
+        GithubSync.afterMutation();
+      } else {
+        DB.afterMutation();
+      }
+      UI.closeModal();
     }, true);
   },
 
@@ -269,8 +277,9 @@ const Projects = {
     const stdIndustries = ['restaurant','beauty','office','retail','hospitality','residential','healthcare'];
     const isOther = p?.industry && (!stdIndustries.includes(p.industry) || p.industry.startsWith('other-'));
 
+    this._submitting = false;
     UI.modal(`${id ? 'Edit' : 'Add'} Project`, `
-      <form id="proj-form" class="form-grid" style="gap:20px" onsubmit="event.preventDefault(); Projects.submitDirect();">
+      <form id="proj-form" class="form-grid" style="gap:20px" onsubmit="event.preventDefault(); Projects.submitDirect(this);">
         <div style="background:rgba(201,169,110,0.1);padding:14px 18px;border-radius:var(--r-md);border:1px solid rgba(201,169,110,0.3);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
           <div>
             <div class="fw-600 text-sm" style="color:var(--text-1)">⭐ Top Preference / Display Order</div>
@@ -409,10 +418,10 @@ const Projects = {
         </div>
       </form>
     `, `
-      ${id ? `<button class="btn btn-danger btn-sm" onclick="Projects.delete('${id}');UI.closeModal()">Delete</button>` : ''}
+      ${id ? `<button class="btn btn-danger btn-sm" onclick="Projects.delete('${id}')">Delete</button>` : ''}
       <span style="flex:1"></span>
       <button class="btn btn-outline" onclick="UI.closeModal()">Cancel</button>
-      <button class="btn btn-primary" type="button" onclick="Projects.submitDirect()">
+      <button class="btn btn-primary" type="button" onclick="Projects.submitDirect(this)">
         ${UI.icon('check')} ${id ? 'Save Changes' : 'Create Project'}
       </button>
     `, 'modal-lg');
@@ -533,13 +542,32 @@ const Projects = {
     this._renderImgPreviews();
   },
 
-  async submitDirect() {
+  async submitDirect(btnEl) {
+    if (this._submitting) return;
     if (this._isCompressing) {
       return UI.toast('Please wait, images are still being saved...', 'info');
     }
 
+    this._submitting = true;
+    let btn = (btnEl && btnEl instanceof HTMLElement) ? btnEl : null;
+    if (!btn) {
+      btn = document.querySelector('#active-modal .btn-primary') || document.querySelector('#proj-form button[type="submit"]');
+    }
+    if (btn) {
+      btn.dataset.loading = 'true';
+      btn.disabled = true;
+    }
+
+    const restore = () => {
+      this._submitting = false;
+      if (btn) {
+        delete btn.dataset.loading;
+        btn.disabled = false;
+      }
+    };
+
     const f = document.getElementById('proj-form');
-    if (!f) return;
+    if (!f) { restore(); return; }
 
     const nameInput = f.querySelector('[name="name"]');
     const indSelect = f.querySelector('[name="industry"]');
@@ -550,11 +578,13 @@ const Projects = {
     if (!nameVal) {
       UI.toast('Please enter a Project Name', 'error');
       if (nameInput) nameInput.focus();
+      restore();
       return;
     }
     if (!indVal) {
       UI.toast('Please select an Industry', 'error');
       if (indSelect) indSelect.focus();
+      restore();
       return;
     }
 
@@ -564,6 +594,7 @@ const Projects = {
       if (!customText) {
         UI.toast('Please type your custom industry name', 'error');
         if (customInput) customInput.focus();
+        restore();
         return;
       }
       indVal = 'other-' + customText.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -640,6 +671,7 @@ const Projects = {
           savedOk = true;
         } else {
           UI.toast('Save failed: storage is full. Go to Settings → Clear Image Cache.', 'error');
+          restore();
           return;
         }
       }
@@ -655,6 +687,7 @@ const Projects = {
           savedOk = true;
         } else {
           UI.toast('Save failed: storage is full. Please clear browser storage or use smaller images.', 'error');
+          restore();
           return;
         }
       } else {
@@ -662,7 +695,7 @@ const Projects = {
       }
     }
 
-    if (!savedOk) return;
+    if (!savedOk) { restore(); return; }
 
     // Reset table filters so newly created/updated project is guaranteed visible
     this._filter = { search: '', industry: 'all', status: 'all' };
@@ -671,11 +704,12 @@ const Projects = {
     this.render();
     if (window.App && App.updateSidebar) App.updateSidebar();
 
-    // Broadcast storage sync event for instant live website updates
-    window.dispatchEvent(new Event('storage'));
-
-    // Push to GitHub so Vercel redeploys and all visitors see the change
-    if (window.GithubSync) GithubSync.push();
+    if (typeof GithubSync !== 'undefined' && GithubSync.afterMutation) {
+      GithubSync.afterMutation();
+    } else {
+      DB.afterMutation();
+    }
+    restore();
   },
 
   save(e) {

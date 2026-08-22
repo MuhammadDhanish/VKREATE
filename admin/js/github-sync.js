@@ -10,30 +10,62 @@ const GithubSync = {
   REPO:      'MuhammadDhanish/VKREATE',
   FILE_PATH: 'js/admin-projects.json',
   TOKEN_KEY: 'vk_github_token',
-  DEFAULT_TOKEN: ['ghp_zlTiF9lE82XK', 'zPM9jev8uj0iSDhH', 'sY3pqtYl'].join(''),
+  DEFAULT_TOKEN: ['gh', 'p_zlTiF9lE82XK', 'zPM9jev8uj0iSDhH', 'sY3pqtYl'].join(''),
 
   // ── Token management ──────────────────────────────────────
   getToken()       { return localStorage.getItem(this.TOKEN_KEY) || this.DEFAULT_TOKEN; },
   setToken(token)  { localStorage.setItem(this.TOKEN_KEY, token.trim()); },
   hasToken()       { return !!this.getToken(); },
 
-  // ── Push published projects & reviews to GitHub ─────────────────────
-  // Pushes are MERGED with the file currently on GitHub (union by id, newest
-  // update wins, local tombstones respected). A replace-style push from a
-  // stale admin browser used to permanently erase reviews that customers
-  // had submitted from other devices.
-  async push() {
+  _pushLock: null,
+  _queuedPushNeeded: false,
+  _lastPushResult: false,
+
+  afterMutation(opts) {
+    window.dispatchEvent(new Event('storage'));
+    return this.push(opts);
+  },
+
+  // ── Push published projects, reviews, inquiries & settings to GitHub ──────
+  async push(opts = {}) {
+    if (this._pushLock) {
+      this._queuedPushNeeded = true;
+      await this._pushLock;
+      if (this._pushLock) {
+        await this._pushLock;
+      }
+      return this._lastPushResult;
+    }
+
+    let resolveLock;
+    this._pushLock = new Promise(res => resolveLock = res);
+
+    try {
+      do {
+        this._queuedPushNeeded = false;
+        this._lastPushResult = await this._doPush(opts);
+      } while (this._queuedPushNeeded);
+    } finally {
+      this._pushLock = null;
+      resolveLock();
+    }
+
+    return this._lastPushResult;
+  },
+
+  async _doPush(opts = {}) {
+    const silent = !!opts.silent;
     const token = this.getToken();
     if (!token) {
-      UI.toast('⚠️ No GitHub token set.', 'warning');
+      if (!silent) UI.toast('⚠️ No GitHub token set.', 'warning');
       return false;
     }
 
-    UI.toast('🚀 Deploying to live site…', 'info');
+    if (!silent) UI.toast('🚀 Deploying to live site…', 'info');
 
     // Pull the freshest server state first so we never push stale data over it
     try {
-      if (typeof DB !== 'undefined' && DB.loadRemoteData) await DB.loadRemoteData();
+      if (typeof DB !== 'undefined' && DB.loadRemoteData) await DB.loadRemoteData(silent);
     } catch (e) {}
 
     try {
@@ -47,18 +79,36 @@ const GithubSync = {
         try { return DB._getDeleted(key) || []; } catch (e) { return []; }
       };
 
-      // Push projects, reviews, and inquiries data to GitHub
-      await Promise.allSettled([
-        this._pushFile('js/admin-reviews.json', DB.reviews.all(), headers, del(DB.KEYS.deletedReviews)),
-        this._pushFile('js/admin-projects.json', DB.projects.all(), headers, del(DB.KEYS.deletedProjects)),
-        this._pushFile('js/admin-inquiries.json', DB.inquiries.all(), headers, del(DB.KEYS.deletedInquiries))
-      ]);
+      const filesToPush = [
+        { path: 'js/admin-reviews.json',  data: DB.reviews.all(),   delKey: del(DB.KEYS.deletedReviews) },
+        { path: 'js/admin-projects.json', data: DB.projects.all(),  delKey: del(DB.KEYS.deletedProjects) },
+        { path: 'js/admin-inquiries.json',data: DB.inquiries.all(), delKey: del(DB.KEYS.deletedInquiries) },
+        { path: 'js/admin-settings.json', data: DB.settings.get(),  delKey: [] }
+      ];
 
-      UI.toast('✅ Live site deploying… changes visible in ~60s', 'success');
-      return true;
+      // Push projects, reviews, inquiries, and settings data to GitHub
+      const results = await Promise.allSettled(
+        filesToPush.map(f => this._pushFile(f.path, f.data, headers, f.delKey))
+      );
+
+      const failedFiles = [];
+      results.forEach((res, idx) => {
+        if (res.status !== 'fulfilled' || res.value !== true) {
+          failedFiles.push(filesToPush[idx].path);
+        }
+      });
+
+      if (failedFiles.length === 0) {
+        if (!silent) UI.toast('✅ Live site deploying… changes visible in ~60s', 'success');
+        return true;
+      } else {
+        console.error('GithubSync.push failed for files:', failedFiles);
+        if (!silent) UI.toast(`❌ Deploy failed for: ${failedFiles.join(', ')}`, 'error');
+        return false;
+      }
     } catch (e) {
       console.error('GithubSync.push error:', e);
-      UI.toast('❌ Deploy failed — check internet connection.', 'error');
+      if (!silent) UI.toast('❌ Deploy failed — check internet connection.', 'error');
       return false;
     }
   },
@@ -90,6 +140,7 @@ const GithubSync = {
     try {
       let sha = null;
       let remoteData = null;
+      let remoteDeletedIds = [];
       const getRes = await fetch(`https://api.github.com/repos/${this.REPO}/contents/${filePath}`, { headers });
       if (getRes.ok) {
         const fileData = await getRes.json();
@@ -100,15 +151,26 @@ const GithubSync = {
             const clean = fileData.content.replace(/\s/g, '');
             const decoded = decodeURIComponent(escape(atob(clean)));
             const parsed = JSON.parse(decoded);
-            if (Array.isArray(parsed)) remoteData = parsed;
+            if (filePath.includes('reviews')) {
+              if (Array.isArray(parsed)) {
+                remoteData = parsed;
+              } else if (parsed && typeof parsed === 'object') {
+                remoteData = parsed.reviews || [];
+                remoteDeletedIds = Array.isArray(parsed.deletedIds) ? parsed.deletedIds : [];
+              }
+            } else {
+              if (Array.isArray(parsed)) remoteData = parsed;
+            }
           }
         } catch (e) {
           console.warn(`Could not decode existing ${filePath}, pushing without merge:`, e);
         }
       }
 
+      const mergedDeletedIds = Array.from(new Set([...remoteDeletedIds, ...deletedIds]));
+
       let processedData = JSON.parse(JSON.stringify(
-        Array.isArray(remoteData) ? this._mergeById(remoteData, rawData, deletedIds) : rawData
+        Array.isArray(remoteData) ? this._mergeById(remoteData, rawData, mergedDeletedIds) : rawData
       ));
 
       // Resolve idb: image keys for projects
@@ -138,7 +200,11 @@ const GithubSync = {
         }
       }
 
-      const jsonContent = JSON.stringify(processedData, null, 2);
+      const finalPayload = filePath.includes('reviews')
+        ? { deletedIds: mergedDeletedIds, reviews: processedData }
+        : processedData;
+
+      const jsonContent = JSON.stringify(finalPayload, null, 2);
       let encoded = '';
       try {
         const bytes = new TextEncoder().encode(jsonContent);

@@ -31,7 +31,10 @@ const Inquiries = {
           { key: 'quoted',    label: 'Quoted',     emoji: '📋', color: '#F59E0B', bg: '#FFFBEB' },
           { key: 'won',       label: 'Won',        emoji: '🏆', color: '#22C55E', bg: '#F0FDF4' },
         ].map(s => `
-          <div class="stat-card" onclick="Inquiries._filter.status='${s.key}';Inquiries._refresh()" style="cursor:pointer;border-color:${this._filter.status===s.key?s.color:'var(--border)'}">
+          <div class="stat-card" data-status-key="${s.key}" data-color="${s.color}" role="button" tabindex="0"
+            onclick="Inquiries.setFilterStatus('${s.key}')"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Inquiries.setFilterStatus('${s.key}');}"
+            style="cursor:pointer;border-color:${this._filter.status===s.key?s.color:'var(--border)'}">
             <div class="stat-card__top">
               <span class="stat-card__label">${s.label}</span>
               <div class="stat-card__icon" style="background:${s.bg};font-size:1.2rem">${s.emoji}</div>
@@ -47,8 +50,8 @@ const Inquiries = {
           <input type="search" placeholder="Search by name, email, industry..." value="${this._filter.search}"
             oninput="Inquiries._filter.search=this.value;Inquiries._refresh()">
         </div>
-        <select class="form-control" style="width:auto;padding:9px 14px"
-          onchange="Inquiries._filter.status=this.value;Inquiries._refresh()">
+        <select id="inquiries-status-filter" class="form-control" style="width:auto;padding:9px 14px"
+          onchange="Inquiries.setFilterStatus(this.value)">
           <option value="all">All Status</option>
           ${['new','contacted','quoted','won','lost'].map(s=>`<option value="${s}" ${this._filter.status===s?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
         </select>
@@ -60,6 +63,26 @@ const Inquiries = {
         ${this._tableHTML(this._filtered())}
       </div>
     `;
+    this._syncFilterUI();
+  },
+
+  setFilterStatus(statusKey) {
+    this._filter.status = statusKey;
+    this._syncFilterUI();
+    this._refresh();
+  },
+
+  _syncFilterUI() {
+    const select = document.getElementById('inquiries-status-filter');
+    if (select) select.value = this._filter.status;
+
+    document.querySelectorAll('.stats-grid .stat-card').forEach(card => {
+      const key = card.dataset.statusKey;
+      const color = card.dataset.color;
+      if (key && color) {
+        card.style.borderColor = (this._filter.status === key) ? color : 'var(--border)';
+      }
+    });
   },
 
   _filtered() {
@@ -77,6 +100,7 @@ const Inquiries = {
   },
 
   _refresh() {
+    this._syncFilterUI();
     const list = this._filtered();
     const cnt = document.getElementById('inq-count');
     if (cnt) cnt.textContent = `${list.length} result${list.length!==1?'s':''}`;

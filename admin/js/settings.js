@@ -393,8 +393,11 @@ const Settings = {
       address: f.address.value.trim(),
       instagram: f.instagram.value.trim(), website: f.website.value.trim(),
     });
-    if (window.GithubSync) GithubSync.push();
-    window.dispatchEvent(new Event('storage'));
+    if (typeof GithubSync !== 'undefined' && GithubSync.afterMutation) {
+      GithubSync.afterMutation();
+    } else {
+      DB.afterMutation();
+    }
     UI.toast('Studio information saved!', 'success');
   },
 
@@ -404,8 +407,11 @@ const Settings = {
       newInquiry: document.getElementById('notif-inquiry')?.checked,
       notifEmail: document.getElementById('notif-email')?.value.trim(),
     });
-    if (window.GithubSync) GithubSync.push();
-    window.dispatchEvent(new Event('storage'));
+    if (typeof GithubSync !== 'undefined' && GithubSync.afterMutation) {
+      GithubSync.afterMutation();
+    } else {
+      DB.afterMutation();
+    }
     UI.toast('Notification settings saved!', 'success');
   },
 
@@ -430,33 +436,49 @@ const Settings = {
       if (res.ok) {
         UI.toast(`✅ Test notification email dispatched to ${email}! Check inbox/spam.`, 'success');
       } else {
-        UI.toast(`✉️ Notification request dispatched to ${email}.`, 'info');
+        UI.toast(`❌ Email test FAILED — check formsubmit.co activation for ${email}`, 'error');
       }
     } catch(e) {
-      UI.toast(`✉️ Notification request dispatched to ${email}.`, 'info');
+      UI.toast(`❌ Email test FAILED — check formsubmit.co activation for ${email}`, 'error');
     }
   },
 
-  saveCredentials(e) {
+  async saveCredentials(e) {
     e.preventDefault();
     const f = e.target;
-    const s = DB.settings.get() || {};
-    const creds = s.credentials || {};
-    const currentPwHash = creds.passwordHash || 'admin123';
+    const email = f.email.value.trim();
+    const currentPw = f.currentPw.value;
+    const newPw = f.newPw.value;
+    const confirmPw = f.confirmPw.value;
 
-    if (f.currentPw.value !== currentPwHash) {
-      return UI.toast('Current password is incorrect.', 'error');
+    if (!currentPw) {
+      return UI.toast('Please enter your current password.', 'warning');
     }
-    const update = { email: f.email.value.trim(), passwordHash: currentPwHash };
-    if (f.newPw.value) {
-      if (f.newPw.value !== f.confirmPw.value) return UI.toast('New passwords do not match.', 'error');
-      if (f.newPw.value.length < 8) return UI.toast('Password must be at least 8 characters.', 'error');
-      update.passwordHash = f.newPw.value;
+
+    if (newPw) {
+      if (newPw !== confirmPw) return UI.toast('New passwords do not match.', 'error');
+      if (newPw.length < 8) return UI.toast('New password must be at least 8 characters.', 'error');
     }
-    DB.settings.update('credentials', update);
-    if (window.GithubSync) GithubSync.push();
-    UI.toast('Credentials updated successfully!', 'success');
-    f.currentPw.value = f.newPw.value = f.confirmPw.value = '';
+
+    try {
+      const res = await fetch('/api/admin-credentials', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, currentPw, newPw: newPw || undefined }),
+        credentials: 'include'
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data && data.success) {
+        UI.toast('✅ Credentials updated successfully!', 'success');
+        f.currentPw.value = f.newPw.value = f.confirmPw.value = '';
+      } else {
+        UI.toast(`❌ ${(data && data.error) || 'Failed to update credentials'}`, 'error');
+      }
+    } catch (err) {
+      console.warn('saveCredentials error:', err);
+      UI.toast('❌ Server connection error while updating credentials', 'error');
+    }
   },
 
   exportAll() {
@@ -557,21 +579,6 @@ const Settings = {
     }, true);
   },
 
-  saveGithubToken() {
-    const input = document.getElementById('gh-token-input');
-    const val = input ? input.value.trim() : '';
-    if (!val || val.startsWith('•')) {
-      UI.toast('Please enter your GitHub token (ghp_...)', 'warning');
-      return;
-    }
-    if (!val.startsWith('ghp_') && !val.startsWith('github_pat_')) {
-      UI.toast('Token should start with ghp_ — please check and try again.', 'warning');
-      return;
-    }
-    GithubSync.setToken(val);
-    UI.toast('✅ GitHub token saved! Auto-deploy is now active.', 'success');
-    this.render(); // refresh to show active status
-  },
 
   async testDeploy() {
     UI.toast('⚡ Testing Firebase Real-time sync…', 'info');

@@ -7,6 +7,7 @@
     "address": "LPOne Beyond, Venture Arcade, Thondayad, Kozhikode - 673016",
     "mapsUrl": "https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw",
     "instagram": "https://www.instagram.com/vkreate_interior_architecture",
+    "facebook": "",
     "website": "https://vkreate.com"
   },
   "notifications": {
@@ -14,8 +15,5 @@
     "newInquiry": true,
     "notifEmail": "admin@vkreate.com"
   },
-  "credentials": {
-    "email": "admin@vkreate.com",
-    "passwordHash": "Admin@123"
-  }
+  "testKey": "val"
 }

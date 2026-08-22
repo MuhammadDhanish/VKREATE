@@ -30,97 +30,23 @@
 
   let cachedApiReviews = null;
 
-  // ── GitHub push helper ───────────────────────────────────────────────────
-  const GH_REPO = 'MuhammadDhanish/VKREATE';
-  const GH_FILE = 'js/admin-reviews.json';
-  // Use the same token key as the admin panel (same domain = same localStorage)
-  // Falls back to the hardcoded default if admin hasn't overridden it.
-  const GH_TOKEN_KEY  = 'vk_github_token';
-  const GH_TOKEN_DEFAULT = ['ghp_zlTiF9lE82XK', 'zPM9jev8uj0iSDhH', 'sY3pqtYl'].join('');
-  function getGHToken() {
-    try { return localStorage.getItem(GH_TOKEN_KEY) || GH_TOKEN_DEFAULT; } catch (e) { return GH_TOKEN_DEFAULT; }
-  }
-
-  // Push a pending review into admin-reviews.json on GitHub.
-  // Retries once on 409 Conflict (SHA race condition).
-  async function pushReviewToGitHub(newReview, _retry) {
-    try {
-      const token = getGHToken();
-      const headers = {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json',
-      };
-      const apiUrl = `https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`;
-
-      // 1. GET current file SHA + content
-      const getRes = await fetch(apiUrl, { headers });
-      if (!getRes.ok) {
-        console.error(`pushReviewToGitHub: GET failed ${getRes.status}`);
-        return false;
-      }
-      const fileData = await getRes.json();
-      const sha = fileData.sha;
-
-      // 2. Decode existing reviews, prepend new one
-      let existing = [];
-      try {
-        const clean = (fileData.content || '').replace(/\s/g, '');
-        const decoded = decodeURIComponent(escape(atob(clean)));
-        const parsed = JSON.parse(decoded);
-        if (Array.isArray(parsed)) existing = parsed;
-      } catch (e) {}
-
-      if (!existing.some(r => r && r.id === newReview.id)) {
-        existing.unshift(newReview);
-      }
-
-      // 3. Encode and PUT
-      const jsonStr = JSON.stringify(existing, null, 2);
-      const bytes = new TextEncoder().encode(jsonStr);
-      let bin = '';
-      bytes.forEach(b => bin += String.fromCharCode(b));
-      const encoded = btoa(bin);
-
-      const putRes = await fetch(apiUrl, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify({
-          message: `New client review: ${newReview.clientName} [${new Date().toISOString()}]`,
-          content: encoded,
-          sha,
-        }),
-      });
-
-      if (putRes.status === 409 && !_retry) {
-        // SHA conflict — another push happened concurrently. Retry once with fresh SHA.
-        console.warn('pushReviewToGitHub: SHA conflict, retrying...');
-        await new Promise(r => setTimeout(r, 800));
-        return pushReviewToGitHub(newReview, true);
-      }
-
-      if (!putRes.ok) {
-        const errBody = await putRes.text().catch(() => '');
-        console.error(`pushReviewToGitHub: PUT failed ${putRes.status}`, errBody);
-        return false;
-      }
-      return true;
-    } catch (e) {
-      console.error('pushReviewToGitHub exception:', e);
-      return false;
-    }
+  function escapeHTML(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/[&<>"']/g, function (m) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+    });
   }
 
   // Fetch live reviews from Express backend API
   async function fetchLiveReviews() {
     try {
-      const res = await fetch(getApiBaseUrl() + '/api/reviews?t=' + Date.now());
+      const res = await fetch(getApiBaseUrl() + '/api/reviews/public?t=' + Date.now());
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          cachedApiReviews = data;
+          cachedApiReviews = data.filter(r => r && r.status === 'approved');
           try {
-            localStorage.setItem('vk_admin_reviews', JSON.stringify(data));
+            localStorage.setItem('vk_reviews', JSON.stringify(cachedApiReviews));
           } catch (e) {}
           renderReviews();
           return;
@@ -140,10 +66,10 @@
       allReviews = cachedApiReviews;
     }
 
-    // 2. Check localStorage vk_admin_reviews / vk_reviews if API cache is empty
+    // 2. Check localStorage vk_reviews if API cache is empty
     if (allReviews.length === 0) {
       try {
-        const raw = localStorage.getItem('vk_admin_reviews') || localStorage.getItem('vk_reviews');
+        const raw = localStorage.getItem('vk_reviews');
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -161,8 +87,7 @@
     // Filter approved reviews only
     return allReviews.filter(r => {
       if (!r) return false;
-      const isApproved = r.status === 'approved' || r.verified === true || (!r.status && r.rating);
-      return isApproved && r.id !== 'mswstn7iv0g7w';
+      return r.status === 'approved' || r.verified === true;
     });
   }
 
@@ -242,22 +167,22 @@
       card.className = 'review-card reveal';
       card.style.transitionDelay = `${(idx % 3) * 0.1}s`;
 
-      const clientName = r.clientName || r.author || 'Verified Client';
-      const clientRole = r.clientRole || r.role || 'Client';
-      const reviewText = r.reviewText || r.text || '';
-      const projName = r.projectName || (window.VKREATE_DATA?.projects?.find(p => p.id === r.projectId)?.name) || '';
+      const clientName = escapeHTML(r.clientName || r.author || 'Verified Client');
+      const clientRole = escapeHTML(r.clientRole || r.role || 'Client');
+      const reviewText = escapeHTML(r.reviewText || r.text || '');
+      const projName = escapeHTML(r.projectName || (window.VKREATE_DATA?.projects?.find(p => p.id === r.projectId)?.name) || '');
       const responseHtml = r.studioResponse ? `
         <div class="review-card__response" style="margin-top:16px;padding:12px 16px;background:rgba(61,92,80,0.06);border-left:3px solid var(--green-mid);border-radius:6px;">
           <div style="font-weight:600;font-size:0.8125rem;color:var(--green-mid);margin-bottom:4px;display:flex;align-items:center;gap:6px;">
             <span>💬 Studio Response from VKREATE:</span>
           </div>
-          <p style="font-size:0.875rem;font-style:italic;color:var(--text-body);margin:0;line-height:1.5;">"${r.studioResponse}"</p>
+          <p style="font-size:0.875rem;font-style:italic;color:var(--text-body);margin:0;line-height:1.5;">"${escapeHTML(r.studioResponse)}"</p>
         </div>` : '';
 
       card.innerHTML = `
         <div class="review-card__header">
           <div class="review-card__stars">${renderStarsHTML(r.rating || 5)}</div>
-          <span class="review-card__tag">${r.industryLabel || r.industry || 'Verified'}</span>
+          <span class="review-card__tag">${escapeHTML(r.industryLabel || r.industry || 'Verified')}</span>
         </div>
         <blockquote class="review-card__text">"${reviewText}"</blockquote>
         ${responseHtml}
@@ -498,14 +423,11 @@
       const newReview = {
         id: 'rev-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         clientName: clientName,
-        author: clientName,
         clientRole: clientRole,
-        role: clientRole,
         clientEmail: clientEmail,
         projectId: projectId,
         rating: ratingVal,
         reviewText: reviewText,
-        text: reviewText,
         status: 'pending',
         createdAt: new Date().toISOString()
       };
@@ -514,8 +436,7 @@
       const submitBtn = document.getElementById('pub-review-submit-btn');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
 
-      // ── Storage chain ───────────────────────────────────────────────────────
-      // 1. Primary: POST to /api/reviews (works on Vercel serverless + Node dev server)
+      // POST to /api/reviews exclusively
       let serverSaved = false;
       try {
         const apiUrl = (getApiBaseUrl() || '') + '/api/reviews';
@@ -528,48 +449,26 @@
         if (res.ok && json && json.success) {
           serverSaved = true;
           if (json.review && json.review.id) newReview.id = json.review.id;
-        } else if (res.status === 400) {
+        } else {
           const json2 = await res.json().catch(() => ({}));
-          showError((json2 && json2.error) || 'Review rejected. Please check your input.');
+          showError((json2 && json2.error) || 'Submission failed. Please check your input and try again.');
           if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
           return;
         }
       } catch (e) {
         console.warn('API POST /api/reviews failed:', e);
+        showError('Submission failed. Please check your network connection and try again.');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
+        return;
       }
 
-      // 2. Firebase Firestore (if connected)
-      let firebaseSaved = false;
-      if (typeof FirebaseDB !== 'undefined' && FirebaseDB.initialized && FirebaseDB.db) {
-        try {
-          await FirebaseDB.db.collection('reviews').doc(newReview.id).set(newReview);
-          firebaseSaved = true;
-        } catch (e) { console.warn('Firestore save failed:', e); }
+      if (!serverSaved) {
+        showError('Submission failed. Please try again.');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Review for Approval'; }
+        return;
       }
 
-      // 3. GitHub API (if custom GitHub token is configured in Admin)
-      let githubSaved = false;
-      if (!serverSaved && !firebaseSaved) {
-        githubSaved = await pushReviewToGitHub(newReview);
-      } else {
-        // Try background push to GitHub if token is available
-        pushReviewToGitHub(newReview).catch(() => {});
-      }
-
-      // 4. Cache in localStorage for this session
-      try {
-        const lsKey = 'vk_admin_reviews';
-        let existing = [];
-        try { existing = JSON.parse(localStorage.getItem(lsKey)) || []; } catch (_) {}
-        if (!Array.isArray(existing)) existing = [];
-        if (!existing.some(r => r && r.id === newReview.id)) {
-          existing.unshift(newReview);
-          localStorage.setItem(lsKey, JSON.stringify(existing));
-          localStorage.setItem('vk_reviews', JSON.stringify(existing));
-        }
-      } catch (_) {}
-
-      // 4. Notify all open tabs (admin panel will pick this up via BroadcastChannel / storage event)
+      // Notify all open tabs
       if (typeof BroadcastChannel !== 'undefined') {
         try {
           const bc = new BroadcastChannel('vk_sync');
@@ -579,7 +478,7 @@
       }
       window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
 
-      // 5. Show confirmed success to user
+      // Show confirmed success to user
       if (modalBody) {
         modalBody.innerHTML = `
           <div style="text-align:center;padding:32px 16px;">
@@ -612,10 +511,10 @@
         try {
           const payload = JSON.parse(event.data);
           if (payload && payload.type === 'reviews-updated' && Array.isArray(payload.data)) {
-            cachedApiReviews = payload.data;
+            const approvedOnly = payload.data.filter(r => r && r.status === 'approved');
+            cachedApiReviews = approvedOnly;
             try {
-              localStorage.setItem('vk_admin_reviews', JSON.stringify(payload.data));
-              localStorage.setItem('vk_reviews', JSON.stringify(payload.data));
+              localStorage.setItem('vk_reviews', JSON.stringify(approvedOnly));
             } catch (e) {}
             renderReviews();
           }

@@ -45,14 +45,63 @@ const DEFAULT_SETTINGS = {
     newReview: true,
     newInquiry: true,
     notifEmail: 'admin@vkreate.com',
-  },
-  credentials: {
-    email: 'admin@vkreate.com',
-    passwordHash: 'Admin@123',
   }
 };
 
+const crypto = require('crypto');
 const os = require('os');
+
+// Server-side Admin Auth state (defaults to env vars)
+let SERVER_ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@vkreate.com';
+let SERVER_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@123';
+const SESSION_SECRET = process.env.SESSION_SECRET || 'vkreate_secret_key_change_me_in_production_2026';
+
+// Cookie parsing helper
+function parseCookies(req) {
+  const list = {};
+  const rc = req.headers.cookie;
+  if (rc) {
+    rc.split(';').forEach(cookie => {
+      const parts = cookie.split('=');
+      list[parts.shift().trim()] = decodeURIComponent(parts.join('='));
+    });
+  }
+  return list;
+}
+
+// Signed session token generator & validator
+function signSession(email) {
+  const payload = JSON.stringify({ email, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 });
+  const b64Payload = Buffer.from(payload).toString('base64url');
+  const hmac = crypto.createHmac('sha256', SESSION_SECRET).update(b64Payload).digest('base64url');
+  return `${b64Payload}.${hmac}`;
+}
+
+function verifySession(token) {
+  if (!token || typeof token !== 'string' || !token.includes('.')) return null;
+  const [b64Payload, hmac] = token.split('.');
+  const expectedHmac = crypto.createHmac('sha256', SESSION_SECRET).update(b64Payload).digest('base64url');
+  if (hmac !== expectedHmac) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(b64Payload, 'base64url').toString('utf8'));
+    if (payload.exp && Date.now() > payload.exp) return null;
+    return payload;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Auth middleware
+function requireAuth(req, res, next) {
+  const cookies = parseCookies(req);
+  const sessionToken = cookies.vk_admin_session;
+  const session = verifySession(sessionToken);
+  if (!session) {
+    return res.status(401).json({ success: false, error: 'Unauthorized: Session expired or invalid' });
+  }
+  req.user = session;
+  next();
+}
 
 // In-memory persistence store for serverless / read-only environments
 const MEMORY_STORE = {};
@@ -89,7 +138,20 @@ function readData(key) {
   try {
     if (fs.existsSync(filePath)) {
       const content = fs.readFileSync(filePath, 'utf8');
-      if (content.trim()) baseData = JSON.parse(content);
+      if (content.trim()) {
+        const fileData = JSON.parse(content);
+        if (key === 'settings' && typeof fileData === 'object' && fileData !== null) {
+          baseData = {
+            ...DEFAULT_SETTINGS,
+            ...fileData,
+            studio: { ...DEFAULT_SETTINGS.studio, ...(fileData.studio || {}) },
+            notifications: { ...DEFAULT_SETTINGS.notifications, ...(fileData.notifications || {}) },
+            credentials: { ...DEFAULT_SETTINGS.credentials, ...(fileData.credentials || {}) }
+          };
+        } else {
+          baseData = fileData;
+        }
+      }
     }
   } catch (err) {}
 
@@ -220,18 +282,18 @@ app.post('/api/projects', (req, res) => {
   }
 
   if (Array.isArray(project)) {
-    projects = project;
-  } else {
-    if (!project.id) project.id = 'proj-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-    project.createdAt = project.createdAt || new Date().toISOString();
-    project.updatedAt = new Date().toISOString();
+    return res.status(400).json({ success: false, error: 'Array payloads are not allowed' });
+  }
 
-    const existingIndex = projects.findIndex(p => p.id === project.id);
-    if (existingIndex >= 0) {
-      projects[existingIndex] = { ...projects[existingIndex], ...project };
-    } else {
-      projects.unshift(project);
-    }
+  if (!project.id) project.id = 'proj-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  project.createdAt = project.createdAt || new Date().toISOString();
+  project.updatedAt = new Date().toISOString();
+
+  const existingIndex = projects.findIndex(p => p.id === project.id);
+  if (existingIndex >= 0) {
+    projects[existingIndex] = { ...projects[existingIndex], ...project };
+  } else {
+    projects.unshift(project);
   }
 
   writeData('projects', projects);
@@ -274,16 +336,41 @@ app.get('/api/reviews', (req, res) => {
   res.json(reviews);
 });
 
-// Minimal server-side validation so junk/bypassed payloads get a real 400
-function validateReview(review) {
+app.get('/api/reviews/public', (req, res) => {
+  const reviews = readData('reviews');
+  const approved = (Array.isArray(reviews) ? reviews : []).filter(r => r && r.status === 'approved');
+  res.json(approved);
+});
+
+// Server-side review validation helper
+function validateReview(review, isUpdate = false) {
   if (typeof review !== 'object' || Array.isArray(review) || review === null) return false;
-  const name = review.clientName || review.author || review.name;
-  const text = review.reviewText || review.text || review.content;
-  if (!name || typeof name !== 'string' || name.trim().length < 2) return false;
-  if (!text || typeof text !== 'string' || text.trim().length < 5) return false;
-  const rating = Number(review.rating);
-  if (!rating || rating < 1 || rating > 5) return false;
-  return true;
+
+  if (!isUpdate) {
+    const name = review.clientName || review.author || review.name;
+    const text = review.reviewText || review.text || review.content;
+    if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 100) return false;
+    if (!text || typeof text !== 'string' || text.trim().length < 5 || text.trim().length > 1000) return false;
+    const rating = Number(review.rating);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) return false;
+    if (review.clientEmail && (typeof review.clientEmail !== 'string' || review.clientEmail.length > 200)) return false;
+    if (review.clientRole && (typeof review.clientRole !== 'string' || review.clientRole.length > 100)) return false;
+    return true;
+  } else {
+    if (review.rating !== undefined) {
+      const rating = Number(review.rating);
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5) return false;
+    }
+    if (review.status !== undefined) {
+      if (!['pending', 'approved', 'rejected'].includes(review.status)) return false;
+    }
+    if (review.clientName && (typeof review.clientName !== 'string' || review.clientName.length > 100)) return false;
+    if (review.clientRole && (typeof review.clientRole !== 'string' || review.clientRole.length > 100)) return false;
+    if (review.reviewText && (typeof review.reviewText !== 'string' || review.reviewText.length > 1000)) return false;
+    if (review.studioResponse && (typeof review.studioResponse !== 'string' || review.studioResponse.length > 2000)) return false;
+    if (review.clientEmail && (typeof review.clientEmail !== 'string' || review.clientEmail.length > 200)) return false;
+    return true;
+  }
 }
 
 app.post('/api/reviews', (req, res) => {
@@ -295,24 +382,27 @@ app.post('/api/reviews', (req, res) => {
   }
 
   if (Array.isArray(review)) {
-    reviews = review;
-  } else {
-    if (!validateReview(review)) {
-      return res.status(400).json({ success: false, error: 'Invalid review: name, rating (1-5) and review text are required' });
-    }
-    if (!review.id) {
-      review.id = 'rev-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-    }
-    review.createdAt = review.createdAt || new Date().toISOString();
-    review.updatedAt = new Date().toISOString();
-    if (!review.status) review.status = 'pending';
+    return res.status(400).json({ success: false, error: 'Array payloads are not allowed' });
+  }
 
-    const existingIndex = reviews.findIndex(r => r.id === review.id);
-    if (existingIndex >= 0) {
-      reviews[existingIndex] = { ...reviews[existingIndex], ...review };
-    } else {
-      reviews.unshift(review);
-    }
+  if (!validateReview(review, false)) {
+    return res.status(400).json({ success: false, error: 'Invalid review: name, rating (1-5) and review text are required' });
+  }
+
+  // FORCE status to pending for all public submissions
+  review.status = 'pending';
+
+  if (!review.id) {
+    review.id = 'rev-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+  review.createdAt = review.createdAt || new Date().toISOString();
+  review.updatedAt = new Date().toISOString();
+
+  const existingIndex = reviews.findIndex(r => r && r.id === review.id);
+  if (existingIndex >= 0) {
+    reviews[existingIndex] = { ...reviews[existingIndex], ...review };
+  } else {
+    reviews.unshift(review);
   }
 
   if (!writeData('reviews', reviews)) {
@@ -325,8 +415,13 @@ app.post('/api/reviews', (req, res) => {
 const updateReviewHandler = (req, res) => {
   const { id } = req.params;
   const updates = req.body;
+
+  if (!validateReview(updates, true)) {
+    return res.status(400).json({ success: false, error: 'Invalid review update payload' });
+  }
+
   let reviews = readData('reviews');
-  const index = reviews.findIndex(r => r.id === id);
+  const index = reviews.findIndex(r => r && r.id === id);
 
   if (index < 0) {
     const newR = { id, status: 'pending', ...updates, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
@@ -352,7 +447,7 @@ app.post('/api/reviews/:id', updateReviewHandler);
 app.delete('/api/reviews/:id', (req, res) => {
   const { id } = req.params;
   let reviews = readData('reviews');
-  reviews = reviews.filter(r => r.id !== id);
+  reviews = reviews.filter(r => r && r.id !== id);
   if (!writeData('reviews', reviews)) {
     return res.status(500).json({ success: false, error: 'Failed to persist deletion to database' });
   }
@@ -371,18 +466,18 @@ app.post('/api/inquiries', (req, res) => {
   const inquiry = req.body;
 
   if (Array.isArray(inquiry)) {
-    inquiries = inquiry;
-  } else {
-    if (!inquiry.id) inquiry.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-    inquiry.createdAt = inquiry.createdAt || new Date().toISOString();
-    inquiry.status = inquiry.status || 'new';
+    return res.status(400).json({ success: false, error: 'Array payloads are not allowed' });
+  }
 
-    const existingIndex = inquiries.findIndex(i => i.id === inquiry.id);
-    if (existingIndex >= 0) {
-      inquiries[existingIndex] = { ...inquiries[existingIndex], ...inquiry };
-    } else {
-      inquiries.unshift(inquiry);
-    }
+  if (!inquiry.id) inquiry.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  inquiry.createdAt = inquiry.createdAt || new Date().toISOString();
+  inquiry.status = inquiry.status || 'new';
+
+  const existingIndex = inquiries.findIndex(i => i.id === inquiry.id);
+  if (existingIndex >= 0) {
+    inquiries[existingIndex] = { ...inquiries[existingIndex], ...inquiry };
+  } else {
+    inquiries.unshift(inquiry);
   }
 
   writeData('inquiries', inquiries);
@@ -419,15 +514,68 @@ app.delete('/api/inquiries/:id', (req, res) => {
   res.json({ success: true, id });
 });
 
+// ── Authentication API ───────────────────────────────────────────
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) {
+    return res.status(400).json({ success: false, error: 'Email and password are required' });
+  }
+
+  if (email.trim().toLowerCase() === SERVER_ADMIN_EMAIL.toLowerCase() && password === SERVER_ADMIN_PASSWORD) {
+    const token = signSession(SERVER_ADMIN_EMAIL);
+    const maxAge = 7 * 24 * 60 * 60; // 7 days in seconds
+    const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    const cookieHeader = `vk_admin_session=${token}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${isSecure ? '; Secure' : ''}`;
+    res.setHeader('Set-Cookie', cookieHeader);
+    return res.json({ success: true, email: SERVER_ADMIN_EMAIL, name: 'Admin' });
+  } else {
+    return res.status(401).json({ success: false, error: 'Invalid email or password' });
+  }
+});
+
+app.post('/api/logout', (req, res) => {
+  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  res.setHeader('Set-Cookie', `vk_admin_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${isSecure ? '; Secure' : ''}`);
+  res.json({ success: true });
+});
+
+app.put('/api/admin-credentials', requireAuth, (req, res) => {
+  const { email, currentPw, newPw } = req.body || {};
+  if (currentPw !== SERVER_ADMIN_PASSWORD) {
+    return res.status(400).json({ success: false, error: 'Current password is incorrect' });
+  }
+  if (email && typeof email === 'string' && email.trim()) {
+    SERVER_ADMIN_EMAIL = email.trim();
+  }
+  if (newPw && typeof newPw === 'string' && newPw.length >= 8) {
+    SERVER_ADMIN_PASSWORD = newPw;
+  }
+  res.json({ success: true, message: 'Credentials updated successfully' });
+});
+
 // Settings
 app.get('/api/settings', (req, res) => {
-  const settings = readData('settings');
+  const settings = { ...readData('settings') };
+  delete settings.credentials;
   res.json(settings);
 });
 
-app.put('/api/settings', (req, res) => {
-  const updates = req.body;
-  const current = readData('settings');
+app.put('/api/settings', requireAuth, (req, res) => {
+  const updates = { ...(req.body || {}) };
+  delete updates.credentials;
+  const current = { ...readData('settings') };
+  delete current.credentials;
+  const updated = { ...current, ...updates };
+  writeData('settings', updated);
+  broadcastEvent('settings-updated', updated);
+  res.json({ success: true, settings: updated });
+});
+
+app.post('/api/settings', requireAuth, (req, res) => {
+  const updates = { ...(req.body || {}) };
+  delete updates.credentials;
+  const current = { ...readData('settings') };
+  delete current.credentials;
   const updated = { ...current, ...updates };
   writeData('settings', updated);
   broadcastEvent('settings-updated', updated);

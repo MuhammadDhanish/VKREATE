@@ -1,8 +1,5 @@
 /* ============================================================
    VKREATE Admin — Reviews Management Module & Studio Response
-   Synchronization: mirrors Projects-section pattern —
-   _refreshCards() for partial DOM, GithubSync.push() after
-   every CRUD action, _refreshTabState() for smooth tab switching.
    ============================================================ */
 
 const Reviews = {
@@ -59,6 +56,23 @@ const Reviews = {
           ${this._cardsHTML(filtered)}
         </div>
       `;
+
+      const listEl = document.getElementById('reviews-list');
+      if (listEl && !listEl.dataset.delegated) {
+        listEl.dataset.delegated = 'true';
+        listEl.addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-action]');
+          if (!btn) return;
+          e.preventDefault();
+          const action = btn.dataset.action;
+          const id = btn.dataset.id;
+          if (!id) return;
+          if (action === 'approve') Reviews.approve(id, btn);
+          else if (action === 'reject') Reviews.reject(id, btn);
+          else if (action === 'delete') Reviews.delete(id, btn);
+          else if (action === 'open-response') Reviews.openResponseModal(id);
+        });
+      }
     } catch (err) {
       console.error('Reviews render error:', err);
     }
@@ -68,11 +82,16 @@ const Reviews = {
 
   /** Re-renders only the cards list — leaves header, tabs, buttons untouched */
   _refreshCards() {
-    const el = document.getElementById('reviews-list');
-    if (!el) { this.render(); return; }
-    const allReviews = DB.reviews.all() || [];
-    const curFilter = (this._filter || 'all').toLowerCase().trim();
-    el.innerHTML = this._cardsHTML(this._filtered(allReviews, curFilter));
+    try {
+      const el = document.getElementById('reviews-list');
+      if (!el) { this.render(); return; }
+      const allReviews = DB.reviews.all() || [];
+      const curFilter = (this._filter || 'all').toLowerCase().trim();
+      el.innerHTML = this._cardsHTML(this._filtered(allReviews, curFilter));
+    } catch (err) {
+      console.error('_refreshCards error:', err);
+      try { this.render(); } catch (_) {}
+    }
   },
 
   /** Re-renders only the filter tab bar — leaves everything else untouched */
@@ -135,7 +154,8 @@ const Reviews = {
   },
 
   _reviewCard(r) {
-    const stars = '★'.repeat(r.rating || 5) + '☆'.repeat(5 - (r.rating || 5));
+    const rating = Math.min(5, Math.max(1, parseInt(r.rating, 10) || 5));
+    const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
     const isApproved = r.status === 'approved';
     const isRejected = r.status === 'rejected';
 
@@ -171,20 +191,20 @@ const Reviews = {
           <div style="margin-top:12px;padding:12px 16px;background:rgba(46,74,64,0.06);border-left:3px solid var(--green-deep);border-radius:var(--r-sm);">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
               <span style="font-weight:600;font-size:0.8125rem;color:var(--green-deep)">💬 Official Studio Response:</span>
-              <button type="button" class="btn btn-ghost btn-sm" onclick="if(event)event.preventDefault();Reviews.openResponseModal('${UI.escapeHTML(r.id)}')" style="padding:2px 8px;font-size:0.75rem;">Edit Response</button>
+              <button type="button" class="btn btn-ghost btn-sm" data-action="open-response" data-id="${UI.escapeHTML(r.id)}" style="padding:2px 8px;font-size:0.75rem;">Edit Response</button>
             </div>
             <p style="font-size:0.875rem;color:var(--text-1);margin:0;">"${studioResponse}"</p>
           </div>` : ''}
 
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
-          <button type="button" class="btn btn-outline btn-sm" onclick="if(event)event.preventDefault();Reviews.openResponseModal('${UI.escapeHTML(r.id)}')">
+          <button type="button" class="btn btn-outline btn-sm" data-action="open-response" data-id="${UI.escapeHTML(r.id)}">
             ${studioResponse ? '✏️ Edit Studio Response' : '💬 Add Studio Response'}
           </button>
 
           <div style="display:flex;gap:8px;">
-            ${!isApproved ? `<button type="button" class="btn btn-approve btn-sm" onclick="if(event)event.preventDefault();Reviews.approve('${UI.escapeHTML(r.id)}', this)">✓ Approve</button>` : ''}
-            ${!isRejected ? `<button type="button" class="btn btn-reject btn-sm" onclick="if(event)event.preventDefault();Reviews.reject('${UI.escapeHTML(r.id)}', this)">✕ Reject</button>` : ''}
-            <button type="button" class="btn btn-danger btn-sm" onclick="if(event)event.preventDefault();Reviews.delete('${UI.escapeHTML(r.id)}', this)">🗑️ Delete</button>
+            ${!isApproved ? `<button type="button" class="btn btn-approve btn-sm" data-action="approve" data-id="${UI.escapeHTML(r.id)}">✓ Approve</button>` : ''}
+            ${!isRejected ? `<button type="button" class="btn btn-reject btn-sm" data-action="reject" data-id="${UI.escapeHTML(r.id)}">✕ Reject</button>` : ''}
+            <button type="button" class="btn btn-danger btn-sm" data-action="delete" data-id="${UI.escapeHTML(r.id)}">🗑️ Delete</button>
           </div>
         </div>
       </div>
@@ -197,24 +217,20 @@ const Reviews = {
     if (btn && btn.dataset.loading === 'true') return;
     if (btn) { btn.dataset.loading = 'true'; btn.disabled = true; btn.innerText = 'Approving...'; }
 
-    // Synchronous — same pattern as Projects.toggleStatus()
     const updated = DB.reviews.approve(id);
+    if (btn) { btn.disabled = false; delete btn.dataset.loading; }
+
     if (updated) {
       UI.toast('Review approved!', 'success');
       if (typeof App !== 'undefined') App.updateSidebar();
-      if (btn) { delete btn.dataset.loading; }
-      // Partial DOM update — matches Projects._refreshTable() pattern
       requestAnimationFrame(() => {
         this._refreshCards();
         this._refreshTabState();
       });
-      // Cross-tab sync + GitHub push — same as Projects.setRank() and toggleStatus()
       window.dispatchEvent(new Event('storage'));
-      if (window.GithubSync) GithubSync.push();
+      if (window.GithubSync) GithubSync.push({ silent: true });
     } else if (btn) {
-      btn.disabled = false;
       btn.innerText = 'Approve';
-      delete btn.dataset.loading;
     }
   },
 
@@ -222,22 +238,20 @@ const Reviews = {
     if (btn && btn.dataset.loading === 'true') return;
     if (btn) { btn.dataset.loading = 'true'; btn.disabled = true; btn.innerText = 'Rejecting...'; }
 
-    // Synchronous — same pattern as Projects.toggleStatus()
     const updated = DB.reviews.reject(id);
+    if (btn) { btn.disabled = false; delete btn.dataset.loading; }
+
     if (updated) {
       UI.toast('Review rejected.', 'warning');
       if (typeof App !== 'undefined') App.updateSidebar();
-      if (btn) { delete btn.dataset.loading; }
       requestAnimationFrame(() => {
         this._refreshCards();
         this._refreshTabState();
       });
       window.dispatchEvent(new Event('storage'));
-      if (window.GithubSync) GithubSync.push();
+      if (window.GithubSync) GithubSync.push({ silent: true });
     } else if (btn) {
-      btn.disabled = false;
       btn.innerText = 'Reject';
-      delete btn.dataset.loading;
     }
   },
 
@@ -246,7 +260,7 @@ const Reviews = {
     const r = DB.reviews.get(id);
     const name = r ? (r.clientName || r.author || 'this review') : 'this review';
     UI.confirm('Delete Review', `Delete review from "<strong>${UI.escapeHTML(name)}</strong>"? This cannot be undone.`, '🗑️', () => {
-      // Synchronous — same pattern as Projects.delete()
+      if (btn) { btn.disabled = false; delete btn.dataset.loading; }
       const ok = DB.reviews.delete(id);
       if (ok) {
         UI.toast('Review deleted.', 'info');
@@ -255,9 +269,8 @@ const Reviews = {
           this._refreshCards();
           this._refreshTabState();
         });
-        // Cross-tab sync + GitHub push — same as Projects.delete()
         window.dispatchEvent(new Event('storage'));
-        if (window.GithubSync) GithubSync.push();
+        if (window.GithubSync) GithubSync.push({ silent: true });
       }
     }, true);
   },
@@ -276,17 +289,25 @@ const Reviews = {
         </p>
         <div class="form-group">
           <label class="form-label">Studio Response Message</label>
-          <textarea class="form-control" id="modal-studio-response" rows="4" placeholder="e.g. Thank you for working with VKREATE! We loved executing your vision...">${currentResp}</textarea>
+          <textarea class="form-control" id="modal-studio-response" rows="4" placeholder="e.g. Thank you for working with VKREATE! We loved executing your vision...">${UI.escapeHTML(currentResp)}</textarea>
         </div>
       </div>
     `;
 
     const footer = `
       <button class="btn btn-outline" onclick="UI.closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="Reviews.saveResponse('${r.id}', this)">Save &amp; Update Live Review</button>
+      <button class="btn btn-primary" id="save-studio-response-btn">Save &amp; Update Live Review</button>
     `;
 
     UI.modal('💬 Studio Response', body, footer, 'max-w-500');
+
+    const saveBtn = document.getElementById('save-studio-response-btn');
+    if (saveBtn) {
+      saveBtn.onclick = (e) => {
+        e.preventDefault();
+        Reviews.saveResponse(r.id, saveBtn);
+      };
+    }
   },
 
   saveResponse(id, btn) {
@@ -298,20 +319,17 @@ const Reviews = {
     if (btn) { btn.dataset.loading = 'true'; btn.disabled = true; btn.innerText = 'Saving...'; }
 
     const text = textEl.value.trim();
-    // Synchronous — same pattern as DB.projects.update()
     const updated = DB.reviews.update(id, { studioResponse: text });
+    if (btn) { btn.disabled = false; delete btn.dataset.loading; }
+
     if (updated) {
       UI.closeModal();
       UI.toast('Studio response saved!', 'success');
-      // Partial update only — no full page destroy
       this._refreshCards();
-      // Cross-tab sync + GitHub push — same as Projects pattern
       window.dispatchEvent(new Event('storage'));
-      if (window.GithubSync) GithubSync.push();
+      if (window.GithubSync) GithubSync.push({ silent: true });
     } else if (btn) {
-      btn.disabled = false;
       btn.innerText = origText;
-      delete btn.dataset.loading;
     }
   },
 
@@ -319,10 +337,7 @@ const Reviews = {
 
   async deployLive() {
     if (typeof GithubSync !== 'undefined' && GithubSync.push) {
-      const ok = await GithubSync.push();
-      if (ok) {
-        UI.toast('🚀 Reviews & Responses deployed to Live Site!', 'success');
-      }
+      await GithubSync.push({ silent: false });
     } else {
       UI.toast('Local storage reviews synced across tabs!', 'info');
     }
@@ -335,15 +350,13 @@ const Reviews = {
 
     try {
       if (typeof DB.loadRemoteData === 'function') {
-        await DB.loadRemoteData();
+        await DB.loadRemoteData(true);
       }
     } catch (e) {}
 
     if (typeof App !== 'undefined' && App.updateSidebar) App.updateSidebar();
-    // Full re-render after a manual sync (data may have changed substantially)
     this.render();
 
-    // Re-enable button after animation
     setTimeout(() => {
       if (btn) { btn.disabled = false; }
       if (icon) icon.style.transform = '';
@@ -358,8 +371,6 @@ const Reviews = {
   restoreSeedReviews() {
     try {
       const deletedIds = DB._getDeleted(DB.KEYS.deletedReviews) || [];
-      // Merge missing seed reviews into the existing list — NEVER replace,
-      // replacing wiped real client reviews and the wipe then spread via sync.
       const existing = DB.reviews.all() || [];
       const existingIds = new Set(existing.map(r => r && r.id).filter(Boolean));
       const missingSeeds = DB._defaultReviews().filter(r =>
@@ -391,7 +402,7 @@ const Reviews = {
       <div class="modal card" style="max-width:560px;width:100%;padding:28px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
           <h2 style="font-family:var(--font-serif);font-size:1.4rem;font-weight:400;color:var(--text-1);margin:0;">➕ Add Client Review</h2>
-          <button class="btn btn-ghost btn-icon" onclick="document.getElementById('admin-add-review-modal').remove()" style="font-size:1.2rem;">✕</button>
+          <button type="button" class="btn btn-ghost btn-icon" id="close-add-modal-btn" style="font-size:1.2rem;">✕</button>
         </div>
 
         <form id="admin-add-review-form" onsubmit="Reviews.submitAddForm(event)">
@@ -417,6 +428,8 @@ const Reviews = {
                 <option value="5" selected>⭐⭐⭐⭐⭐ (5 Stars)</option>
                 <option value="4">⭐⭐⭐⭐ (4 Stars)</option>
                 <option value="3">⭐⭐⭐ (3 Stars)</option>
+                <option value="2">⭐⭐ (2 Stars)</option>
+                <option value="1">⭐ (1 Star)</option>
               </select>
             </div>
           </div>
@@ -443,13 +456,27 @@ const Reviews = {
           </div>
 
           <div style="display:flex;justify-content:flex-end;gap:12px;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('admin-add-review-modal').remove()">Cancel</button>
+            <button type="button" class="btn btn-outline btn-sm" id="cancel-add-modal-btn">Cancel</button>
             <button type="submit" class="btn btn-primary btn-sm">Save &amp; Publish Review</button>
           </div>
         </form>
       </div>
     `;
     document.body.appendChild(overlay);
+
+    const removeModal = () => {
+      overlay.remove();
+      document.removeEventListener('keydown', escHandler);
+    };
+
+    const escHandler = (e) => {
+      if (e.key === 'Escape') removeModal();
+    };
+
+    document.addEventListener('keydown', escHandler);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) removeModal(); });
+    overlay.querySelector('#close-add-modal-btn')?.addEventListener('click', removeModal);
+    overlay.querySelector('#cancel-add-modal-btn')?.addEventListener('click', removeModal);
   },
 
   submitAddForm(e) {
@@ -462,13 +489,13 @@ const Reviews = {
     const text      = (document.getElementById('adm-rev-text')?.value    || '').trim();
     const status    = document.getElementById('adm-rev-status')?.value   || 'approved';
 
-    if (!name) {
-      UI.toast('Please provide a client name.', 'warning');
+    if (!name || name.length < 2) {
+      UI.toast('Client name must be at least 2 characters.', 'warning');
       document.getElementById('adm-rev-name')?.focus();
       return;
     }
-    if (!text) {
-      UI.toast('Please provide review text.', 'warning');
+    if (!text || text.length < 5) {
+      UI.toast('Review text must be at least 5 characters.', 'warning');
       document.getElementById('adm-rev-text')?.focus();
       return;
     }
@@ -476,41 +503,33 @@ const Reviews = {
     const newRev = {
       id:          'rev-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       clientName:  name,
-      author:      name,
       clientRole:  role || 'Client',
-      role:        role || 'Client',
       clientEmail: email,
       projectId,
       rating,
       reviewText:  text,
-      text,
       status,
       createdAt:   new Date().toISOString(),
       approvedAt:  status === 'approved' ? new Date().toISOString() : null,
     };
 
-    // Close modal first — same as Projects.submitDirect()
     const modal = document.getElementById('admin-add-review-modal');
     if (modal) modal.remove();
 
-    // Save locally + fire API + broadcast — same as DB.projects.add()
     DB.reviews.add(newRev);
 
     UI.toast(`✓ Review from ${UI.escapeHTML(name)} added!`, 'success');
     if (typeof App !== 'undefined') App.updateSidebar();
 
-    // Show the newly created review immediately — reset to All tab
     this._filter = 'all';
     this._refreshTabState();
     this._refreshCards();
 
-    // Cross-tab sync + GitHub push — same as Projects.submitDirect()
     window.dispatchEvent(new Event('storage'));
-    if (window.GithubSync) GithubSync.push();
+    if (window.GithubSync) GithubSync.push({ silent: true });
   },
 };
 
-// Expose Reviews globally on window object for inline onclick handlers
 window.Reviews = Reviews;
 
 

@@ -31,6 +31,13 @@ const DB = {
     deletedInquiries:  'vk_admin_deleted_inquiries',
   },
 
+  afterMutation() {
+    window.dispatchEvent(new Event('storage'));
+    if (typeof GithubSync !== 'undefined' && GithubSync.push) {
+      return GithubSync.push();
+    }
+  },
+
   // ── Helpers ───────────────────────────────────────────────
   _get(key) {
     try { return JSON.parse(localStorage.getItem(key)) || null; } catch { return null; }
@@ -284,10 +291,6 @@ const DB = {
           newReview: true,
           newInquiry: true,
           notifEmail: 'admin@vkreate.com',
-        },
-        credentials: {
-          email: 'admin@vkreate.com',
-          passwordHash: 'Admin@123',
         }
       });
     }
@@ -501,7 +504,7 @@ const DB = {
         }
       } catch (e) {}
 
-      const result = Array.from(itemMap.values()).filter(r => r && r.id && r.id !== 'mswstn7iv0g7w');
+      const result = Array.from(itemMap.values()).filter(r => r && r.id);
       result.sort((a, b) => {
         const tA = new Date(a.createdAt || a.approvedAt || a.date || 0).getTime();
         const tB = new Date(b.createdAt || b.approvedAt || b.date || 0).getTime();
@@ -512,7 +515,8 @@ const DB = {
     get(id) { return this.all().find(r => r && r.id && (r.id === id || String(r.id) === String(id))) || null; },
     save(list) {
       DB._set(DB.KEYS.reviews, list);
-      try { localStorage.setItem('vk_reviews', JSON.stringify(list)); } catch (e) {}
+      const approvedOnly = list.filter(r => r && r.status === 'approved');
+      try { localStorage.setItem('vk_reviews', JSON.stringify(approvedOnly)); } catch (e) {}
       DB._broadcast('reviews-updated', list);
     },
 
@@ -527,7 +531,8 @@ const DB = {
       const existingIdx = l.findIndex(x => x && x.id === r.id);
       if (existingIdx >= 0) { l[existingIdx] = r; } else { l.unshift(r); }
       DB._set(DB.KEYS.reviews, JSON.parse(JSON.stringify(l)));
-      try { localStorage.setItem('vk_reviews', JSON.stringify(l)); } catch (e) {}
+      const approvedOnly = l.filter(x => x && x.status === 'approved');
+      try { localStorage.setItem('vk_reviews', JSON.stringify(approvedOnly)); } catch (e) {}
 
       // 2. Sync to API (same pattern as DB.projects.add — no getApiBaseUrl() guard)
       fetch('/api/reviews', {
@@ -547,9 +552,15 @@ const DB = {
       if (i < 0) return null;
       l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
 
+      // Phase out legacy aliases on update
+      delete l[i].author;
+      delete l[i].role;
+      delete l[i].text;
+
       // 1. Save to localStorage immediately (instant UI — same as projects pattern)
       DB._set(DB.KEYS.reviews, JSON.parse(JSON.stringify(l)));
-      try { localStorage.setItem('vk_reviews', JSON.stringify(l)); } catch (e) {}
+      const approvedOnly = l.filter(x => x && x.status === 'approved');
+      try { localStorage.setItem('vk_reviews', JSON.stringify(approvedOnly)); } catch (e) {}
 
       // 2. Sync to API (same pattern as DB.projects.update — no getApiBaseUrl() guard)
       fetch(`/api/reviews/${id}`, {
@@ -570,7 +581,8 @@ const DB = {
       DB._addDeleted(DB.KEYS.deletedReviews, id);
       const remaining = this.all().filter(r => r && r.id !== id);
       DB._set(DB.KEYS.reviews, remaining);
-      try { localStorage.setItem('vk_reviews', JSON.stringify(remaining)); } catch (e) {}
+      const approvedOnly = remaining.filter(x => x && x.status === 'approved');
+      try { localStorage.setItem('vk_reviews', JSON.stringify(approvedOnly)); } catch (e) {}
 
       // 2. Sync to API (same pattern as DB.projects.delete — no getApiBaseUrl() guard)
       fetch(`/api/reviews/${id}`, { method: 'DELETE' })
@@ -587,12 +599,13 @@ const DB = {
     approved()  { return this.all().filter(r => r && r.status === 'approved'); },
     stats() {
       const all = this.all();
+      const approvedList = all.filter(r => r && r.status === 'approved');
       return {
         total: all.length,
         pending: all.filter(r => r && r.status === 'pending').length,
-        approved: all.filter(r => r && r.status === 'approved').length,
+        approved: approvedList.length,
         rejected: all.filter(r => r && r.status === 'rejected').length,
-        avgRating: all.length ? (all.reduce((s,r) => s + (r.rating || 5), 0) / all.length).toFixed(1) : 0,
+        avgRating: approvedList.length ? (approvedList.reduce((s,r) => s + (Number(r.rating) || 5), 0) / approvedList.length).toFixed(1) : '5.0',
       };
     },
   },
@@ -686,17 +699,25 @@ const DB = {
   auth: {
     login(email, password) {
       const s = DB.settings.get();
-      if (!s.credentials) return false;
+      if (!s || !s.credentials) return false;
       return s.credentials.email === email && s.credentials.passwordHash === password;
     },
     session: {
       set(data)   { DB._set(DB.KEYS.session, { ...data, ts: Date.now() }); },
       get()       { return DB._get(DB.KEYS.session); },
       clear()     { localStorage.removeItem(DB.KEYS.session); },
+      touch()     {
+        const s = this.get();
+        if (s) {
+          s.ts = Date.now();
+          DB._set(DB.KEYS.session, s);
+        }
+      },
       isValid()   {
         const s = this.get();
         if (!s) return false;
-        return (Date.now() - s.ts) < 8 * 60 * 60 * 1000;
+        const maxAge = s.remember ? (7 * 24 * 60 * 60 * 1000) : (8 * 60 * 60 * 1000);
+        return (Date.now() - s.ts) < maxAge;
       },
     },
   },
@@ -800,38 +821,52 @@ const DB = {
       }
     };
 
-    // Helper to fetch entity data with fallback chain:
-    // 1. Live API endpoint (/api/reviews, /api/projects, etc.)
-    // 2. GitHub API (if custom valid GitHub token is provided by admin)
-    // 3. Static JSON file fallback (js/admin-reviews.json, etc.)
+    // Helper to fetch entity data with fallback chain
     const fetchEntity = async (apiEndpoint, staticPath) => {
-      // 1. Primary: Live backend API endpoint (same-origin on Vercel or localhost)
-      try {
-        const apiUrl = (getApiBaseUrl() || '') + apiEndpoint + '?t=' + Date.now();
-        const res = await fetch(apiUrl);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) return data;
-          if (data && !Array.isArray(data) && typeof data === 'object' && Object.keys(data).length > 0) return data;
-        }
-      } catch (e) {}
+      const isLocalDev = (getApiBaseUrl() !== '');
+      const hasGhToken = (typeof GithubSync !== 'undefined') && GithubSync.hasToken();
 
-      // 2. Secondary: GitHub API (if admin token set)
-      const ghData = await fetchFromGitHub(staticPath);
-      if (ghData !== null && Array.isArray(ghData) && ghData.length > 0) return ghData;
+      const fetchApi = async () => {
+        try {
+          const apiUrl = (getApiBaseUrl() || '') + apiEndpoint + '?t=' + Date.now();
+          const res = await fetch(apiUrl);
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) return data;
+            if (data && !Array.isArray(data) && typeof data === 'object' && Object.keys(data).length > 0) return data;
+          }
+        } catch (e) {}
+        return null;
+      };
 
-      // 3. Last resort: static JSON file (js/admin-reviews.json)
-      try {
-        let res = await fetch('../' + staticPath + '?t=' + Date.now());
-        if (!res.ok) res = await fetch(staticPath + '?t=' + Date.now());
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) return data;
-          if (data && typeof data === 'object') return data;
-        }
-      } catch (e) {}
+      const fetchGh = async () => fetchFromGitHub(staticPath);
 
-      return null;
+      const fetchStatic = async () => {
+        try {
+          let res = await fetch('../' + staticPath + '?t=' + Date.now());
+          if (!res.ok) res = await fetch(staticPath + '?t=' + Date.now());
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) return data;
+            if (data && typeof data === 'object') return data;
+          }
+        } catch (e) {}
+        return null;
+      };
+
+      if (!isLocalDev && hasGhToken) {
+        let d = await fetchGh();
+        if (d) return d;
+        d = await fetchApi();
+        if (d) return d;
+        return await fetchStatic();
+      } else {
+        let d = await fetchApi();
+        if (d) return d;
+        d = await fetchGh();
+        if (d) return d;
+        return await fetchStatic();
+      }
     };
 
     try {
@@ -851,19 +886,27 @@ const DB = {
         }
       }
 
-      if (Array.isArray(remoteReviews) && remoteReviews.length > 0) {
+      let remoteDeletedIds = [];
+      let remoteReviewsList = [];
+      if (remoteReviews && typeof remoteReviews === 'object' && !Array.isArray(remoteReviews)) {
+        remoteDeletedIds = Array.isArray(remoteReviews.deletedIds) ? remoteReviews.deletedIds : [];
+        remoteReviewsList = Array.isArray(remoteReviews.reviews) ? remoteReviews.reviews : [];
+      } else if (Array.isArray(remoteReviews)) {
+        remoteReviewsList = remoteReviews;
+      }
+
+      if (remoteDeletedIds.length > 0) {
+        remoteDeletedIds.forEach(id => DB._addDeleted(DB.KEYS.deletedReviews, id));
+      }
+
+      if (remoteReviewsList.length > 0) {
         const localRev = DB._get(DB.KEYS.reviews) || [];
         const rawLiveRev = (() => { try { return JSON.parse(localStorage.getItem('vk_reviews')) || []; } catch { return []; } })();
         const deletedIds = DB._getDeleted(DB.KEYS.deletedReviews) || [];
 
-        // Union merge: start with everything local (not deleted), then overlay remote.
-        // Remote data ADDS or UPDATES local items but can never REMOVE a local item
-        // that is not in deletedIds. This prevents CDN-cached stale responses from
-        // dropping pending reviews that were just written to localStorage.
         const currentRev = DB._mergeItems(localRev, rawLiveRev);
-        const mergedReviews = DB._mergeItems(currentRev, remoteReviews, deletedIds);
+        const mergedReviews = DB._mergeItems(currentRev, remoteReviewsList, deletedIds);
 
-        // Always ensure every local item is present in the merged result (safety net)
         const mergedIds = new Set(mergedReviews.map(r => r && r.id).filter(Boolean));
         currentRev.forEach(r => {
           if (r && r.id && !deletedIds.includes(r.id) && !mergedIds.has(r.id)) {
@@ -875,7 +918,8 @@ const DB = {
         const newJson  = JSON.stringify(mergedReviews);
         if (prevJson !== newJson) {
           DB._set(DB.KEYS.reviews, mergedReviews);
-          try { localStorage.setItem('vk_reviews', newJson); } catch (e) {}
+          const approvedOnly = mergedReviews.filter(r => r && r.status === 'approved');
+          try { localStorage.setItem('vk_reviews', JSON.stringify(approvedOnly)); } catch (e) {}
           reviewsUpdated = true;
         }
       }
@@ -892,7 +936,12 @@ const DB = {
       }
 
       if (remoteSettings && remoteSettings.studio) {
-        const prevJson = JSON.stringify(DB._get(DB.KEYS.settings) || {});
+        delete remoteSettings.credentials;
+        const currentLocalSettings = DB._get(DB.KEYS.settings) || {};
+        if (currentLocalSettings.credentials) {
+          remoteSettings.credentials = currentLocalSettings.credentials;
+        }
+        const prevJson = JSON.stringify(currentLocalSettings);
         const newJson = JSON.stringify(remoteSettings);
         if (prevJson !== newJson) {
           DB._set(DB.KEYS.settings, remoteSettings);
