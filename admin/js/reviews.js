@@ -37,13 +37,13 @@ const Reviews = {
             <p class="page-subtitle">Manage, approve, reject, and respond to client reviews</p>
           </div>
           <div class="page-actions">
-            <button class="btn btn-gold btn-sm" onclick="Reviews.openAddModal()" title="Add a new client review directly from Admin">
+            <button type="button" class="btn btn-gold btn-sm" onclick="if(event)event.preventDefault();Reviews.openAddModal()" title="Add a new client review directly from Admin">
               ➕ Add Review
             </button>
-            <button class="btn btn-outline btn-sm" onclick="Reviews.refreshSync(this)" title="Force merge sync from localStorage, JSON, and Firestore">
+            <button type="button" class="btn btn-outline btn-sm" onclick="if(event)event.preventDefault();Reviews.refreshSync(this)" title="Force merge sync from localStorage, JSON, and Firestore">
               <span class="refresh-icon" style="display:inline-block;transition:transform 0.5s ease;">🔄</span> Refresh &amp; Sync
             </button>
-            <button class="btn btn-primary btn-sm" onclick="Reviews.deployLive()" title="Sync approved reviews &amp; studio responses to production live site">
+            <button type="button" class="btn btn-primary btn-sm" onclick="if(event)event.preventDefault();Reviews.deployLive()" title="Sync approved reviews &amp; studio responses to production live site">
               🚀 Deploy to Live Site
             </button>
           </div>
@@ -171,20 +171,20 @@ const Reviews = {
           <div style="margin-top:12px;padding:12px 16px;background:rgba(46,74,64,0.06);border-left:3px solid var(--green-deep);border-radius:var(--r-sm);">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
               <span style="font-weight:600;font-size:0.8125rem;color:var(--green-deep)">💬 Official Studio Response:</span>
-              <button class="btn btn-ghost btn-sm" data-rev-action="response" data-rev-id="${UI.escapeHTML(r.id)}" onclick="Reviews.openResponseModal('${UI.escapeHTML(r.id)}')" style="padding:2px 8px;font-size:0.75rem;">Edit Response</button>
+              <button type="button" class="btn btn-ghost btn-sm" data-rev-action="response" data-rev-id="${UI.escapeHTML(r.id)}" onclick="if(event)event.preventDefault();Reviews.openResponseModal('${UI.escapeHTML(r.id)}')" style="padding:2px 8px;font-size:0.75rem;">Edit Response</button>
             </div>
             <p style="font-size:0.875rem;color:var(--text-1);margin:0;">"${studioResponse}"</p>
           </div>` : ''}
 
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
-          <button class="btn btn-outline btn-sm" data-rev-action="response" data-rev-id="${UI.escapeHTML(r.id)}" onclick="Reviews.openResponseModal('${UI.escapeHTML(r.id)}')">
+          <button type="button" class="btn btn-outline btn-sm" data-rev-action="response" data-rev-id="${UI.escapeHTML(r.id)}" onclick="if(event)event.preventDefault();Reviews.openResponseModal('${UI.escapeHTML(r.id)}')">
             ${studioResponse ? '✏️ Edit Studio Response' : '💬 Add Studio Response'}
           </button>
 
           <div style="display:flex;gap:8px;">
-            ${!isApproved ? `<button class="btn btn-sm" data-rev-action="approve" data-rev-id="${UI.escapeHTML(r.id)}" onclick="Reviews.approve('${UI.escapeHTML(r.id)}', this)" style="background:#22C55E;color:#fff;border:none;">✓ Approve</button>` : ''}
-            ${!isRejected ? `<button class="btn btn-outline btn-sm" data-rev-action="reject" data-rev-id="${UI.escapeHTML(r.id)}" onclick="Reviews.reject('${UI.escapeHTML(r.id)}', this)" style="color:#EF4444;border-color:#FCA5A5;">✕ Reject</button>` : ''}
-            <button class="btn btn-danger btn-sm" data-rev-action="delete" data-rev-id="${UI.escapeHTML(r.id)}" onclick="Reviews.delete('${UI.escapeHTML(r.id)}', this)">🗑️ Delete</button>
+            ${!isApproved ? `<button type="button" class="btn btn-sm" data-rev-action="approve" data-rev-id="${UI.escapeHTML(r.id)}" onclick="if(event)event.preventDefault();Reviews.approve('${UI.escapeHTML(r.id)}', this)" style="background:#22C55E;color:#fff;border:none;">✓ Approve</button>` : ''}
+            ${!isRejected ? `<button type="button" class="btn btn-outline btn-sm" data-rev-action="reject" data-rev-id="${UI.escapeHTML(r.id)}" onclick="if(event)event.preventDefault();Reviews.reject('${UI.escapeHTML(r.id)}', this)" style="color:#EF4444;border-color:#FCA5A5;">✕ Reject</button>` : ''}
+            <button type="button" class="btn btn-danger btn-sm" data-rev-action="delete" data-rev-id="${UI.escapeHTML(r.id)}" onclick="if(event)event.preventDefault();Reviews.delete('${UI.escapeHTML(r.id)}', this)">🗑️ Delete</button>
           </div>
         </div>
       </div>
