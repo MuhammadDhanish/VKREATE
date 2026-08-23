@@ -47,6 +47,10 @@ const Auth = {
       if (errEl) errEl.classList.remove('show');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Signing in…'; }
 
+      let authenticated = false;
+      let token = '';
+      let serverError = '';
+
       try {
         const res = await fetch('/api/login', {
           method: 'POST',
@@ -55,46 +59,44 @@ const Auth = {
           credentials: 'include'
         });
         const data = await res.json().catch(() => ({}));
-
         if (res.ok && data && data.success) {
-          const settings = DB.settings.get();
-          DB.auth.session.set({
-            token: data.token || '',
-            email: data.email || email,
-            name: settings.studio?.name || data.name || 'Admin',
-            remember
-          });
-          App.init();
-        } else {
-          if (errEl) {
-            errEl.textContent = (data && data.error) ? data.error : 'Invalid email or password. Please try again.';
-            errEl.classList.add('show');
-          }
-          const pwInp = document.getElementById('login-password');
-          if (pwInp) {
-            pwInp.value = '';
-            pwInp.focus();
-          }
+          authenticated = true;
+          token = data.token || '';
+        } else if (res.status === 401) {
+          serverError = data.error || 'Invalid email or password. Please try again.';
         }
       } catch (err) {
-        if (DB.auth.login(email, password)) {
-          const settings = DB.settings.get();
-          DB.auth.session.set({ email, name: settings.studio?.name || 'Admin', remember });
-          App.init();
-        } else {
-          if (errEl) {
-            errEl.textContent = 'Invalid email or password. Please try again.';
-            errEl.classList.add('show');
-          }
-          const pwInp = document.getElementById('login-password');
-          if (pwInp) {
-            pwInp.value = '';
-            pwInp.focus();
-          }
-        }
-      } finally {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
+        // Connection error or static server
       }
+
+      // If backend login didn't succeed, check local DB fallback
+      if (!authenticated && !serverError) {
+        if (DB.auth.login(email, password)) {
+          authenticated = true;
+        }
+      }
+
+      if (authenticated) {
+        const settings = DB.settings.get();
+        DB.auth.session.set({
+          token: token,
+          email: email,
+          name: settings.studio?.name || 'Admin',
+          remember
+        });
+        App.init();
+      } else {
+        if (errEl) {
+          errEl.textContent = serverError || 'Invalid email or password. Please try again.';
+          errEl.classList.add('show');
+        }
+        const pwInp = document.getElementById('login-password');
+        if (pwInp) {
+          pwInp.value = '';
+          pwInp.focus();
+        }
+      }
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
     });
 
     document.getElementById('toggle-pw').addEventListener('click', () => {

@@ -1,9 +1,36 @@
 {
   "deletedIds": [
     "rev-mt4tkq8z930kn",
-    "rev-mt4vkt1vdk36x"
+    "rev-mt4vkt1vdk36x",
+    "rev-mt4s7y3gg7nb",
+    "rev-mt4oggvcohlbq"
   ],
   "items": [
+    {
+      "id": "rev-mt4xw123qgosh",
+      "clientName": "M.dhanishkk",
+      "clientRole": "cafe",
+      "clientEmail": "dhanishdhanishkk@gmail.com",
+      "projectId": "lilaa-restaurant",
+      "rating": 2,
+      "reviewText": "kkkkkkkkkkkkkkkkkkkkkkkkk",
+      "status": "pending",
+      "createdAt": "2026-08-22T22:18:04.252Z",
+      "updatedAt": "2026-08-22T22:18:04.252Z"
+    },
+    {
+      "id": "rev-mt4w0c6j6dn54",
+      "clientName": "Public Reviewer",
+      "clientRole": "Test Client",
+      "clientEmail": "public_secret@test.com",
+      "projectId": "general",
+      "rating": 5,
+      "reviewText": "Public submission testing pending status enforcement.",
+      "status": "approved",
+      "createdAt": "2026-08-22T21:25:26.059Z",
+      "updatedAt": "2026-08-22T22:10:22.407Z",
+      "approvedAt": "2026-08-22T22:10:22.357Z"
+    },
     {
       "id": "rev-mt4vnci40knjh",
       "clientName": "M.dhanish",
@@ -17,7 +44,6 @@
       "updatedAt": "2026-08-22T21:19:02.094Z",
       "approvedAt": "2026-08-22T21:19:02.077Z"
     },
-
     {
       "id": "rev-mt4tvyssnlwwh",
       "clientName": "Public Reviewer",
@@ -39,9 +65,10 @@
       "projectId": "general",
       "rating": 5,
       "reviewText": "Public submission testing pending status enforcement.",
-      "status": "pending",
+      "status": "approved",
       "createdAt": "2026-08-22T20:03:30.799Z",
-      "updatedAt": "2026-08-22T20:03:30.799Z"
+      "updatedAt": "2026-08-22T21:25:59.228Z",
+      "approvedAt": "2026-08-22T21:25:59.202Z"
     },
     {
       "id": "rev-mt4t26qada0do",
@@ -51,21 +78,9 @@
       "projectId": "general",
       "rating": 5,
       "reviewText": "Public submission testing pending status enforcement.",
-      "status": "pending",
+      "status": "rejected",
       "createdAt": "2026-08-22T20:02:53.458Z",
-      "updatedAt": "2026-08-22T20:02:53.458Z"
-    },
-    {
-      "id": "rev-mt4s7y3gg7nb",
-      "clientName": "DANISH",
-      "clientRole": "cafe",
-      "clientEmail": "dhanishdhanishkk@gmail.com",
-      "projectId": "retail-jewellery",
-      "rating": 2,
-      "reviewText": "efffffffffffffffffffff",
-      "status": "pending",
-      "createdAt": "2026-08-22T19:39:22.588Z",
-      "updatedAt": "2026-08-22T19:39:22.632Z"
+      "updatedAt": "2026-08-22T21:26:09.730Z"
     },
     {
       "id": "rev-mt4rpe5nrdrk",
@@ -78,49 +93,9 @@
       "rating": 5,
       "reviewText": "This is a local test review to verify origin coordination with the Admin Panel.",
       "text": "This is a local test review to verify origin coordination with the Admin Panel.",
-      "status": "pending",
+      "status": "rejected",
       "createdAt": "2026-08-22T19:24:56.939Z",
-      "updatedAt": "2026-08-22T19:24:57.054Z"
-    },
-    {
-      "clientName": "Test Client",
-      "clientRole": "CEO",
-      "reviewText": "Excellent work from VKREATE!",
-      "rating": 5,
-      "status": "pending",
-      "id": "rev-mt4oggvcohlbq",
-      "createdAt": "2026-08-22T17:54:01.704Z",
-      "updatedAt": "2026-08-22T17:54:01.704Z"
-    },
-    {
-      "id": "rev-mt4bq7tokam1",
-      "clientName": "fgj",
-      "author": "fgj",
-      "clientRole": "BEDROOM WORK",
-      "role": "BEDROOM WORK",
-      "clientEmail": "dhanishdhanishkk@gmail.com",
-      "projectId": "emerald-brew-cafe",
-      "rating": 2,
-      "reviewText": "jjjjjjjjjjjjjjjjjjjjjjjjjjjjjj",
-      "text": "jjjjjjjjjjjjjjjjjjjjjjjjjjjjjj",
-      "status": "pending",
-      "createdAt": "2026-08-22T11:57:41.532Z",
-      "updatedAt": "2026-08-22T11:57:41.538Z"
-    },
-    {
-      "id": "rev-mt4azaey9q5f",
-      "clientName": "Public Tester",
-      "author": "Public Tester",
-      "clientRole": "Feedback Tester",
-      "role": "Feedback Tester",
-      "clientEmail": "public@test.com",
-      "projectId": "general",
-      "rating": 5,
-      "reviewText": "Testing public submission form buttons responsiveness. Hopefully it works.",
-      "text": "Testing public submission form buttons responsiveness. Hopefully it works.",
-      "status": "pending",
-      "createdAt": "2026-08-22T11:36:45.178Z",
-      "updatedAt": "2026-08-22T11:36:45.260Z"
+      "updatedAt": "2026-08-22T22:10:46.815Z"
     },
     {
       "id": "rev-mt48lf1marot",
@@ -165,9 +140,9 @@
       "rating": 4,
       "reviewText": "Fantastic office reception interior redesign in Kochi.",
       "text": "Fantastic office reception interior redesign in Kochi.",
-      "status": "pending",
+      "status": "rejected",
       "createdAt": "2026-08-21T21:35:25.690Z",
-      "updatedAt": "2026-08-21T21:35:25.700Z"
+      "updatedAt": "2026-08-22T22:12:31.432Z"
     },
     {
       "id": "rev-mt3gvg572wcm",

@@ -17,59 +17,76 @@ const Projects = {
   },
 
   render() {
-    const projects = this._filtered();
-    const allProjs = DB.projects.all();
-    const publishedProjs = DB.projects.published();
-    const draftProjs = DB.projects.drafts();
+    try {
+      const projects = this._filtered() || [];
+      const allProjs = (typeof DB.projects.all === 'function') ? DB.projects.all() : [];
+      const publishedProjs = (typeof DB.projects.published === 'function') ? DB.projects.published() : allProjs.filter(p => p && p.status === 'published');
+      const draftProjs = (typeof DB.projects.drafts === 'function') ? DB.projects.drafts() : allProjs.filter(p => p && p.status === 'draft');
 
-    document.getElementById('main-content').innerHTML = `
-      <div class="page-header">
-        <div>
-          <h1 class="page-title">Projects</h1>
-          <p class="page-subtitle">${allProjs.length} total · ${publishedProjs.length} published · ${draftProjs.length} drafts</p>
-        </div>
-        <div class="page-actions">
-          <button class="btn btn-outline btn-sm" onclick="Projects.exportCSV()">
-            ${UI.icon('download')} Export
-          </button>
-          <button class="btn btn-primary" onclick="Projects.openForm()">
-            ${UI.icon('plus')} Add Project
-          </button>
-        </div>
-      </div>
+      const mainEl = document.getElementById('main-content');
+      if (!mainEl) return;
 
-      <!-- Filters -->
-      <div class="card mb-24">
-        <div class="card-body" style="padding:16px 20px">
-          <div class="filters-bar">
-            <div class="search-bar">
-              ${UI.icon('search', 'search-bar__icon')}
-              <input type="search" placeholder="Search projects..." value="${this._filter.search}"
-                oninput="Projects._filter.search=this.value;Projects._refreshTable()">
-            </div>
-            <select class="form-control" style="width:auto;padding:9px 14px"
-              onchange="Projects._filter.industry=this.value;Projects._refreshTable()">
-              <option value="all">All Industries</option>
-              ${this._industryFilterOptions()}
-            </select>
-            <select class="form-control" style="width:auto;padding:9px 14px"
-              onchange="Projects._filter.status=this.value;Projects._refreshTable()">
-              <option value="all">All Status</option>
-              <option value="published" ${this._filter.status==='published'?'selected':''}>Published</option>
-              <option value="draft"     ${this._filter.status==='draft'?'selected':''}>Draft</option>
-            </select>
-            <span class="text-xs text-muted ml-auto">${projects.length} result${projects.length!==1?'s':''}</span>
+      mainEl.innerHTML = `
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Projects</h1>
+            <p class="page-subtitle">${allProjs.length} total · ${publishedProjs.length} published · ${draftProjs.length} drafts</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-outline btn-sm" onclick="Projects.exportCSV()">
+              ${UI.icon('download')} Export
+            </button>
+            <button class="btn btn-primary" onclick="Projects.openForm()">
+              ${UI.icon('plus')} Add Project
+            </button>
           </div>
         </div>
-      </div>
 
-      <!-- Table -->
-      <div class="card">
-        <div class="table-wrap" id="projects-table">
-          ${this._tableHTML(projects)}
+        <!-- Filters -->
+        <div class="card mb-24">
+          <div class="card-body" style="padding:16px 20px">
+            <div class="filters-bar">
+              <div class="search-bar">
+                ${UI.icon('search', 'search-bar__icon')}
+                <input type="search" placeholder="Search projects..." value="${this._filter.search}"
+                  oninput="Projects._filter.search=this.value;Projects._refreshTable()">
+              </div>
+              <select class="form-control" style="width:auto;padding:9px 14px"
+                onchange="Projects._filter.industry=this.value;Projects._refreshTable()">
+                <option value="all">All Industries</option>
+                ${this._industryFilterOptions()}
+              </select>
+              <select class="form-control" style="width:auto;padding:9px 14px"
+                onchange="Projects._filter.status=this.value;Projects._refreshTable()">
+                <option value="all">All Status</option>
+                <option value="published" ${this._filter.status==='published'?'selected':''}>Published</option>
+                <option value="draft"     ${this._filter.status==='draft'?'selected':''}>Draft</option>
+              </select>
+              <span class="text-xs text-muted ml-auto">${projects.length} result${projects.length!==1?'s':''}</span>
+            </div>
+          </div>
         </div>
-      </div>
-    `;
+
+        <!-- Table -->
+        <div class="card">
+          <div class="table-wrap" id="projects-table">
+            ${this._tableHTML(projects)}
+          </div>
+        </div>
+      `;
+    } catch (err) {
+      console.error('Projects render error:', err);
+      const mainEl = document.getElementById('main-content');
+      if (mainEl) {
+        mainEl.innerHTML = `
+          <div class="card" style="padding:36px;text-align:center;">
+            <div style="font-size:2.5rem;margin-bottom:12px">⚠️</div>
+            <h3 class="text-lg fw-600">Failed to render Projects view</h3>
+            <p class="text-muted text-sm mt-4">An error occurred while loading projects list: ${UI.escapeHTML(err.message)}</p>
+            <button class="btn btn-primary btn-sm mt-16" onclick="Projects.render()">🔄 Retry Loading Projects</button>
+          </div>`;
+      }
+    }
   },
 
   _industryFilterOptions() {

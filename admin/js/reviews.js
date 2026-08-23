@@ -60,16 +60,16 @@ const Reviews = {
       const listEl = document.getElementById('reviews-list');
       if (listEl && !listEl.dataset.delegated) {
         listEl.dataset.delegated = 'true';
-        listEl.addEventListener('click', (e) => {
+        listEl.addEventListener('click', async (e) => {
           const btn = e.target.closest('[data-action]');
           if (!btn) return;
           e.preventDefault();
           const action = btn.dataset.action;
           const id = btn.dataset.id;
           if (!id) return;
-          if (action === 'approve') Reviews.approve(id, btn);
-          else if (action === 'reject') Reviews.reject(id, btn);
-          else if (action === 'delete') Reviews.delete(id, btn);
+          if (action === 'approve') await Reviews.approve(id, btn);
+          else if (action === 'reject') await Reviews.reject(id, btn);
+          else if (action === 'delete') await Reviews.delete(id, btn);
           else if (action === 'open-response') Reviews.openResponseModal(id);
         });
       }

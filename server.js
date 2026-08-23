@@ -294,6 +294,7 @@ const updateReviewHandler = async (req, res) => {
   }
 
   let updatedItem = null;
+  let notFound = false;
   const result = await ghWrite('js/admin-reviews.json', (doc) => {
     const items = doc.items || [];
     const idx = items.findIndex(r => r && r.id === id);
@@ -301,14 +302,17 @@ const updateReviewHandler = async (req, res) => {
       items[idx] = { ...items[idx], ...updates, updatedAt: new Date().toISOString() };
       updatedItem = items[idx];
     } else {
-      const initialStatus = updates.status || 'approved';
-      updatedItem = { id, ...updates, status: initialStatus, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-      items.unshift(updatedItem);
+      notFound = true;
+      return doc;
     }
     doc.items = items;
     doc.deletedIds = (doc.deletedIds || []).filter(dId => dId !== id);
     return doc;
   });
+
+  if (notFound) {
+    return res.status(404).json({ success: false, error: 'Review not found' });
+  }
 
   if (!result.success) {
     return res.status(500).json({ success: false, error: result.error });
