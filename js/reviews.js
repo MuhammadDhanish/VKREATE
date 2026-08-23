@@ -507,6 +507,16 @@
     fetchLiveReviews();
   }
 
+  function checkAutoOpenModal() {
+    if (window.location.search.includes('write=true') || window.location.hash === '#write' || window.location.hash === '#review-modal') {
+      setTimeout(() => {
+        if (typeof window.openReviewModal === 'function') {
+          window.openReviewModal();
+        }
+      }, 150);
+    }
+  }
+
   // Init Engine
   function initEngine() {
     populateProjectDropdown();
@@ -516,6 +526,7 @@
     setupModalControls();
     setupFormSubmit();
     fetchLiveReviews();
+    checkAutoOpenModal();
   }
 
   if (document.readyState === 'loading') {
