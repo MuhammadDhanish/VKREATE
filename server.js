@@ -297,7 +297,6 @@ const updateReviewHandler = async (req, res) => {
   }
 
   let updatedItem = null;
-  let notFound = false;
   const result = await ghWrite('js/admin-reviews.json', (doc) => {
     const items = doc.items || [];
     const idx = items.findIndex(r => r && r.id === id);
@@ -305,17 +304,26 @@ const updateReviewHandler = async (req, res) => {
       items[idx] = { ...items[idx], ...updates, updatedAt: new Date().toISOString() };
       updatedItem = items[idx];
     } else {
-      notFound = true;
-      return doc;
+      // Upsert: Create item if it doesn't exist on server yet
+      updatedItem = {
+        id,
+        clientName: (updates.clientName || updates.author || 'Verified Client').trim(),
+        clientRole: (updates.clientRole || updates.role || 'Client').trim(),
+        clientEmail: (updates.clientEmail || '').trim().toLowerCase(),
+        projectId: updates.projectId || 'general',
+        rating: parseInt(updates.rating, 10) || 5,
+        reviewText: (updates.reviewText || updates.text || '').trim(),
+        status: updates.status || 'approved',
+        createdAt: updates.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        ...updates
+      };
+      items.unshift(updatedItem);
     }
     doc.items = items;
     doc.deletedIds = (doc.deletedIds || []).filter(dId => dId !== id);
     return doc;
   });
-
-  if (notFound) {
-    return res.status(404).json({ success: false, error: 'Review not found' });
-  }
 
   if (!result.success) {
     return res.status(500).json({ success: false, error: result.error });

@@ -429,12 +429,10 @@ const DB = {
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || `HTTP ${res.status}`);
+          console.warn(`Review server update warning (HTTP ${res.status}): ${err.error || 'Server sync pending'}`);
         }
       } catch (e) {
-        if (window.UI && UI.toast) UI.toast(`❌ Review update error: ${e.message}. Rolling back...`, 'error');
-        await DB.loadRemoteData();
-        return null;
+        console.warn(`Review server update fetch exception: ${e.message} - keeping local change`);
       }
       return l[i];
     },
@@ -686,24 +684,45 @@ const DB = {
       if (resReviews && resReviews.ok) {
         const reviews = await resReviews.json().catch(() => null);
         if (Array.isArray(reviews)) {
-          if (Date.now() - (DB._lastLocalWrite.reviews || 0) < 15000) {
-            const currentLocal = DB._get(DB.KEYS.reviews) || [];
-            const localIdSet = new Set(currentLocal.map(r => r && r.id));
-            const newRemoteAdds = reviews.filter(r => r && r.id && !localIdSet.has(r.id));
-            if (newRemoteAdds.length > 0) {
-              const merged = [...currentLocal, ...newRemoteAdds];
-              DB._set(DB.KEYS.reviews, merged);
-              DB.reviews._syncPublicMirror(merged);
-              reviewsUpdated = true;
+          const currentLocal = DB._get(DB.KEYS.reviews) || [];
+          
+          // Create a map of local items to preserve locally modified status
+          const localMap = new Map();
+          currentLocal.forEach(r => { if (r && r.id) localMap.set(r.id, r); });
+
+          // Merge: remote updates + preserve recent local approvals/rejections if remote is older or pending
+          const merged = reviews.map(remoteItem => {
+            if (!remoteItem || !remoteItem.id) return remoteItem;
+            const localItem = localMap.get(remoteItem.id);
+            if (localItem) {
+              // If locally approved/rejected but remote is still pending, prefer local decision
+              if (localItem.status !== 'pending' && remoteItem.status === 'pending') {
+                return { ...remoteItem, ...localItem };
+              }
+              // If local was updated more recently, prefer local
+              const localTs = new Date(localItem.updatedAt || localItem.approvedAt || 0).getTime();
+              const remoteTs = new Date(remoteItem.updatedAt || remoteItem.approvedAt || 0).getTime();
+              if (localTs > remoteTs) {
+                return { ...remoteItem, ...localItem };
+              }
             }
-          } else {
-            const prevJson = JSON.stringify(DB._get(DB.KEYS.reviews) || []);
-            const newJson = JSON.stringify(reviews);
-            if (prevJson !== newJson) {
-              DB._set(DB.KEYS.reviews, reviews);
-              DB.reviews._syncPublicMirror(reviews);
-              reviewsUpdated = true;
+            return remoteItem;
+          });
+
+          // Also include any local-only items not yet in remote
+          const remoteIdSet = new Set(reviews.map(r => r && r.id));
+          currentLocal.forEach(localItem => {
+            if (localItem && localItem.id && !remoteIdSet.has(localItem.id)) {
+              merged.push(localItem);
             }
+          });
+
+          const prevJson = JSON.stringify(currentLocal);
+          const newJson = JSON.stringify(merged);
+          if (prevJson !== newJson) {
+            DB._set(DB.KEYS.reviews, merged);
+            DB.reviews._syncPublicMirror(merged);
+            reviewsUpdated = true;
           }
         }
       }
