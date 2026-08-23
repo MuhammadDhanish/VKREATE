@@ -220,6 +220,11 @@
   transition: opacity var(--dur-fast);
 }
 
+.nav__logo-text-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
 .nav__logo-name {
   font-family: var(--font-serif);
   font-size: 1.4rem;

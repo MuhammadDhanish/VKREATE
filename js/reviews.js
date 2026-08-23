@@ -148,9 +148,17 @@
       });
     }
 
+    const isReviewsPage = window.location.pathname.endsWith('reviews.html');
+    let showAllHomeReviews = window.VKREATE_SHOW_ALL_HOME_REVIEWS || false;
     let showAllMobileReviews = window.VKREATE_SHOW_ALL_REVIEWS || false;
     const isMobile = window.innerWidth <= 768;
-    const displayList = (isMobile && !showAllMobileReviews) ? filtered.slice(0, 3) : filtered;
+
+    let displayList = filtered;
+    if (!isReviewsPage && !showAllHomeReviews && filtered.length > 6) {
+      displayList = filtered.slice(0, 6);
+    } else if (isMobile && !showAllMobileReviews && !showAllHomeReviews && filtered.length > 3) {
+      displayList = filtered.slice(0, 3);
+    }
 
     grid.innerHTML = '';
 
@@ -205,12 +213,30 @@
       grid.appendChild(card);
     });
 
-    // Add Mobile "Show All Reviews" Toggle Button if list > 3 items
-    let moreBtnWrap = document.getElementById('reviews-mobile-more-wrap');
-    if (isMobile && filtered.length > 3) {
+    // Add "View More Reviews" Single Button
+    let moreBtnWrap = document.getElementById('reviews-more-wrap');
+    if (!isReviewsPage && filtered.length > 6) {
       if (!moreBtnWrap) {
         moreBtnWrap = document.createElement('div');
-        moreBtnWrap.id = 'reviews-mobile-more-wrap';
+        moreBtnWrap.id = 'reviews-more-wrap';
+        moreBtnWrap.style.cssText = 'grid-column:1/-1;text-align:center;margin-top:36px;display:flex;justify-content:center;align-items:center;';
+        grid.parentNode.insertBefore(moreBtnWrap, grid.nextSibling);
+      }
+      moreBtnWrap.style.display = 'flex';
+      moreBtnWrap.innerHTML = `
+        <button type="button" class="btn btn-outline" id="reviews-home-toggle-btn" style="padding:14px 32px;font-weight:600;display:inline-flex;align-items:center;gap:8px;">
+          <span>${showAllHomeReviews ? 'Show Fewer Reviews ▲' : `Explore All Client Reviews (${filtered.length}) ▼`}</span>
+        </button>
+      `;
+
+      document.getElementById('reviews-home-toggle-btn')?.addEventListener('click', () => {
+        window.VKREATE_SHOW_ALL_HOME_REVIEWS = !showAllHomeReviews;
+        renderReviews();
+      });
+    } else if (isMobile && filtered.length > 3 && isReviewsPage) {
+      if (!moreBtnWrap) {
+        moreBtnWrap = document.createElement('div');
+        moreBtnWrap.id = 'reviews-more-wrap';
         moreBtnWrap.style.cssText = 'grid-column:1/-1;text-align:center;margin-top:24px;';
         grid.parentNode.insertBefore(moreBtnWrap, grid.nextSibling);
       }

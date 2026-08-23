@@ -84,8 +84,8 @@
       </a>
 
       <ul class="nav__links" role="list">
-        <li><a class="nav__link" href="#portfolio" data-section="portfolio">Portfolio</a></li>
-        <li><a class="nav__link" href="reviews.html">Reviews</a></li>
+        <li><a class="nav__link" href="#portfolio" data-section="portfolio">Projects</a></li>
+        <li><a class="nav__link" href="#reviews" data-section="reviews">Reviews</a></li>
         <li><a class="nav__link" href="#about" data-section="about">About</a></li>
         <li><a class="nav__link" href="#services" data-section="services">Services</a></li>
         <li><a class="nav__link nav__cta" href="#contact" id="nav-cta">Start a Project</a></li>
@@ -162,9 +162,9 @@
         <div class="hero__actions">
           <a href="#portfolio" class="btn btn-primary btn-arrow" id="hero-view-work">View Our Work</a>
           <a href="#contact" class="btn btn-outline" id="hero-start-project">Start a Project</a>
-          <a href="reviews.html?write=true" class="btn btn-gold-outline open-review-modal-trigger" id="hero-add-review-btn" title="Write a Client Review">
+          <button type="button" class="btn btn-gold-outline open-review-modal-trigger" id="hero-add-review-btn" title="Write a Client Review">
             <span>Write a Review ↗</span>
-          </a>
+          </button>
         </div>
 
         <!-- Stats strip inline -->
@@ -179,10 +179,10 @@
             <span class="hero__stat-label">Years</span>
           </div>
           <span class="hero__stat-sep" aria-hidden="true"></span>
-          <a href="reviews.html" class="hero__stat open-review-modal-trigger" style="cursor:pointer;text-decoration:none;" title="Click to view and write client reviews">
+          <div class="hero__stat open-review-modal-trigger" style="cursor:pointer;" title="Click to view and write client reviews">
             <span class="hero__stat-value" style="color:var(--gold,#C9A96E);">4.9★</span>
             <span class="hero__stat-label">Client Rating</span>
-          </a>
+          </div>
         </div>
       </div>
 
@@ -241,6 +241,86 @@
             <span>Explore All Projects</span> <span>→</span>
           </a>
         </div>
+      </div>
+    </section>
+
+<!-- ══════════════════════════════════════════════════════════
+     REVIEWS SECTION — SECTION 3
+══════════════════════════════════════════════════════════ -->
+    <section id="reviews" class="reviews section" aria-label="Client reviews and ratings">
+      <div class="container">
+        
+        <div class="section__header section__header--center reveal">
+          <span class="t-overline section__overline">Client Voices</span>
+          <h2 class="t-h1 section__title">Client Reviews &amp; Testimonials</h2>
+          <p class="section__desc t-body" style="margin-top:8px;">
+            Every rating reflects a real project, a real relationship, and a real space transformed.
+          </p>
+          <div class="divider divider--center"></div>
+        </div>
+
+        <!-- Aggregate Score Card & Write Review CTA -->
+        <div class="reviews__aggregate reveal" style="margin-bottom:40px;">
+          <div>
+            <div class="reviews__big-score" id="agg-score" aria-label="Average rating">5.0</div>
+          </div>
+          <div class="reviews__score-detail">
+            <div class="reviews__score-stars" id="agg-stars" aria-label="5 star rating">
+              <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span>
+            </div>
+            <div class="reviews__score-count" id="agg-count">Based on verified client reviews</div>
+          </div>
+          <div class="reviews__trust-badges">
+            <div class="trust-badge">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              All Reviews Verified
+            </div>
+            <div class="trust-badge">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              100% Genuine Clients
+            </div>
+            <div class="trust-badge">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              On-Time Guarantee
+            </div>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;">
+            <button type="button" class="btn btn-green open-review-modal-trigger" id="open-review-modal-btn" style="padding:14px 28px;font-size:0.9375rem;">
+              ✍️ Write a Client Review
+            </button>
+          </div>
+        </div>
+
+        <!-- Review Filters (Desktop) -->
+        <div class="reviews__filters desktop-only reveal delay-1" id="reviews-filters" role="group" aria-label="Filter reviews by industry" style="margin-bottom:40px;">
+          <button class="filter-btn active" data-filter="all" id="rev-filter-all">All Reviews</button>
+          <button class="filter-btn" data-filter="restaurant" id="rev-filter-restaurant">Restaurants</button>
+          <button class="filter-btn" data-filter="beauty" id="rev-filter-beauty">Beauty &amp; Wellness</button>
+          <button class="filter-btn" data-filter="retail" id="rev-filter-retail">Retail</button>
+          <button class="filter-btn" data-filter="office" id="rev-filter-office">Offices</button>
+        </div>
+
+        <!-- Review Filters (Mobile Dropdown) -->
+        <div class="reviews__filters-mobile mobile-only reveal delay-1" style="margin-bottom:32px;">
+          <label for="reviews-filter-select" class="sr-only">Filter reviews by industry</label>
+          <select class="filter-dropdown" id="reviews-filter-select" aria-label="Select review category">
+            <option value="all">All Reviews</option>
+            <option value="restaurant">Restaurants</option>
+            <option value="beauty">Beauty &amp; Wellness</option>
+            <option value="retail">Retail</option>
+            <option value="office">Offices</option>
+          </select>
+        </div>
+
+        <!-- Review Cards Grid -->
+        <div class="reviews__grid" id="reviews-grid" role="list" aria-label="Client review cards"></div>
+
       </div>
     </section>
 
@@ -629,6 +709,76 @@
   </div>
 </footer>
 
+<!-- ══════════════════════════════════════════════════════════
+     CLIENT REVIEW SUBMISSION MODAL
+══════════════════════════════════════════════════════════ -->
+<div class="review-modal-overlay" id="pub-review-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-review-title">
+  <div class="review-modal">
+    <div class="review-modal__header">
+      <div>
+        <h3 class="review-modal__title" id="modal-review-title">Share Your Experience</h3>
+        <div class="review-modal__subtitle">Tell us about working with VKREATE Design Studio</div>
+      </div>
+      <button type="button" class="review-modal__close" id="close-pub-review-btn" onclick="window.closeReviewModal()" aria-label="Close modal">✕</button>
+    </div>
+    
+    <div class="review-modal__body" id="pub-review-modal-body">
+      <form id="pub-review-form">
+        <!-- Interactive Star Selector -->
+        <div class="star-rating-wrap">
+          <div class="star-rating-stars" id="pub-star-selector">
+            <span class="star-rating-star" data-rating="1">★</span>
+            <span class="star-rating-star" data-rating="2">★</span>
+            <span class="star-rating-star" data-rating="3">★</span>
+            <span class="star-rating-star" data-rating="4">★</span>
+            <span class="star-rating-star" data-rating="5">★</span>
+          </div>
+          <div class="star-rating-label" id="pub-star-label">Click stars to rate (1–5)</div>
+          <input type="hidden" id="pub-rating-val" name="rating" value="0" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pub-client-name">Your Name *</label>
+            <input type="text" id="pub-client-name" name="clientName" placeholder="e.g. Unnikrishnan Nair" required />
+          </div>
+          <div class="form-group">
+            <label for="pub-client-role">Role / Title *</label>
+            <input type="text" id="pub-client-role" name="clientRole" placeholder="e.g. Founder, Lilaa Hospitality" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pub-client-email">Email Address *</label>
+            <input type="email" id="pub-client-email" name="clientEmail" placeholder="your@company.com" required />
+          </div>
+          <div class="form-group">
+            <label for="pub-project-sel">Select Project (Optional)</label>
+            <select id="pub-project-sel" name="projectId">
+              <option value="general">General Studio Review</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <label for="pub-review-text">Your Review *</label>
+            <span id="pub-char-counter" style="font-size:0.8125rem;color:var(--text-muted);">0 / 500 characters (min 20)</span>
+          </div>
+          <textarea id="pub-review-text" name="reviewText" rows="4" placeholder="Tell us about the design quality, spatial flow, timeline, and overall experience..." required maxlength="500"></textarea>
+        </div>
+
+        <div id="pub-form-error" style="display:none;color:#DC2626;background:rgba(220,38,38,0.08);padding:10px 14px;border-radius:6px;font-size:0.875rem;margin-top:12px;border:1px solid rgba(220,38,38,0.2);"></div>
+
+        <button type="submit" class="btn btn-green w-full" id="pub-review-submit-btn" style="margin-top:20px;width:100%;justify-content:center;">
+          Submit Review for Approval
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- ── Scripts ───────────────────────────────────────────── -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -636,6 +786,7 @@
 <script src="js/firebase-config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/portfolio.js"></script>
+<script src="js/reviews.js"></script>
 <script src="js/main.js?v=20260819_v9"></script>
 <script>
 // Render Team
