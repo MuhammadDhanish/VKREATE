@@ -695,10 +695,14 @@ const DB = {
             if (!remoteItem || !remoteItem.id) return remoteItem;
             const localItem = localMap.get(remoteItem.id);
             if (localItem) {
-              // If locally approved/rejected but remote is still pending, prefer local decision
-              if (localItem.status !== 'pending' && remoteItem.status === 'pending') {
-                return { ...remoteItem, ...localItem };
+              const localStatus = (localItem.status || 'pending').toLowerCase().trim();
+              const remoteStatus = (remoteItem.status || 'pending').toLowerCase().trim();
+              
+              // If local decision is approved or rejected, ALWAYS preserve local status
+              if (localStatus === 'approved' || localStatus === 'rejected') {
+                return { ...remoteItem, ...localItem, status: localStatus };
               }
+
               // If local was updated more recently, prefer local
               const localTs = new Date(localItem.updatedAt || localItem.approvedAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.approvedAt || 0).getTime();

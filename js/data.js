@@ -738,6 +738,27 @@ async function loadRemoteAdminReviews() {
   }
 
   if (Array.isArray(remoteReviews)) {
+    // Preserve local approved/rejected status decisions if present in local storage
+    try {
+      const rawLocal = localStorage.getItem('vk_admin_reviews');
+      const currentLocal = rawLocal ? JSON.parse(rawLocal) : null;
+      if (Array.isArray(currentLocal) && currentLocal.length > 0) {
+        const localMap = new Map();
+        currentLocal.forEach(r => { if (r && r.id) localMap.set(r.id, r); });
+        remoteReviews = remoteReviews.map(remoteItem => {
+          if (!remoteItem || !remoteItem.id) return remoteItem;
+          const localItem = localMap.get(remoteItem.id);
+          if (localItem) {
+            const localStatus = (localItem.status || 'pending').toLowerCase().trim();
+            if (localStatus === 'approved' || localStatus === 'rejected') {
+              return { ...remoteItem, ...localItem, status: localStatus };
+            }
+          }
+          return remoteItem;
+        });
+      }
+    } catch (e) {}
+
     // Authoritative update from server/database — overwrite stale local cache
     try {
       localStorage.setItem('vk_admin_reviews', JSON.stringify(remoteReviews));
