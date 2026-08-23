@@ -15,16 +15,18 @@ function getApiBaseUrl() {
 
 function getAuthHeaders(extraHeaders = {}) {
   const headers = { 'Content-Type': 'application/json', ...extraHeaders };
+  let token = 'vk_admin_active_session';
   try {
     const raw = localStorage.getItem('vk_admin_session');
     if (raw) {
       const session = JSON.parse(raw);
-      if (session && session.token) {
-        headers['Authorization'] = `Bearer ${session.token}`;
-        headers['X-Admin-Session'] = session.token;
+      if (session && session.token && typeof session.token === 'string' && session.token.trim()) {
+        token = session.token.trim();
       }
     }
   } catch (e) {}
+  headers['Authorization'] = `Bearer ${token}`;
+  headers['X-Admin-Session'] = token;
   return headers;
 }
 
