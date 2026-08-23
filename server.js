@@ -7,6 +7,9 @@ const { ghRead, ghWrite, ensureDataBranch } = require('./lib/github-store');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
+const GH_REPO = process.env.GH_REPO || 'MuhammadDhanish/VKREATE';
+const GH_DATA_BRANCH = process.env.GH_DATA_BRANCH || 'data';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -504,8 +507,8 @@ app.put('/api/admin-credentials', requireAuth, (req, res) => {
   res.json({ success: true, message: 'Credentials updated successfully' });
 });
 
-// Image Upload
-app.post('/api/upload', (req, res) => {
+// Image Upload — stores to GitHub data branch (works on Vercel serverless)
+app.post('/api/upload', async (req, res) => {
   const { filename, base64Data } = req.body;
   if (!base64Data) {
     return res.status(400).json({ error: 'No image data provided' });
@@ -519,15 +522,75 @@ app.post('/api/upload', (req, res) => {
 
     const ext = matches[1].split('/')[1] || 'png';
     const cleanFilename = (filename || `img_${Date.now()}`).replace(/[^a-zA-Z0-9._-]/g, '_') + '.' + ext;
-    const savePath = path.join(UPLOADS_DIR, cleanFilename);
-    const buffer = Buffer.from(matches[2], 'base64');
+    const contentBase64 = matches[2];
 
-    fs.writeFileSync(savePath, buffer);
-    const publicUrl = `assets/uploads/${cleanFilename}`;
-    res.json({ success: true, url: publicUrl });
+    // Upload to GitHub data branch if GITHUB_TOKEN is set
+    if (GITHUB_TOKEN) {
+      try {
+        const ghFilePath = `assets/uploads/${cleanFilename}`;
+        const ghUrl = `https://api.github.com/repos/${GH_REPO}/contents/${ghFilePath}`;
+
+        // Check if file already exists (get its SHA)
+        let existingSha = null;
+        try {
+          const checkRes = await fetch(`${ghUrl}?ref=${GH_DATA_BRANCH}`, {
+            headers: {
+              'Authorization': `token ${GITHUB_TOKEN}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'VKREATE-Server-Sync'
+            }
+          });
+          if (checkRes.ok) {
+            const checkJson = await checkRes.json();
+            existingSha = checkJson.sha;
+          }
+        } catch (e) {}
+
+        const putBody = {
+          message: `upload: ${cleanFilename} [${new Date().toISOString()}]`,
+          content: contentBase64,
+          branch: GH_DATA_BRANCH,
+          ...(existingSha ? { sha: existingSha } : {})
+        };
+
+        const putRes = await fetch(ghUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+            'User-Agent': 'VKREATE-Server-Sync'
+          },
+          body: JSON.stringify(putBody)
+        });
+
+        if (putRes.ok) {
+          const publicUrl = `/assets/uploads/${cleanFilename}`;
+          return res.json({ success: true, url: publicUrl });
+        }
+
+        const errJson = await putRes.json().catch(() => ({}));
+        console.error('GitHub upload error:', errJson.message || putRes.status);
+      } catch (ghErr) {
+        console.error('GitHub upload exception:', ghErr.message);
+      }
+    }
+
+    // Fallback: try local disk (works on localhost)
+    try {
+      const buffer = Buffer.from(contentBase64, 'base64');
+      const savePath = path.join(UPLOADS_DIR, cleanFilename);
+      fs.writeFileSync(savePath, buffer);
+      const publicUrl = `/assets/uploads/${cleanFilename}`;
+      return res.json({ success: true, url: publicUrl });
+    } catch (diskErr) {
+      // On Vercel, disk is read-only; return the base64 data URL as fallback
+      console.warn('Disk write failed (serverless?), returning data URL:', diskErr.message);
+      return res.json({ success: true, url: base64Data, isDataUrl: true });
+    }
   } catch (err) {
     console.error('Upload error:', err);
-    res.status(500).json({ error: 'Failed to save uploaded image' });
+    res.status(500).json({ error: 'Failed to upload image' });
   }
 });
 

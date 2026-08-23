@@ -693,7 +693,16 @@ async function loadRemoteAdminProjects() {
     if (!remoteProjects) {
       try {
         const res = await fetch('js/admin-projects.json?t=' + Date.now());
-        if (res.ok) remoteProjects = await res.json();
+        if (res.ok) {
+          const raw = await res.json();
+          // Handle both plain array and {items, deletedIds} GitHub format
+          if (Array.isArray(raw)) {
+            remoteProjects = raw;
+          } else if (raw && Array.isArray(raw.items)) {
+            const deletedSet = new Set(raw.deletedIds || []);
+            remoteProjects = raw.items.filter(p => p && p.id && !deletedSet.has(p.id));
+          }
+        }
       } catch (e) {}
     }
 
@@ -715,7 +724,16 @@ async function loadRemoteAdminReviews() {
   if (!remoteReviews) {
     try {
       const res = await fetch('js/admin-reviews.json?t=' + Date.now());
-      if (res.ok) remoteReviews = await res.json();
+      if (res.ok) {
+        const raw = await res.json();
+        // Handle both plain array and {items, deletedIds} GitHub data format
+        if (Array.isArray(raw)) {
+          remoteReviews = raw;
+        } else if (raw && Array.isArray(raw.items)) {
+          const deletedSet = new Set(raw.deletedIds || []);
+          remoteReviews = raw.items.filter(r => r && r.id && !deletedSet.has(r.id));
+        }
+      }
     } catch (e) {}
   }
 

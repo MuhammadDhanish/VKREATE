@@ -10,10 +10,10 @@
     "completionDate": "2025-06-15",
     "budgetRange": "₹25L – ₹35L",
     "status": "published",
-    "thumbnail": "../assets/images/project_lilaa_1.jpg",
+    "thumbnail": "/assets/images/project_lilaa_1.jpg",
     "images": [
-      "../assets/images/project_lilaa_1.jpg",
-      "../assets/images/project_lilaa_2.png"
+      "/assets/images/project_lilaa_1.jpg",
+      "/assets/images/project_lilaa_2.png"
     ],
     "challenge": "Transform an underutilized mall space into a premium dining destination.",
     "solution": "Multi-zone dining with arched niches, vertical ribbed wood panels, and warm cream palette.",
@@ -50,9 +50,9 @@
     "completionDate": "2025-04-10",
     "budgetRange": "₹18L – ₹25L",
     "status": "draft",
-    "thumbnail": "../assets/images/project_salon_3.png",
+    "thumbnail": "/assets/images/project_salon_3.png",
     "images": [
-      "../assets/images/project_salon_3.png"
+      "/assets/images/project_salon_3.png"
     ],
     "challenge": "Create a luxurious, Instagram-ready salon that feels intimate yet spacious.",
     "solution": "Individual styling pods with LED mirrors, private pedicure suite, botanical murals.",
@@ -89,10 +89,10 @@
     "completionDate": "2025-02-14",
     "budgetRange": "₹12L – ₹18L",
     "status": "published",
-    "thumbnail": "../assets/images/project_jewellery_1.jpg",
+    "thumbnail": "/assets/images/project_jewellery_1.jpg",
     "images": [
-      "../assets/images/project_jewellery_1.jpg",
-      "../assets/images/project_jewellery_2.jpg"
+      "/assets/images/project_jewellery_1.jpg",
+      "/assets/images/project_jewellery_2.jpg"
     ],
     "challenge": "Stand out in a busy luxury mall corridor with limited square footage.",
     "solution": "High-impact storefront featuring grand arched maroon grid glass windows, diamond-cut mirror wall.",
@@ -129,10 +129,10 @@
     "completionDate": "2025-01-20",
     "budgetRange": "₹15L – ₹20L",
     "status": "published",
-    "thumbnail": "../assets/images/project_lounge.png",
+    "thumbnail": "/assets/images/project_lounge.png",
     "images": [
-      "../assets/images/project_lounge.png",
-      "../assets/images/project_lilaa_5.png"
+      "/assets/images/project_lounge.png",
+      "/assets/images/project_lilaa_5.png"
     ],
     "challenge": "Design an executive reception and waiting lounge that conveys prestige, hospitality, and privacy.",
     "solution": "Sculptural cream armchairs, warm indirect LED ceiling troffers, organic cloud pendant chandeliers.",
@@ -170,10 +170,10 @@
     "budgetRange": "₹35L – ₹50L",
     "rank": 2,
     "status": "published",
-    "thumbnail": "../assets/images/project_lilaa_3.png",
+    "thumbnail": "/assets/images/project_lilaa_3.png",
     "images": [
-      "../assets/images/project_lilaa_3.png",
-      "../assets/images/project_lilaa_4.jpg"
+      "/assets/images/project_lilaa_3.png",
+      "/assets/images/project_lilaa_4.jpg"
     ],
     "challenge": "Integrate tropical plantation views with modern minimalist indoor luxury.",
     "solution": "Teak wood louvers, double-height ceiling voids, floor-to-ceiling glass paneling, and warm earth tones.",
@@ -201,8 +201,8 @@
     "leads": 0,
     "createdAt": "2025-07-20T11:00:00Z",
     "updatedAt": "2026-08-17T04:42:47.919Z",
-    "afterImage": "../assets/images/project_lilaa_3.png",
-    "beforeImage": "../assets/images/project_lilaa_4.jpg"
+    "afterImage": "/assets/images/project_lilaa_3.png",
+    "beforeImage": "/assets/images/project_lilaa_4.jpg"
   },
   {
     "id": "aura-clinic",
@@ -216,10 +216,10 @@
     "budgetRange": "₹14L – ₹20L",
     "rank": 6,
     "status": "published",
-    "thumbnail": "../assets/images/project_salon_2.png",
+    "thumbnail": "/assets/images/project_salon_2.png",
     "images": [
-      "../assets/images/project_salon_2.png",
-      "../assets/images/project_salon_5.png"
+      "/assets/images/project_salon_2.png",
+      "/assets/images/project_salon_5.png"
     ],
     "challenge": "Softment clinical sterile environment while retaining strict medical hygiene standard.",
     "solution": "Curved drywall partitions, soothing sage green accent walls, concealed equipment cabinetry.",
@@ -260,10 +260,10 @@
     "budgetRange": "₹60L – ₹80L",
     "rank": 7,
     "status": "published",
-    "thumbnail": "../assets/images/project_lilaa_7.png",
+    "thumbnail": "/assets/images/project_lilaa_7.png",
     "images": [
-      "../assets/images/project_lilaa_7.png",
-      "../assets/images/project_lilaa_9.png"
+      "/assets/images/project_lilaa_7.png",
+      "/assets/images/project_lilaa_9.png"
     ],
     "challenge": "Revamp a heritage hill station resort lobby and suites with boutique modern luxury.",
     "solution": "Heritage brass fixtures, custom rattan furniture, fireplace lounge, and ambient warm lighting.",
@@ -304,10 +304,10 @@
     "budgetRange": "₹15L – ₹22L",
     "rank": 5,
     "status": "published",
-    "thumbnail": "../assets/images/project_lilaa_6.jpg",
+    "thumbnail": "/assets/images/project_lilaa_6.jpg",
     "images": [
-      "../assets/images/project_lilaa_6.jpg",
-      "../assets/images/project_lilaa_2.png"
+      "/assets/images/project_lilaa_6.jpg",
+      "/assets/images/project_lilaa_2.png"
     ],
     "challenge": "Create a cozy acoustic coffee bar with high seating density and fast takeaway counter flow.",
     "solution": "Terrazzo espresso bar, acoustic wood ceiling bays, plush velvet banquettes.",
@@ -335,7 +335,7 @@
     "leads": 0,
     "createdAt": "2025-03-25T10:00:00Z",
     "updatedAt": "2026-08-17T04:49:11.914Z",
-    "afterImage": "../assets/images/project_lilaa_6.jpg",
-    "beforeImage": "../assets/images/project_lilaa_2.png"
+    "afterImage": "/assets/images/project_lilaa_6.jpg",
+    "beforeImage": "/assets/images/project_lilaa_2.png"
   }
 ]
