@@ -542,23 +542,64 @@
   const id = params.get('id');
   const root = document.getElementById('project-root');
 
-  async function loadAndRender() {
-    let project = VKREATE_DATA.projects.find(p => p.id === id);
+  function findProject(targetId) {
+    if (window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.projects)) {
+      if (targetId) {
+        const cleanId = String(targetId).toLowerCase().trim();
+        let match = window.VKREATE_DATA.projects.find(p => p && String(p.id).toLowerCase() === cleanId);
+        if (match) return match;
+        match = window.VKREATE_DATA.projects.find(p => p && (
+          String(p.name || '').toLowerCase().includes(cleanId) ||
+          cleanId.includes(String(p.id || '').toLowerCase())
+        ));
+        if (match) return match;
+      }
+    }
 
-  if (!project) {
-    root.innerHTML = `
-      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;gap:var(--space-lg);text-align:center;">
-        <h1 class="t-h1" style="color:var(--charcoal)">Project Not Found</h1>
-        <p style="color:var(--text-muted)">The project you're looking for doesn't exist.</p>
+    try {
+      const rawLocal = localStorage.getItem('vk_admin_projects') || localStorage.getItem('vk_projects');
+      if (rawLocal) {
+        const list = JSON.parse(rawLocal);
+        if (Array.isArray(list)) {
+          if (targetId) {
+            const cleanId = String(targetId).toLowerCase().trim();
+            let match = list.find(p => p && (
+              String(p.id || '').toLowerCase() === cleanId ||
+              String(p.slug || '').toLowerCase() === cleanId ||
+              String(p.name || '').toLowerCase().includes(cleanId)
+            ));
+            if (match) return match;
+          }
+        }
+      }
+    } catch (e) {}
+
+    // Fallback: Default to first static project if no match
+    if (window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.projects) && window.VKREATE_DATA.projects.length > 0) {
+      return window.VKREATE_DATA.projects[0];
+    }
+    return null;
+  }
+
+  async function loadAndRender() {
+    let project = findProject(id);
+
+    if (!project) {
+      root.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;gap:var(--space-lg);text-align:center;padding:40px 20px;">
+          <h1 class="t-h1" style="color:var(--charcoal)">Project Not Found</h1>
+          <p style="color:var(--text-muted)">The project you're looking for doesn't exist.</p>
         <a href="index.html" class="btn btn-green">â† Back to Portfolio</a>
       </div>`;
     return;
     }
 
     if (typeof ImageDBReader !== 'undefined') {
-      await ImageDBReader.resolveProject(project);
-      const relatedProjects = VKREATE_DATA.projects.filter(p => p.id !== project.id);
-      await Promise.all(relatedProjects.map(p => ImageDBReader.resolveProject(p)));
+      try {
+        await ImageDBReader.resolveProject(project);
+        const relatedProjects = (window.VKREATE_DATA?.projects || []).filter(p => p && p.id !== project.id);
+        await Promise.all(relatedProjects.map(p => ImageDBReader.resolveProject(p)));
+      } catch (err) {}
     }
 
     render(project);
@@ -581,11 +622,14 @@
     }
   } catch (e) {}
 
-  // Update page title and meta
-  document.title = `${project.name} â€” VKREATE Design Studio`;
-  document.querySelector('meta[name="description"]').setAttribute('content',
-    `${project.name}: ${project.tagline}. A VKREATE interior design project.`
-  );
+  // Update page title and meta safely
+  if (project && project.name) {
+    document.title = `${project.name} — VKREATE Design Studio`;
+  }
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc && project && project.name) {
+    metaDesc.setAttribute('content', `${project.name}: ${project.tagline || ''}. A VKREATE interior design project.`);
+  }
 
   // Render star rating
   function stars(rating) {
