@@ -7,7 +7,6 @@
   try {
     const PURGE_KEY = 'vk_purge_v4';
     if (localStorage.getItem('vk_purge_key') !== PURGE_KEY) {
-      localStorage.removeItem('vk_admin_reviews');
       localStorage.removeItem('vk_reviews');
       localStorage.setItem('vk_purge_key', PURGE_KEY);
     }
@@ -772,13 +771,14 @@ async function loadRemoteAdminReviews() {
   if (Array.isArray(remoteReviews)) {
     remoteReviews = remoteReviews.filter(r => r && !isDeletedReview(r, deletedIds));
 
-    // Preserve local approved/rejected status decisions if present in local storage
+    // Preserve local approved/rejected status decisions & un-synced pending customer reviews
     try {
       const rawLocal = localStorage.getItem('vk_admin_reviews');
       const currentLocal = rawLocal ? JSON.parse(rawLocal) : null;
       if (Array.isArray(currentLocal) && currentLocal.length > 0) {
         const localMap = new Map();
         currentLocal.forEach(r => { if (r && r.id && !isDeletedReview(r, deletedIds)) localMap.set(String(r.id), r); });
+        
         remoteReviews = remoteReviews.map(remoteItem => {
           if (!remoteItem || !remoteItem.id) return remoteItem;
           const localItem = localMap.get(String(remoteItem.id));
@@ -790,12 +790,29 @@ async function loadRemoteAdminReviews() {
           }
           return remoteItem;
         });
+
+        // Also keep any local-only reviews (e.g. submitted while offline or pending server write)
+        const remoteIdSet = new Set(remoteReviews.map(r => r && String(r.id)).filter(Boolean));
+        currentLocal.forEach(localItem => {
+          if (localItem && localItem.id && !isDeletedReview(localItem, deletedIds)) {
+            const idStr = String(localItem.id);
+            const existsById = remoteIdSet.has(idStr);
+            const existsByMatch = remoteReviews.some(r => r && (
+              (r.clientEmail && localItem.clientEmail && r.clientEmail.toLowerCase() === localItem.clientEmail.toLowerCase() && r.reviewText === localItem.reviewText) ||
+              (r.clientName === localItem.clientName && r.reviewText === localItem.reviewText)
+            ));
+            if (!existsById && !existsByMatch) {
+              remoteReviews.unshift(localItem);
+              remoteIdSet.add(idStr);
+            }
+          }
+        });
       }
     } catch (e) {}
 
     remoteReviews = remoteReviews.filter(r => r && !isDeletedReview(r, deletedIds));
 
-    // Authoritative update from server/database — overwrite stale local cache
+    // Authoritative update from server/database — store merged list
     try {
       localStorage.setItem('vk_admin_reviews', JSON.stringify(remoteReviews));
       localStorage.setItem('vk_reviews', JSON.stringify(remoteReviews));

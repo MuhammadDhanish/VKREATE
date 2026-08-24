@@ -513,7 +513,22 @@
         });
         const json = await res.json().catch(() => ({}));
         if (res.ok && json && json.success && json.review && json.review.id) {
-          newReview.id = json.review.id;
+          const oldId = newReview.id;
+          newReview = { ...newReview, ...json.review };
+          // Update local storage with server-assigned ID to keep client & server in sync
+          try {
+            const rawLocal = localStorage.getItem('vk_admin_reviews');
+            let localReviews = rawLocal ? JSON.parse(rawLocal) : [];
+            if (Array.isArray(localReviews)) {
+              const idx = localReviews.findIndex(r => r && (r.id === oldId || r.id === json.review.id));
+              if (idx >= 0) {
+                localReviews[idx] = newReview;
+              } else {
+                localReviews.unshift(newReview);
+              }
+              localStorage.setItem('vk_admin_reviews', JSON.stringify(localReviews));
+            }
+          } catch (stErr) {}
         }
       } catch (e) {
         console.warn('API POST /api/reviews skipped or offline (saved locally):', e);
