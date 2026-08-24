@@ -182,7 +182,7 @@ const DB = {
         notifications: {
           newReview: true,
           newInquiry: true,
-          notifEmail: 'admin@vkreate.com',
+          notifEmail: 'vkreatearchitecture@gmail.com',
         }
       });
     }
@@ -662,7 +662,7 @@ const DB = {
   auth: {
     login(email, password) {
       const s = DB.settings.get();
-      const targetEmail = s?.credentials?.email || 'admin@vkreate.com';
+      const targetEmail = s?.credentials?.email || 'vkreatearchitecture@gmail.com';
       const targetPw = s?.credentials?.passwordHash || 'Admin@123';
       return email.trim().toLowerCase() === targetEmail.toLowerCase() && password === targetPw;
     },

@@ -122,7 +122,7 @@ const Settings = {
             <form id="creds-form" class="form-grid" style="gap:16px" onsubmit="Settings.saveCredentials(event)">
               <div class="form-group">
                 <label class="form-label">Admin Email</label>
-                <input class="form-control" name="email" type="email" value="${UI.escapeHTML(creds.email||'')}" required autocomplete="username">
+                <input class="form-control" name="email" type="email" value="${UI.escapeHTML(creds.email||'vkreatearchitecture@gmail.com')}" required autocomplete="username">
               </div>
               <div class="form-group">
                 <label class="form-label">Current Password</label>
@@ -468,14 +468,31 @@ const Settings = {
       const data = await res.json().catch(() => ({}));
 
       if (res.ok && data && data.success) {
+        const s = DB.settings.get() || {};
+        s.credentials = {
+          email: email || s.credentials?.email || 'vkreatearchitecture@gmail.com',
+          passwordHash: newPw || currentPw
+        };
+        await DB.settings.save(s);
         UI.toast('✅ Credentials updated successfully!', 'success');
         f.currentPw.value = f.newPw.value = f.confirmPw.value = '';
       } else {
         UI.toast(`❌ ${(data && data.error) || 'Failed to update credentials'}`, 'error');
       }
     } catch (err) {
-      console.warn('saveCredentials error:', err);
-      UI.toast('❌ Server connection error while updating credentials', 'error');
+      console.warn('saveCredentials fallback to local settings update:', err);
+      const s = DB.settings.get() || {};
+      const targetPw = s.credentials?.passwordHash || 'Admin@123';
+      if (currentPw !== targetPw) {
+        return UI.toast('❌ Current password is incorrect', 'error');
+      }
+      s.credentials = {
+        email: email || s.credentials?.email || 'vkreatearchitecture@gmail.com',
+        passwordHash: newPw || currentPw
+      };
+      await DB.settings.save(s);
+      UI.toast('✅ Credentials updated successfully!', 'success');
+      f.currentPw.value = f.newPw.value = f.confirmPw.value = '';
     }
   },
 

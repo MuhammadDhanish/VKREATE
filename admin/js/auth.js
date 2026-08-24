@@ -15,7 +15,7 @@ const Auth = {
           <form id="login-form" class="form-grid" style="gap:16px">
             <div class="form-group">
               <label class="form-label" for="login-email">Email Address</label>
-              <input class="form-control" type="email" id="login-email" placeholder="admin@vkreate.com" required autocomplete="email">
+              <input class="form-control" type="email" id="login-email" placeholder="vkreatearchitecture@gmail.com" required autocomplete="email">
             </div>
             <div class="form-group">
               <label class="form-label" for="login-password">Password</label>
