@@ -490,7 +490,7 @@ const Settings = {
     } catch (err) {
       console.warn('saveCredentials fallback to local settings update:', err);
       const s = DB.settings.get() || {};
-      const targetPw = s.credentials?.passwordHash || 'Admin@123';
+      const targetPw = s.credentials?.passwordHash || 'vkreate@234';
       if (currentPw !== targetPw) {
         return UI.toast('❌ Current password is incorrect', 'error');
       }

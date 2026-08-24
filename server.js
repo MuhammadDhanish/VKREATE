@@ -47,7 +47,7 @@ const DEFAULT_SETTINGS = {
 
 // Server-side Admin Auth state (defaults to env vars)
 let SERVER_ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'vkreatearchitecture@gmail.com';
-let SERVER_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@123';
+let SERVER_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'vkreate@234';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'vkreate_secret_key_change_me_in_production_2026';
 
 // Cookie parsing helper

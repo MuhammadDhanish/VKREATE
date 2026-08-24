@@ -670,7 +670,7 @@ const DB = {
     login(email, password) {
       const s = DB.settings.get();
       const targetEmail = s?.credentials?.email || 'vkreatearchitecture@gmail.com';
-      const targetPw = s?.credentials?.passwordHash || 'Admin@123';
+      const targetPw = s?.credentials?.passwordHash || 'vkreate@234';
       return email.trim().toLowerCase() === targetEmail.toLowerCase() && password === targetPw;
     },
     session: {
