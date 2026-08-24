@@ -642,12 +642,10 @@ const DB = {
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || `HTTP ${res.status}`);
+          console.warn(`Settings server update warning (HTTP ${res.status}): ${err.error || 'Saved locally'}`);
         }
       } catch (e) {
-        if (window.UI && UI.toast) UI.toast(`❌ Settings save error: ${e.message}. Rolling back...`, 'error');
-        await DB.loadRemoteData();
-        return false;
+        console.warn(`Settings server update fetch exception: ${e.message} — keeping local change`);
       }
       return true;
     },

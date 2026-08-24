@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const settings = JSON.parse(localStorage.getItem('vk_admin_settings')) || {};
       const notif = settings.notifications || {};
       if (notif.newInquiry === false) return;
-      const recipient = notif.notifEmail || 'dhanishdhanishkk@gmail.com';
+      const recipient = notif.notifEmail || 'vkreatearchitecture@gmail.com';
 
       const formData = new FormData();
       formData.append('_subject', `🔔 New Inquiry from ${inquiry.name} — VKREATE Studio`);

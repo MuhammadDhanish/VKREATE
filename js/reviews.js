@@ -433,6 +433,32 @@
       }
     }
 
+    async function sendReviewEmailNotification(review) {
+      try {
+        const settings = JSON.parse(localStorage.getItem('vk_admin_settings')) || {};
+        const notif = settings.notifications || {};
+        if (notif.newReview === false) return;
+        const recipient = notif.notifEmail || 'vkreatearchitecture@gmail.com';
+
+        const formData = new FormData();
+        formData.append('_subject', `⭐ New Review from ${review.author} — VKREATE Studio`);
+        formData.append('_template', 'table');
+        formData.append('_captcha', 'false');
+        formData.append('Author Name', review.author || 'Anonymous');
+        formData.append('Role/Company', review.role || 'N/A');
+        formData.append('Email', review.clientEmail || 'N/A');
+        formData.append('Rating', `${review.rating || 5} Stars`);
+        formData.append('Review Content', review.reviewText || '');
+        formData.append('Submitted Date', new Date().toLocaleString());
+
+        fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`, {
+          method: 'POST',
+          body: formData,
+          headers: { 'Accept': 'application/json' }
+        }).catch(e => console.warn('Review email dispatch warning:', e));
+      } catch(e) {}
+    }
+
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
       clearError();
@@ -533,6 +559,9 @@
       } catch (e) {
         console.warn('API POST /api/reviews skipped or offline (saved locally):', e);
       }
+
+      // Dispatch instant email notification to studio admin
+      sendReviewEmailNotification(newReview);
 
       // Notify all open tabs
       if (typeof BroadcastChannel !== 'undefined') {

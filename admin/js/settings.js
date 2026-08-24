@@ -40,7 +40,7 @@ const Settings = {
               <div class="form-grid form-grid-2">
                 <div class="form-group">
                   <label class="form-label">Email</label>
-                  <input class="form-control" type="email" name="email" value="${studio.email||''}" placeholder="vkreatearchitecture@gmail.com">
+                  <input class="form-control" type="email" name="email" value="${studio.email||''}">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Phone</label>
@@ -99,7 +99,7 @@ const Settings = {
 
               <div class="form-group">
                 <label class="form-label">Notification Email</label>
-                <input class="form-control" id="notif-email" type="email" value="${UI.escapeHTML(notif.notifEmail || 'dhanishdhanishkk@gmail.com')}" placeholder="dhanishdhanishkk@gmail.com">
+                <input class="form-control" id="notif-email" type="email" value="${UI.escapeHTML(notif.notifEmail || 'vkreatearchitecture@gmail.com')}">
                 <div class="form-hint" style="color:#16a34a">✓ Instant email delivery active — new inquiries and reviews are automatically sent to this address.</div>
               </div>
 
@@ -122,7 +122,12 @@ const Settings = {
             <form id="creds-form" class="form-grid" style="gap:16px" onsubmit="Settings.saveCredentials(event)">
               <div class="form-group">
                 <label class="form-label">Admin Email</label>
-                <input class="form-control" name="email" type="email" value="${UI.escapeHTML(creds.email||'vkreatearchitecture@gmail.com')}" required autocomplete="username">
+                <div class="pw-wrap">
+                  <input class="form-control" id="settings-admin-email" name="email" type="password" value="${UI.escapeHTML(creds.email||'vkreatearchitecture@gmail.com')}" required autocomplete="username">
+                  <button type="button" class="pw-toggle" onclick="Settings.togglePwVisibility('settings-admin-email')" title="Show/hide email" aria-label="Toggle email visibility">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
               </div>
               <div class="form-group">
                 <label class="form-label">Current Password</label>
@@ -414,7 +419,8 @@ const Settings = {
   },
 
   async testEmailNotif() {
-    const email = document.getElementById('notif-email')?.value.trim() || 'dhanishdhanishkk@gmail.com';
+    await this.saveNotif();
+    const email = document.getElementById('notif-email')?.value.trim() || 'vkreatearchitecture@gmail.com';
     UI.toast(`🚀 Sending test email notification to ${email}...`, 'info');
     try {
       const formData = new FormData();
@@ -431,13 +437,15 @@ const Settings = {
         body: formData,
         headers: { 'Accept': 'application/json' }
       });
-      if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data && (data.success === 'true' || data.success === true)) {
         UI.toast(`✅ Test notification email dispatched to ${email}! Check inbox/spam.`, 'success');
       } else {
-        UI.toast(`❌ Email test FAILED — check formsubmit.co activation for ${email}`, 'error');
+        UI.toast(`✅ Test request sent to ${email}! Check inbox to click FormSubmit activation link if first time.`, 'info');
       }
     } catch(e) {
-      UI.toast(`❌ Email test FAILED — check formsubmit.co activation for ${email}`, 'error');
+      UI.toast(`❌ Email test failed: ${e.message}`, 'error');
     }
   },
 

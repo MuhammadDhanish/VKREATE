@@ -15,12 +15,12 @@ const Auth = {
           <form id="login-form" class="form-grid" style="gap:16px">
             <div class="form-group">
               <label class="form-label" for="login-email">Email Address</label>
-              <input class="form-control" type="email" id="login-email" placeholder="vkreatearchitecture@gmail.com" required autocomplete="email">
+              <input class="form-control" type="email" id="login-email" required autocomplete="email">
             </div>
             <div class="form-group">
               <label class="form-label" for="login-password">Password</label>
               <div style="position:relative">
-                <input class="form-control" type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password" style="padding-right:44px">
+                <input class="form-control" type="password" id="login-password" required autocomplete="current-password" style="padding-right:44px">
                 <button type="button" id="toggle-pw" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-4);font-size:1.1rem;background:none;border:none;cursor:pointer;" title="Show/hide password">👁</button>
               </div>
             </div>
