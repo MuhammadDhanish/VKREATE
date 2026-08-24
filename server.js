@@ -129,10 +129,62 @@ function requireAuth(req, res, next) {
 // Ensure dedicated data branch exists on startup
 ensureDataBranch();
 
-// API responses must never be cached by browsers or proxies
-app.use('/api', (req, res, next) => {
-  res.set('Cache-Control', 'no-store');
-  next();
+// ── Auth API ───────────────────────────────────────────────────
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) {
+    return res.status(400).json({ success: false, error: 'Email and password are required' });
+  }
+
+  // Refresh current stored credentials from disk database before verifying
+  try {
+    const doc = await ghRead('js/admin-settings.json');
+    if (doc && doc.credentials) {
+      if (doc.credentials.email) SERVER_ADMIN_EMAIL = doc.credentials.email;
+      if (doc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = doc.credentials.passwordHash;
+    }
+  } catch (e) {}
+
+  const cleanEmail = email.trim().toLowerCase();
+  const targetEmail = SERVER_ADMIN_EMAIL.trim().toLowerCase();
+
+  if (cleanEmail === targetEmail && password === SERVER_ADMIN_PASSWORD) {
+    const token = signSession(SERVER_ADMIN_EMAIL);
+    res.cookie('vk_admin_session', token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+    return res.json({
+      success: true,
+      token,
+      email: SERVER_ADMIN_EMAIL,
+      credentials: { email: SERVER_ADMIN_EMAIL, passwordHash: SERVER_ADMIN_PASSWORD }
+    });
+  }
+
+  return res.status(401).json({ success: false, error: 'Invalid email or password. Please try again.' });
+});
+
+app.post('/api/logout', (req, res) => {
+  res.clearCookie('vk_admin_session');
+  res.json({ success: true });
+});
+
+app.get('/api/auth/credentials', async (req, res) => {
+  try {
+    const doc = await ghRead('js/admin-settings.json');
+    if (doc && doc.credentials) {
+      if (doc.credentials.email) SERVER_ADMIN_EMAIL = doc.credentials.email;
+      if (doc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = doc.credentials.passwordHash;
+    }
+  } catch (e) {}
+
+  res.json({
+    email: SERVER_ADMIN_EMAIL,
+    passwordHash: SERVER_ADMIN_PASSWORD
+  });
 });
 
 // ── Projects API ────────────────────────────────────────────────

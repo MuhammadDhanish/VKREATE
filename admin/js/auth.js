@@ -52,7 +52,8 @@ const Auth = {
       let serverError = '';
 
       try {
-        const res = await fetch('/api/login', {
+        const getApiBaseUrl = () => (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:3000' : '';
+        const res = await fetch((getApiBaseUrl() || '') + '/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
@@ -62,6 +63,11 @@ const Auth = {
         if (res.ok && data && data.success) {
           authenticated = true;
           token = data.token || '';
+          if (data.credentials) {
+            const s = DB.settings.get() || {};
+            s.credentials = data.credentials;
+            DB._set(DB.KEYS.settings, s);
+          }
         } else if (res.status === 401) {
           serverError = data.error || 'Invalid email or password. Please try again.';
         }

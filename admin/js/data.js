@@ -709,11 +709,12 @@ const DB = {
     try {
       const baseUrl = getApiBaseUrl() || '';
       const opts = { headers: getAuthHeaders(), credentials: 'include' };
-      const [resProjects, resReviews, resInquiries, resSettings] = await Promise.all([
+      const [resProjects, resReviews, resInquiries, resSettings, resCreds] = await Promise.all([
         fetch(baseUrl + '/api/projects?t=' + Date.now(), opts).catch(() => null),
         fetch(baseUrl + '/api/reviews?t=' + Date.now(), opts).catch(() => null),
         fetch(baseUrl + '/api/inquiries?t=' + Date.now(), opts).catch(() => null),
         fetch(baseUrl + '/api/settings?t=' + Date.now(), opts).catch(() => null),
+        fetch(baseUrl + '/api/auth/credentials?t=' + Date.now(), opts).catch(() => null),
       ]);
 
       if (resProjects && resProjects.ok) {
@@ -859,6 +860,15 @@ const DB = {
             DB._set(DB.KEYS.inquiries, merged);
             inquiriesUpdated = true;
           }
+        }
+      }
+
+      if (resCreds && resCreds.ok) {
+        const creds = await resCreds.json().catch(() => null);
+        if (creds && creds.email && creds.passwordHash) {
+          const currentLocalSettings = DB._get(DB.KEYS.settings) || {};
+          currentLocalSettings.credentials = creds;
+          DB._set(DB.KEYS.settings, currentLocalSettings);
         }
       }
 
