@@ -748,9 +748,18 @@ const DB = {
       }
 
       if (resReviews && resReviews.ok) {
-        const reviews = await resReviews.json().catch(() => null);
+        const rawRev = await resReviews.json().catch(() => null);
+        let reviews = [];
+        let deletedList = DB._get('vk_admin_deleted_reviews') || [];
+        if (Array.isArray(rawRev)) {
+          reviews = rawRev;
+        } else if (rawRev && Array.isArray(rawRev.items)) {
+          reviews = rawRev.items;
+          const remoteDeleted = (rawRev.deletedIds || []).map(id => String(id));
+          deletedList = Array.from(new Set([...deletedList, ...remoteDeleted]));
+          DB._set('vk_admin_deleted_reviews', deletedList);
+        }
         if (Array.isArray(reviews)) {
-          const deletedList = DB._get('vk_admin_deleted_reviews') || [];
           const deletedSet = new Set(deletedList.map(id => String(id)));
           const currentLocal = (DB._get(DB.KEYS.reviews) || []).filter(r => r && r.id && !deletedSet.has(String(r.id)));
           

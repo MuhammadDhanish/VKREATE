@@ -1,45 +1,5 @@
 [
   {
-    "id": "lilaa-restaurant",
-    "name": "Lilaa — Malayali Cuisine",
-    "industry": "restaurant",
-    "industryLabel": "Restaurants & Cafes",
-    "location": "Calicut, Kerala",
-    "area": "2,500 sq ft",
-    "duration": "4 months",
-    "completionDate": "2025-06-15",
-    "budgetRange": "₹25L – ₹35L",
-    "status": "published",
-    "thumbnail": "/assets/images/project_lilaa_1.jpg",
-    "images": [
-      "/assets/images/project_lilaa_1.jpg",
-      "/assets/images/project_lilaa_2.png"
-    ],
-    "challenge": "Transform an underutilized mall space into a premium dining destination.",
-    "solution": "Multi-zone dining with arched niches, vertical ribbed wood panels, and warm cream palette.",
-    "result": "30% increase in table turns, 100% weekend reservation capacity.",
-    "processPhases": [
-      "Discovery",
-      "Concept",
-      "Detailing",
-      "Execution",
-      "Handover"
-    ],
-    "testimonial": null,
-    "metrics": {
-      "sqft": "2500",
-      "seatingCapacity": 85,
-      "timeline": "4 months"
-    },
-    "tags": [
-      "restaurant",
-      "dining",
-      "premium"
-    ],
-    "createdAt": "2025-06-15T10:00:00Z",
-    "updatedAt": "2026-08-22T11:39:29.002Z"
-  },
-  {
     "id": "luxury-salon",
     "name": "Wings Luxury Beauty & Wellness",
     "industry": "beauty",

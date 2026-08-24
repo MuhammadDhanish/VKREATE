@@ -155,11 +155,6 @@ const Reviews = {
           <div style="font-size:2.5rem;margin-bottom:12px">⭐</div>
           <h3 class="fw-600 text-lg">No Reviews Found</h3>
           <p class="text-muted text-sm mt-4">No reviews match the selected filter category.</p>
-          <div style="margin-top:16px;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="Reviews.restoreSeedReviews()">
-              🔄 Restore Sample Reviews &amp; Reset Storage
-            </button>
-          </div>
         </div>`;
     }
 
@@ -341,16 +336,23 @@ const Reviews = {
       try {
         const ok = await DB.reviews.delete(id);
         if (ok) {
-          UI.toast('Review deleted.', 'info');
+          UI.toast('Review deleted.', 'success');
           if (typeof App !== 'undefined' && App.updateSidebar) App.updateSidebar();
-          requestAnimationFrame(() => {
+          DB.afterMutation();
+          UI.closeModal();
+          const doRefresh = () => {
             try {
               this._refreshCards();
               this._refreshTabState();
             } catch (rErr) {
               console.error('rAF refresh error:', rErr);
             }
-          });
+          };
+          if (typeof requestAnimationFrame !== 'undefined') {
+            requestAnimationFrame(doRefresh);
+          } else {
+            doRefresh();
+          }
         }
       } catch (e) {
         console.error('Delete error:', e);
@@ -384,8 +386,13 @@ const Reviews = {
     `;
 
     const footer = `
-      <button class="btn btn-outline" onclick="UI.closeModal()">Cancel</button>
-      <button class="btn btn-primary" id="save-studio-response-btn" data-id="${UI.escapeHTML(r.id)}">Save &amp; Update Live Review</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+        <button type="button" class="btn btn-danger btn-sm" onclick="Reviews.delete('${UI.escapeHTML(r.id)}')">🗑️ Delete Review</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline" onclick="UI.closeModal()">Cancel</button>
+          <button class="btn btn-primary" id="save-studio-response-btn" data-id="${UI.escapeHTML(r.id)}">Save &amp; Update Live Review</button>
+        </div>
+      </div>
     `;
 
     UI.modal('💬 Studio Response', body, footer, 'max-w-500');

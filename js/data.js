@@ -308,6 +308,7 @@ function getDeletedProjectIds() {
 function applyAdminProjects(adminProjects) {
   const deletedIds = getDeletedProjectIds();
   const deletedSet = new Set(deletedIds);
+  const hasAdminDataset = (Array.isArray(adminProjects) && adminProjects.length > 0) || !!localStorage.getItem('vk_admin_projects');
   const rawList = Array.isArray(adminProjects) ? adminProjects.filter(p => p && p.id && !deletedSet.has(p.id)) : [];
   let adminProjMap = new Map(rawList.map(p => [p.id, p]));
   const finalProjects = [];
@@ -494,7 +495,7 @@ function applyAdminProjects(adminProjects) {
           } : null
         });
       }
-    } else {
+    } else if (!hasAdminDataset) {
       finalProjects.push(staticP);
     }
   });
@@ -547,15 +548,19 @@ function applyAdminProjects(adminProjects) {
   try {
     // ── 1. LocalStorage Sync ─────────────────────────────────
     const rawProjects = localStorage.getItem('vk_admin_projects');
-    if (rawProjects) {
+    if (rawProjects !== null) {
       try {
         const adminProjects = JSON.parse(rawProjects);
-        if (Array.isArray(adminProjects) && adminProjects.length > 0) {
+        if (Array.isArray(adminProjects)) {
           applyAdminProjects(adminProjects);
-        } else {
-          localStorage.removeItem('vk_admin_projects');
         }
       } catch (e) {}
+    } else {
+      const deletedIds = getDeletedProjectIds();
+      if (deletedIds.length > 0 && Array.isArray(VKREATE_DATA.projects)) {
+        const deletedSet = new Set(deletedIds);
+        VKREATE_DATA.projects = VKREATE_DATA.projects.filter(p => p && p.id && !deletedSet.has(p.id));
+      }
     }
 
     // ── 2. Reviews Sync ──────────────────────────────────────
