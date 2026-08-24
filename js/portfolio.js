@@ -208,5 +208,18 @@
     });
   }
 
+  // Re-render portfolio cards when IndexedDB images finish resolving
+  window.addEventListener('vkreate:idb-resolved', () => {
+    const allProjects = getProjectsData();
+    if (allProjects && allProjects.length) {
+      const activeBtn = document.querySelector('#portfolio-filters .filter-btn.active');
+      const activeFilter = activeBtn ? activeBtn.dataset.filter : 'all';
+      const filtered = activeFilter === 'all'
+        ? allProjects
+        : allProjects.filter(p => p.industry === activeFilter);
+      renderCards(filtered);
+    }
+  });
+
 })();
 

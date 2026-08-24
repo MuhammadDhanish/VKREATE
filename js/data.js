@@ -822,20 +822,87 @@ window.addEventListener('storage', function (e) {
 
 
 // ============================================================
-// Async IDB Resolution — resolve idb: image refs after page load
+// Async IDB Reader & Resolution — resolve idb: image refs on public pages
 // ============================================================
+window.ImageDBReader = window.ImageDBReader || {
+  _db: null,
+  DB_NAME: 'vkreate_images',
+  STORE: 'images',
+
+  async open() {
+    if (this._db) return this._db;
+    return new Promise((resolve) => {
+      try {
+        if (typeof indexedDB === 'undefined') return resolve(null);
+        const req = indexedDB.open(this.DB_NAME, 1);
+        req.onsuccess = (e) => { this._db = e.target.result; resolve(this._db); };
+        req.onerror = () => resolve(null);
+      } catch (e) {
+        resolve(null);
+      }
+    });
+  },
+
+  async get(id) {
+    try {
+      const db = await this.open();
+      if (!db) return null;
+      return new Promise((resolve) => {
+        const tx = db.transaction(this.STORE, 'readonly');
+        const store = tx.objectStore(this.STORE);
+        const req = store.get(id);
+        req.onsuccess = (e) => resolve(e.target.result?.dataUrl || null);
+        req.onerror = () => resolve(null);
+      });
+    } catch (e) {
+      return null;
+    }
+  },
+
+  async resolve(ref) {
+    if (!ref) return '';
+    if (typeof ref === 'string' && ref.startsWith('idb:')) {
+      const key = ref.slice(4);
+      const dataUrl = await this.get(key);
+      if (dataUrl) return dataUrl;
+      return 'assets/images/project_lilaa_1.jpg';
+    }
+    return ref;
+  },
+
+  async resolveProject(p) {
+    if (!p) return p;
+    if (p.thumbnail && p.thumbnail.startsWith('idb:')) {
+      const resolvedThumb = await this.resolve(p.thumbnail);
+      if (resolvedThumb) p.thumbnail = resolvedThumb;
+    }
+    if (p.afterImage && p.afterImage.startsWith('idb:')) {
+      const resolvedAfter = await this.resolve(p.afterImage);
+      if (resolvedAfter) p.afterImage = resolvedAfter;
+    }
+    if (p.beforeImage && p.beforeImage.startsWith('idb:')) {
+      const resolvedBefore = await this.resolve(p.beforeImage);
+      if (resolvedBefore) p.beforeImage = resolvedBefore;
+    }
+    if (Array.isArray(p.images)) {
+      p.images = await Promise.all(p.images.map(img => this.resolve(img)));
+    }
+    return p;
+  }
+};
+
 (async function resolveIdbImages() {
   try {
-    const hasIdb = VKREATE_DATA.projects.some(p =>
-      (p.thumbnail || '').startsWith('idb:') ||
-      (p.images || []).some(img => (img || '').startsWith('idb:'))
+    if (!window.VKREATE_DATA || !Array.isArray(window.VKREATE_DATA.projects)) return;
+    const hasIdb = window.VKREATE_DATA.projects.some(p =>
+      p && (
+        (p.thumbnail || '').startsWith('idb:') ||
+        (p.images || []).some(img => (img || '').startsWith('idb:'))
+      )
     );
-    if (!hasIdb) return; // nothing to resolve
+    if (!hasIdb) return;
 
-    // Resolve all idb: refs in parallel
-    await Promise.all(VKREATE_DATA.projects.map(p => ImageDBReader.resolveProject(p)));
-
-    // Notify page scripts that images are now resolved
+    await Promise.all(window.VKREATE_DATA.projects.map(p => ImageDBReader.resolveProject(p)));
     window.dispatchEvent(new CustomEvent('vkreate:idb-resolved'));
   } catch (e) {
     console.warn('IDB image resolution error:', e);

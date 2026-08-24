@@ -636,7 +636,12 @@ const Projects = {
       }
     }
 
-    const thumbRef = imageRefs.length ? imageRefs[0] : '../assets/images/project_lilaa_1.jpg';
+    const rawThumbRef = imageRefs.length ? imageRefs[0] : '../assets/images/project_lilaa_1.jpg';
+    let thumbRef = rawThumbRef;
+    if (rawThumbRef && rawThumbRef.startsWith('idb:')) {
+      const dataUrl = await ImageDB.get(rawThumbRef.slice(4));
+      if (dataUrl) thumbRef = dataUrl;
+    }
     const imageList = imageRefs.length ? imageRefs : [thumbRef];
 
     const data = {
