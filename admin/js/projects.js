@@ -638,8 +638,14 @@ const Projects = {
 
     const rawThumbRef = imageRefs.length ? imageRefs[0] : '../assets/images/project_lilaa_1.jpg';
     let thumbRef = rawThumbRef;
-    if (rawThumbRef && rawThumbRef.startsWith('idb:')) {
-      const dataUrl = await ImageDB.get(rawThumbRef.slice(4));
+    if (this._images && this._images.length > 0) {
+      const firstPrev = typeof this._images[0] === 'object' ? this._images[0].preview : this._images[0];
+      if (firstPrev && firstPrev.startsWith('data:')) {
+        thumbRef = firstPrev;
+      }
+    }
+    if (thumbRef && thumbRef.startsWith('idb:')) {
+      const dataUrl = await ImageDB.get(thumbRef.slice(4));
       if (dataUrl) thumbRef = dataUrl;
     }
     const imageList = imageRefs.length ? imageRefs : [thumbRef];

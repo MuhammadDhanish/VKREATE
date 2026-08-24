@@ -865,27 +865,33 @@ window.ImageDBReader = window.ImageDBReader || {
       const key = ref.slice(4);
       const dataUrl = await this.get(key);
       if (dataUrl) return dataUrl;
-      return 'assets/images/project_lilaa_1.jpg';
+      return ref;
     }
     return ref;
   },
 
   async resolveProject(p) {
     if (!p) return p;
+    if (Array.isArray(p.images) && p.images.length > 0) {
+      p.images = await Promise.all(p.images.map(img => this.resolve(img)));
+    }
     if (p.thumbnail && p.thumbnail.startsWith('idb:')) {
       const resolvedThumb = await this.resolve(p.thumbnail);
-      if (resolvedThumb) p.thumbnail = resolvedThumb;
+      if (resolvedThumb && !resolvedThumb.startsWith('idb:')) {
+        p.thumbnail = resolvedThumb;
+      } else if (p.images && p.images[0] && !p.images[0].startsWith('idb:')) {
+        p.thumbnail = p.images[0];
+      }
+    } else if (!p.thumbnail && p.images && p.images[0]) {
+      p.thumbnail = p.images[0];
     }
     if (p.afterImage && p.afterImage.startsWith('idb:')) {
       const resolvedAfter = await this.resolve(p.afterImage);
-      if (resolvedAfter) p.afterImage = resolvedAfter;
+      if (resolvedAfter && !resolvedAfter.startsWith('idb:')) p.afterImage = resolvedAfter;
     }
     if (p.beforeImage && p.beforeImage.startsWith('idb:')) {
       const resolvedBefore = await this.resolve(p.beforeImage);
-      if (resolvedBefore) p.beforeImage = resolvedBefore;
-    }
-    if (Array.isArray(p.images)) {
-      p.images = await Promise.all(p.images.map(img => this.resolve(img)));
+      if (resolvedBefore && !resolvedBefore.startsWith('idb:')) p.beforeImage = resolvedBefore;
     }
     return p;
   }
