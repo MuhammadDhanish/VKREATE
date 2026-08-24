@@ -671,7 +671,10 @@ const DB = {
       const s = DB.settings.get();
       const targetEmail = s?.credentials?.email || 'vkreatearchitecture@gmail.com';
       const targetPw = s?.credentials?.passwordHash || 'vkreate@234';
-      return email.trim().toLowerCase() === targetEmail.toLowerCase() && password === targetPw;
+      return email.trim().toLowerCase() === targetEmail.toLowerCase() && (
+        password === targetPw ||
+        password.toLowerCase() === targetPw.toLowerCase()
+      );
     },
     session: {
       set(data)   { DB._set(DB.KEYS.session, { ...data, ts: Date.now() }); },
