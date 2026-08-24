@@ -616,10 +616,11 @@ function getDeletedReviewIds() {
 
 function isDeletedReview(r, deletedIds) {
   if (!r || !deletedIds || !deletedIds.length) return false;
-  if (r.id && deletedIds.includes(r.id)) return true;
-  if (r.projectId && (deletedIds.includes(r.projectId) || deletedIds.includes('proj:' + r.projectId))) return true;
+  const strSet = new Set(deletedIds.map(id => String(id)));
+  if (r.id && (strSet.has(String(r.id)) || deletedIds.includes(r.id))) return true;
+  if (r.projectId && (strSet.has(String(r.projectId)) || strSet.has('proj:' + String(r.projectId)))) return true;
   const name = (r.clientName || r.author || '').toLowerCase().trim();
-  if (name && (deletedIds.includes(name) || deletedIds.includes('name:' + name))) return true;
+  if (name && (strSet.has(name) || strSet.has('name:' + name))) return true;
   return false;
 }
 
@@ -767,17 +768,20 @@ async function loadRemoteAdminReviews() {
     } catch (e) {}
   }
 
+  const deletedIds = getDeletedReviewIds();
   if (Array.isArray(remoteReviews)) {
+    remoteReviews = remoteReviews.filter(r => r && !isDeletedReview(r, deletedIds));
+
     // Preserve local approved/rejected status decisions if present in local storage
     try {
       const rawLocal = localStorage.getItem('vk_admin_reviews');
       const currentLocal = rawLocal ? JSON.parse(rawLocal) : null;
       if (Array.isArray(currentLocal) && currentLocal.length > 0) {
         const localMap = new Map();
-        currentLocal.forEach(r => { if (r && r.id) localMap.set(r.id, r); });
+        currentLocal.forEach(r => { if (r && r.id && !isDeletedReview(r, deletedIds)) localMap.set(String(r.id), r); });
         remoteReviews = remoteReviews.map(remoteItem => {
           if (!remoteItem || !remoteItem.id) return remoteItem;
-          const localItem = localMap.get(remoteItem.id);
+          const localItem = localMap.get(String(remoteItem.id));
           if (localItem) {
             const localStatus = (localItem.status || 'pending').toLowerCase().trim();
             if (localStatus === 'approved' || localStatus === 'rejected') {
@@ -788,6 +792,8 @@ async function loadRemoteAdminReviews() {
         });
       }
     } catch (e) {}
+
+    remoteReviews = remoteReviews.filter(r => r && !isDeletedReview(r, deletedIds));
 
     // Authoritative update from server/database — overwrite stale local cache
     try {

@@ -358,7 +358,10 @@ const DB = {
   // ── Reviews CRUD ──────────────────────────────────────────
   reviews: {
     all() {
-      return DB._get(DB.KEYS.reviews) || [];
+      const list = DB._get(DB.KEYS.reviews) || [];
+      const deletedList = DB._get('vk_admin_deleted_reviews') || [];
+      const deletedSet = new Set(deletedList.map(id => String(id)));
+      return list.filter(r => r && r.id && !deletedSet.has(String(r.id)));
     },
     get(id) {
       return this.all().find(r => r && r.id && (r.id === id || String(r.id) === String(id))) || null;
@@ -423,13 +426,14 @@ const DB = {
 
     async update(id, data) {
       const l = this.all();
-      const i = l.findIndex(r => r && r.id === id);
+      const i = l.findIndex(r => r && (r.id === id || String(r.id) === String(id)));
       if (i < 0) return null;
-      l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
 
-      delete l[i].author;
-      delete l[i].role;
-      delete l[i].text;
+      const merged = { ...l[i], ...data, updatedAt: new Date().toISOString() };
+      merged.clientName = merged.clientName || merged.author || 'Client';
+      merged.clientRole = merged.clientRole || merged.role || 'Client';
+      merged.reviewText = merged.reviewText || merged.text || '';
+      l[i] = merged;
 
       DB._lastLocalWrite.reviews = Date.now();
       DB._set(DB.KEYS.reviews, JSON.parse(JSON.stringify(l)));
@@ -455,7 +459,16 @@ const DB = {
 
     async delete(id) {
       if (!id) return false;
-      const remaining = this.all().filter(r => r && r.id !== id);
+      const idStr = String(id);
+      try {
+        let deletedList = DB._get('vk_admin_deleted_reviews') || [];
+        if (!deletedList.includes(idStr)) {
+          deletedList.push(idStr);
+          DB._set('vk_admin_deleted_reviews', deletedList);
+        }
+      } catch (e) {}
+
+      const remaining = this.all().filter(r => r && r.id !== id && String(r.id) !== idStr);
       DB._lastLocalWrite.reviews = Date.now();
       DB._set(DB.KEYS.reviews, remaining);
       this._syncPublicMirror(remaining);
@@ -711,26 +724,24 @@ const DB = {
       if (resReviews && resReviews.ok) {
         const reviews = await resReviews.json().catch(() => null);
         if (Array.isArray(reviews)) {
-          const currentLocal = DB._get(DB.KEYS.reviews) || [];
+          const deletedList = DB._get('vk_admin_deleted_reviews') || [];
+          const deletedSet = new Set(deletedList.map(id => String(id)));
+          const currentLocal = (DB._get(DB.KEYS.reviews) || []).filter(r => r && r.id && !deletedSet.has(String(r.id)));
           
           // Create a map of local items to preserve locally modified status
           const localMap = new Map();
-          currentLocal.forEach(r => { if (r && r.id) localMap.set(r.id, r); });
+          currentLocal.forEach(r => { if (r && r.id) localMap.set(String(r.id), r); });
 
-          // Merge: remote updates + preserve recent local approvals/rejections if remote is older or pending
-          const merged = reviews.map(remoteItem => {
-            if (!remoteItem || !remoteItem.id) return remoteItem;
-            const localItem = localMap.get(remoteItem.id);
+          // Filter out deleted items from remote reviews
+          const activeRemote = reviews.filter(r => r && r.id && !deletedSet.has(String(r.id)));
+
+          const merged = activeRemote.map(remoteItem => {
+            const localItem = localMap.get(String(remoteItem.id));
             if (localItem) {
               const localStatus = (localItem.status || 'pending').toLowerCase().trim();
-              const remoteStatus = (remoteItem.status || 'pending').toLowerCase().trim();
-              
-              // If local decision is approved or rejected, ALWAYS preserve local status
               if (localStatus === 'approved' || localStatus === 'rejected') {
                 return { ...remoteItem, ...localItem, status: localStatus };
               }
-
-              // If local was updated more recently, prefer local
               const localTs = new Date(localItem.updatedAt || localItem.approvedAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.approvedAt || 0).getTime();
               if (localTs > remoteTs) {
@@ -741,9 +752,9 @@ const DB = {
           });
 
           // Also include any local-only items not yet in remote
-          const remoteIdSet = new Set(reviews.map(r => r && r.id));
+          const remoteIdSet = new Set(activeRemote.map(r => String(r.id)));
           currentLocal.forEach(localItem => {
-            if (localItem && localItem.id && !remoteIdSet.has(localItem.id)) {
+            if (localItem && localItem.id && !remoteIdSet.has(String(localItem.id)) && !deletedSet.has(String(localItem.id))) {
               merged.push(localItem);
             }
           });
