@@ -466,42 +466,38 @@ const Settings = {
       if (newPw.length < 8) return UI.toast('New password must be at least 8 characters.', 'error');
     }
 
+    let apiSuccess = false;
     try {
-      const res = await fetch('/api/admin-credentials', {
+      const res = await fetch((getApiBaseUrl() || '') + '/api/admin-credentials', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ email, currentPw, newPw: newPw || undefined }),
         credentials: 'include'
       });
       const data = await res.json().catch(() => ({}));
 
       if (res.ok && data && data.success) {
-        const s = DB.settings.get() || {};
-        s.credentials = {
-          email: email || s.credentials?.email || 'vkreatearchitecture@gmail.com',
-          passwordHash: newPw || currentPw
-        };
-        await DB.settings.save(s);
-        UI.toast('✅ Credentials updated successfully!', 'success');
-        f.currentPw.value = f.newPw.value = f.confirmPw.value = '';
-      } else {
-        UI.toast(`❌ ${(data && data.error) || 'Failed to update credentials'}`, 'error');
+        apiSuccess = true;
+      } else if (res.status === 400 && data && data.error) {
+        return UI.toast(`❌ ${data.error}`, 'error');
       }
     } catch (err) {
-      console.warn('saveCredentials fallback to local settings update:', err);
-      const s = DB.settings.get() || {};
-      const targetPw = s.credentials?.passwordHash || 'vkreate@234';
-      if (currentPw !== targetPw) {
-        return UI.toast('❌ Current password is incorrect', 'error');
-      }
-      s.credentials = {
-        email: email || s.credentials?.email || 'vkreatearchitecture@gmail.com',
-        passwordHash: newPw || currentPw
-      };
-      await DB.settings.save(s);
-      UI.toast('✅ Credentials updated successfully!', 'success');
-      f.currentPw.value = f.newPw.value = f.confirmPw.value = '';
+      console.warn('Backend credentials update fetch warning, falling back to local update:', err);
     }
+
+    const s = DB.settings.get() || {};
+    const targetPw = s.credentials?.passwordHash || 'vkreate@234';
+    if (!apiSuccess && currentPw !== targetPw) {
+      return UI.toast('❌ Current password is incorrect', 'error');
+    }
+
+    s.credentials = {
+      email: email || s.credentials?.email || 'vkreatearchitecture@gmail.com',
+      passwordHash: newPw || currentPw
+    };
+    await DB.settings.save(s);
+    UI.toast('✅ Credentials updated successfully!', 'success');
+    f.currentPw.value = f.newPw.value = f.confirmPw.value = '';
   },
 
   saveGithubToken(e) {

@@ -45,10 +45,18 @@ const DEFAULT_SETTINGS = {
   }
 };
 
-// Server-side Admin Auth state (defaults to env vars)
+// Server-side Admin Auth state (defaults to env vars or stored settings)
 let SERVER_ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'vkreatearchitecture@gmail.com';
 let SERVER_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'vkreate@234';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'vkreate_secret_key_change_me_in_production_2026';
+
+// Read stored credentials from disk database on boot
+ghRead('js/admin-settings.json').then(doc => {
+  if (doc && doc.credentials) {
+    if (doc.credentials.email) SERVER_ADMIN_EMAIL = doc.credentials.email;
+    if (doc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = doc.credentials.passwordHash;
+  }
+}).catch(() => null);
 
 // Cookie parsing helper
 function parseCookies(req) {
@@ -432,7 +440,46 @@ app.delete('/api/inquiries/:id', requireAuth, async (req, res) => {
   res.json({ success: true, id });
 });
 
-// ── Settings API ────────────────────────────────────────────────
+// ── Settings & Credentials API ─────────────────────────────────
+app.put('/api/admin-credentials', requireAuth, async (req, res) => {
+  const { email, currentPw, newPw } = req.body || {};
+  if (!currentPw) {
+    return res.status(400).json({ success: false, error: 'Current password is required' });
+  }
+
+  // Validate current password against server state
+  if (currentPw !== SERVER_ADMIN_PASSWORD) {
+    return res.status(400).json({ success: false, error: 'Current password is incorrect' });
+  }
+
+  const nextEmail = email ? email.trim() : SERVER_ADMIN_EMAIL;
+  const nextPw = newPw ? newPw.trim() : currentPw;
+
+  if (newPw && nextPw.length < 8) {
+    return res.status(400).json({ success: false, error: 'New password must be at least 8 characters' });
+  }
+
+  // Update server state in memory
+  SERVER_ADMIN_EMAIL = nextEmail;
+  SERVER_ADMIN_PASSWORD = nextPw;
+
+  // Persist to js/admin-settings.json on disk / GitHub repo
+  const result = await ghWrite('js/admin-settings.json', (doc) => {
+    doc.credentials = {
+      email: nextEmail,
+      passwordHash: nextPw,
+      updatedAt: new Date().toISOString()
+    };
+    return doc;
+  });
+
+  if (!result.success) {
+    return res.status(500).json({ success: false, error: result.error });
+  }
+
+  res.json({ success: true, email: nextEmail });
+});
+
 app.get('/api/settings', async (req, res) => {
   const data = await ghRead('js/admin-settings.json');
   const settings = { ...DEFAULT_SETTINGS, ...(data.settings || {}) };
