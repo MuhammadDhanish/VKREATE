@@ -37,14 +37,34 @@
     });
   }
 
+  function getDeletedReviewIds() {
+    try {
+      const raw = localStorage.getItem('vk_admin_deleted_reviews');
+      return raw ? (JSON.parse(raw) || []) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function isDeletedReview(r, deletedIds) {
+    if (!r || !deletedIds || !deletedIds.length) return false;
+    const strSet = new Set(deletedIds.map(id => String(id)));
+    if (r.id && (strSet.has(String(r.id)) || deletedIds.includes(r.id))) return true;
+    if (r.projectId && (strSet.has(String(r.projectId)) || strSet.has('proj:' + String(r.projectId)))) return true;
+    const name = (r.clientName || r.author || '').toLowerCase().trim();
+    if (name && (strSet.has(name) || strSet.has('name:' + name))) return true;
+    return false;
+  }
+
   // Fetch live reviews from Express backend API
   async function fetchLiveReviews() {
+    const deletedIds = getDeletedReviewIds();
     try {
       const res = await fetch(getApiBaseUrl() + '/api/reviews/public?t=' + Date.now());
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
-          cachedApiReviews = data.map(r => ({ ...r, status: r.status || 'approved' })).filter(r => r && r.status === 'approved');
+          cachedApiReviews = data.map(r => ({ ...r, status: r.status || 'approved' })).filter(r => r && r.status === 'approved' && !isDeletedReview(r, deletedIds));
           try {
             localStorage.setItem('vk_reviews', JSON.stringify({
               cachedAt: Date.now(),
@@ -56,42 +76,42 @@
         }
       }
     } catch (err) {
-      console.warn('Live API fetch skipped/failed, trying local fallback:', err);
+      console.warn('Live API fetch skipped/failed, using local fallback:', err);
     }
+    renderReviews();
   }
 
-  // Get all approved reviews from API cache, localStorage (with 24h TTL), or VKREATE_DATA
+  // Get all approved reviews from VKREATE_DATA, API cache, or localStorage
   function getApprovedReviews() {
+    const deletedIds = getDeletedReviewIds();
     let allReviews = [];
 
-    // 1. Check fetched API memory cache
-    if (Array.isArray(cachedApiReviews) && cachedApiReviews.length > 0) {
+    // 1. Check live VKREATE_DATA.reviews first (kept in sync by js/data.js)
+    if (window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.reviews) && window.VKREATE_DATA.reviews.length > 0) {
+      allReviews = window.VKREATE_DATA.reviews;
+    }
+
+    // 2. Check fetched API memory cache
+    if (allReviews.length === 0 && Array.isArray(cachedApiReviews) && cachedApiReviews.length > 0) {
       allReviews = cachedApiReviews;
     }
 
-    // 2. Check localStorage vk_reviews if API cache is empty (24h max age)
+    // 3. Check localStorage vk_reviews
     if (allReviews.length === 0) {
       try {
         const raw = localStorage.getItem('vk_reviews');
         if (raw) {
           const parsed = JSON.parse(raw);
           const list = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.reviews) ? parsed.reviews : []);
-          const cachedAt = parsed && parsed.cachedAt ? parsed.cachedAt : 0;
-          const maxAge = 24 * 60 * 60 * 1000;
-          if (list.length > 0 && (!cachedAt || (Date.now() - cachedAt) < maxAge)) {
-            allReviews = list;
-          }
+          allReviews = list;
         }
       } catch (e) {}
     }
 
-    // 3. Fallback to static VKREATE_DATA.reviews if localStorage is empty
-    if (allReviews.length === 0 && window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.reviews)) {
-      allReviews = window.VKREATE_DATA.reviews;
-    }
-
-    // Filter approved reviews strictly
-    return allReviews.map(r => ({ ...r, status: r.status || 'approved' })).filter(r => r && r.status === 'approved');
+    // Filter approved reviews strictly and exclude deleted ones
+    return allReviews
+      .map(r => ({ ...r, status: r.status || 'approved' }))
+      .filter(r => r && r.status === 'approved' && !isDeletedReview(r, deletedIds));
   }
 
   // Populate projects dropdown in client submission modal
@@ -531,6 +551,7 @@
   function onReviewsUpdated() {
     cachedApiReviews = null;
     fetchLiveReviews();
+    renderReviews();
   }
 
   function checkAutoOpenModal() {
