@@ -112,11 +112,15 @@ const Reviews = {
   },
 
   // ── Filter helpers ─────────────────────────────────────────────────────
+  // ── Filter helpers ─────────────────────────────────────────────────────
   _filtered(allReviews, curFilter) {
-    if (curFilter === 'pending')  return allReviews.filter(r => (r.status || 'pending').toLowerCase().trim() === 'pending');
-    if (curFilter === 'approved') return allReviews.filter(r => (r.status || 'pending').toLowerCase().trim() === 'approved');
-    if (curFilter === 'rejected') return allReviews.filter(r => (r.status || 'pending').toLowerCase().trim() === 'rejected');
-    return allReviews;
+    if (!Array.isArray(allReviews)) return [];
+    const valid = allReviews.filter(r => r && typeof r === 'object' && r.id);
+    const f = (curFilter || 'all').toLowerCase().trim();
+    if (f === 'pending')  return valid.filter(r => (r.status || 'pending').toString().toLowerCase().trim() === 'pending');
+    if (f === 'approved') return valid.filter(r => (r.status || 'pending').toString().toLowerCase().trim() === 'approved');
+    if (f === 'rejected') return valid.filter(r => (r.status || 'pending').toString().toLowerCase().trim() === 'rejected');
+    return valid;
   },
 
   // ── Switch filter — partial update only (no full re-render) ───────────
@@ -145,7 +149,7 @@ const Reviews = {
   },
 
   _cardsHTML(filtered) {
-    if (!filtered.length) {
+    if (!Array.isArray(filtered) || !filtered.length) {
       return `
         <div class="card" style="padding:48px;text-align:center">
           <div style="font-size:2.5rem;margin-bottom:12px">⭐</div>
@@ -182,17 +186,30 @@ const Reviews = {
   },
 
   _reviewCard(r) {
-    const rating = Math.min(5, Math.max(1, parseInt(r.rating, 10) || 5));
-    const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
-    const isApproved = r.status === 'approved';
-    const isRejected = r.status === 'rejected';
+    if (!r || typeof r !== 'object' || !r.id) {
+      throw new Error('Invalid review object');
+    }
+    let ratingNum = 5;
+    try {
+      const num = Number(r.rating);
+      if (!isNaN(num) && num >= 1 && num <= 5) ratingNum = Math.round(num);
+      else {
+        const parsed = parseInt(String(r.rating || 5), 10);
+        if (!isNaN(parsed)) ratingNum = Math.min(5, Math.max(1, parsed));
+      }
+    } catch (e) {}
 
-    const clientName    = UI.escapeHTML(r.clientName || r.author || 'Anonymous Client');
-    const clientRole    = UI.escapeHTML(r.clientRole || r.role || 'Client');
-    const clientEmail   = UI.escapeHTML(r.clientEmail || 'No email provided');
-    const reviewText    = UI.escapeHTML(r.reviewText || r.text || '');
+    const stars = '★'.repeat(ratingNum) + '☆'.repeat(5 - ratingNum);
+    const status = String(r.status || 'pending').toLowerCase().trim();
+    const isApproved = status === 'approved';
+    const isRejected = status === 'rejected';
+
+    const clientName    = UI.escapeHTML(String(r.clientName || r.author || 'Anonymous Client'));
+    const clientRole    = UI.escapeHTML(String(r.clientRole || r.role || 'Client'));
+    const clientEmail   = UI.escapeHTML(String(r.clientEmail || 'No email provided'));
+    const reviewText    = UI.escapeHTML(String(r.reviewText || r.text || ''));
     const dateStr       = UI.dateShort(r.createdAt || r.approvedAt || r.date);
-    const studioResponse = r.studioResponse ? UI.escapeHTML(r.studioResponse) : '';
+    const studioResponse = r.studioResponse ? UI.escapeHTML(String(r.studioResponse)) : '';
 
     return `
       <div class="card" style="padding:20px;border-left:4px solid ${isApproved ? '#22C55E' : isRejected ? '#EF4444' : '#F59E0B'}">
@@ -200,7 +217,7 @@ const Reviews = {
           <div>
             <div style="display:flex;align-items:center;gap:10px;">
               <span style="color:#C9A96E;font-size:1.1rem;letter-spacing:2px;">${stars}</span>
-              ${UI.badge(r.status || 'pending')}
+              ${UI.badge(status)}
             </div>
             <h3 style="font-size:1.05rem;font-weight:600;color:var(--text-1);margin-top:6px;">${clientName}</h3>
             <div style="font-size:0.8125rem;color:var(--text-3);margin-top:2px;">
@@ -210,7 +227,7 @@ const Reviews = {
           <div style="font-size:0.78rem;color:var(--text-4);">${dateStr}</div>
         </div>
 
-        <p style="font-size:0.9375rem;color:var(--text-2);line-height:1.6;margin-top:14px;background:var(--bg);padding:12px 16px;border-radius:var(--r-md);font-style:italic;">
+        <p style="font-size:0.9375rem;color:var(--text-2);line-height:1.6;margin-top:14px;background:var(--bg);padding:12px 16px;border-radius:var(--r-md);font-style:italic;word-break:break-word;">
           "${reviewText}"
         </p>
 
@@ -221,7 +238,7 @@ const Reviews = {
               <span style="font-weight:600;font-size:0.8125rem;color:var(--green-deep)">💬 Official Studio Response:</span>
               <button type="button" class="btn btn-ghost btn-sm" data-action="open-response" data-id="${UI.escapeHTML(r.id)}" style="padding:2px 8px;font-size:0.75rem;">Edit Response</button>
             </div>
-            <p style="font-size:0.875rem;color:var(--text-1);margin:0;">"${studioResponse}"</p>
+            <p style="font-size:0.875rem;color:var(--text-1);margin:0;word-break:break-word;">"${studioResponse}"</p>
           </div>` : ''}
 
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
@@ -316,19 +333,16 @@ const Reviews = {
   async delete(id, btn) {
     if (btn && btn.dataset.loading === 'true') return;
     const r = DB.reviews.get(id);
-    const name = r ? (r.clientName || r.author || 'this review') : 'this review';
-    UI.confirm('Delete Review', `Delete review from "<strong>${UI.escapeHTML(name)}</strong>"? This cannot be undone.`, '🗑️', async () => {
+    const rawName = r ? (r.clientName || r.author || 'this review') : 'this review';
+    const nameStr = (rawName && typeof rawName === 'object') ? 'this review' : String(rawName);
+
+    UI.confirm('Delete Review', `Delete review from "<strong>${UI.escapeHTML(nameStr)}</strong>"? This cannot be undone.`, '🗑️', async () => {
       if (btn) { btn.dataset.loading = 'true'; btn.disabled = true; }
       try {
         const ok = await DB.reviews.delete(id);
-        if (btn) {
-          btn.disabled = false;
-          delete btn.dataset.loading;
-        }
-
         if (ok) {
           UI.toast('Review deleted.', 'info');
-          if (typeof App !== 'undefined') App.updateSidebar();
+          if (typeof App !== 'undefined' && App.updateSidebar) App.updateSidebar();
           requestAnimationFrame(() => {
             try {
               this._refreshCards();
@@ -340,6 +354,7 @@ const Reviews = {
         }
       } catch (e) {
         console.error('Delete error:', e);
+        UI.toast('Failed to delete review.', 'error');
       } finally {
         if (btn) {
           btn.disabled = false;

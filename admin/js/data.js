@@ -368,21 +368,34 @@ const DB = {
     },
     _syncPublicMirror(list) {
       try {
+        if (!Array.isArray(list)) return;
         const approvedOnly = list
-          .filter(r => r && r.status === 'approved')
-          .map(r => ({
-            id: r.id,
-            clientName: r.clientName || r.author || 'Verified Client',
-            clientRole: r.clientRole || r.role || 'Client',
-            projectId: r.projectId || 'general',
-            industry: r.industry || r.industryLabel || '',
-            industryLabel: r.industryLabel || r.industry || '',
-            rating: Math.min(5, Math.max(1, parseInt(r.rating, 10) || 5)),
-            reviewText: r.reviewText || r.text || '',
-            studioResponse: r.studioResponse || '',
-            status: 'approved',
-            createdAt: r.createdAt || r.approvedAt || ''
-          }));
+          .filter(r => r && typeof r === 'object' && (r.status === 'approved' || String(r.status || '').toLowerCase() === 'approved'))
+          .map(r => {
+            let rating = 5;
+            try {
+              const num = Number(r.rating);
+              if (!isNaN(num) && num >= 1 && num <= 5) rating = Math.round(num);
+              else {
+                const parsed = parseInt(String(r.rating || 5), 10);
+                if (!isNaN(parsed)) rating = Math.min(5, Math.max(1, parsed));
+              }
+            } catch (e) {}
+
+            return {
+              id: String(r.id || ''),
+              clientName: String(r.clientName || r.author || 'Verified Client'),
+              clientRole: String(r.clientRole || r.role || 'Client'),
+              projectId: String(r.projectId || 'general'),
+              industry: String(r.industry || r.industryLabel || ''),
+              industryLabel: String(r.industryLabel || r.industry || ''),
+              rating,
+              reviewText: String(r.reviewText || r.text || ''),
+              studioResponse: String(r.studioResponse || ''),
+              status: 'approved',
+              createdAt: String(r.createdAt || r.approvedAt || '')
+            };
+          });
         localStorage.setItem('vk_reviews', JSON.stringify({
           cachedAt: Date.now(),
           reviews: approvedOnly
@@ -492,17 +505,30 @@ const DB = {
 
     async approve(id) { return await this.update(id, { status: 'approved', approvedAt: new Date().toISOString() }); },
     async reject(id)  { return await this.update(id, { status: 'rejected' }); },
-    pending()   { return this.all().filter(r => r && r.status === 'pending'); },
-    approved()  { return this.all().filter(r => r && r.status === 'approved'); },
+    pending()   { return this.all().filter(r => r && typeof r === 'object' && (r.status === 'pending' || String(r.status || 'pending').toLowerCase() === 'pending')); },
+    approved()  { return this.all().filter(r => r && typeof r === 'object' && (r.status === 'approved' || String(r.status || '').toLowerCase() === 'approved')); },
     stats() {
       const all = this.all();
-      const approvedList = all.filter(r => r && r.status === 'approved');
+      const approvedList = all.filter(r => r && typeof r === 'object' && (r.status === 'approved' || String(r.status || '').toLowerCase() === 'approved'));
+      const pendingList  = all.filter(r => r && typeof r === 'object' && (r.status === 'pending'  || String(r.status || 'pending').toLowerCase() === 'pending'));
+      const rejectedList = all.filter(r => r && typeof r === 'object' && (r.status === 'rejected' || String(r.status || '').toLowerCase() === 'rejected'));
+      
+      let sumRating = 0;
+      approvedList.forEach(r => {
+        try {
+          const num = Number(r.rating);
+          sumRating += (!isNaN(num) && num >= 1 && num <= 5) ? num : 5;
+        } catch (e) {
+          sumRating += 5;
+        }
+      });
+
       return {
         total: all.length,
-        pending: all.filter(r => r && r.status === 'pending').length,
+        pending: pendingList.length,
         approved: approvedList.length,
-        rejected: all.filter(r => r && r.status === 'rejected').length,
-        avgRating: approvedList.length ? (approvedList.reduce((s,r) => s + (Number(r.rating) || 5), 0) / approvedList.length).toFixed(1) : '5.0',
+        rejected: rejectedList.length,
+        avgRating: approvedList.length ? (sumRating / approvedList.length).toFixed(1) : '5.0',
       };
     },
   },
