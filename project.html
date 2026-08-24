@@ -574,8 +574,8 @@
       }
     } catch (e) {}
 
-    // Fallback: Default to first static project if no match
-    if (window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.projects) && window.VKREATE_DATA.projects.length > 0) {
+    // Fallback: Default to first static project if no targetId was specified
+    if (!targetId && window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.projects) && window.VKREATE_DATA.projects.length > 0) {
       return window.VKREATE_DATA.projects[0];
     }
     return null;
@@ -588,16 +588,16 @@
       root.innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;gap:var(--space-lg);text-align:center;padding:40px 20px;">
           <h1 class="t-h1" style="color:var(--charcoal)">Project Not Found</h1>
-          <p style="color:var(--text-muted)">The project you're looking for doesn't exist.</p>
-        <a href="index.html" class="btn btn-green">â† Back to Portfolio</a>
-      </div>`;
-    return;
+          <p style="color:var(--text-muted)">The project you're looking for doesn't exist or has been deleted.</p>
+          <a href="index.html" class="btn btn-green">← Back to Portfolio</a>
+        </div>`;
+      return;
     }
 
     if (typeof ImageDBReader !== 'undefined') {
       try {
         await ImageDBReader.resolveProject(project);
-        const relatedProjects = (window.VKREATE_DATA?.projects || []).filter(p => p && p.id !== project.id);
+        const relatedProjects = (window.VKREATE_DATA?.projects || []).filter(p => p && p.id && project && p.id !== project.id);
         await Promise.all(relatedProjects.map(p => ImageDBReader.resolveProject(p)));
       } catch (err) {}
     }
@@ -609,221 +609,220 @@
   window.addEventListener('storage', loadAndRender);
 
   function render(project) {
+    if (!project) return;
     // Increment view count in admin data
-  try {
-    const rawP = localStorage.getItem('vk_admin_projects');
-    if (rawP) {
-      const plist = JSON.parse(rawP);
-      const target = plist.find(p => p.id === project.id);
-      if (target) {
-        target.views = (target.views || 0) + 1;
-        localStorage.setItem('vk_admin_projects', JSON.stringify(plist));
+    try {
+      const rawP = localStorage.getItem('vk_admin_projects');
+      if (rawP && project.id) {
+        const plist = JSON.parse(rawP);
+        if (Array.isArray(plist)) {
+          const target = plist.find(p => p && p.id === project.id);
+          if (target) {
+            target.views = (target.views || 0) + 1;
+            localStorage.setItem('vk_admin_projects', JSON.stringify(plist));
+          }
+        }
       }
+    } catch (e) {}
+
+    // Update page title and meta safely
+    if (project && project.name) {
+      document.title = `${project.name} — VKREATE Design Studio`;
     }
-  } catch (e) {}
-
-  // Update page title and meta safely
-  if (project && project.name) {
-    document.title = `${project.name} — VKREATE Design Studio`;
-  }
-  const metaDesc = document.querySelector('meta[name="description"]');
-  if (metaDesc && project && project.name) {
-    metaDesc.setAttribute('content', `${project.name}: ${project.tagline || ''}. A VKREATE interior design project.`);
-  }
-
-  // Render star rating
-  function stars(rating) {
-    let h = '';
-    for (let i = 1; i <= 5; i++) {
-      h += `<span class="star" style="${i > rating ? 'opacity:.2' : ''}">â˜…</span>`;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc && project && project.name) {
+      metaDesc.setAttribute('content', `${project.name}: ${project.tagline || ''}. A VKREATE interior design project.`);
     }
-    return h;
-  }
 
-  // Build metrics display
-  const metricsMap = {
-    'sqft': ['sq ft', 'Area'],
-    'duration': ['', 'Duration'],
-    'budgetRange': ['', 'Investment'],
-    'rooms': ['', 'Rooms / Zones'],
-    'seatingCapacity': [' seats', 'Seating'],
-    'conversionLift': ['', 'Conversion Lift'],
-    'adrIncrease': ['', 'ADR Increase'],
-    'tripadvisor': ['/5', 'TripAdvisor'],
-    'anxietyReduction': ['', 'Anxiety Reduction'],
-    'bedrooms': [' BR', 'Bedrooms'],
-    'zones': ['', 'Design Zones'],
-    'avgTransactionLift': ['', 'Avg Transaction'],
-    'satisfaction': ['', 'Satisfaction'],
-    'timeline': ['', 'Timeline']
-  };
-  const metricEntries = Object.entries(project.metrics || {}).slice(0, 4);
-  const metricsHTML = metricEntries.map(([k, v]) => {
-    const [suffix, label] = metricsMap[k] || ['', k];
-    return `
-      <div class="proj-metrics__item">
-        <div class="proj-metrics__value">${v}${suffix}</div>
-        <div class="proj-metrics__label">${label}</div>
-      </div>`;
-  }).join('');
+    // Render star rating
+    function stars(rating) {
+      let h = '';
+      for (let i = 1; i <= 5; i++) {
+        h += `<span class="star" style="${i > rating ? 'opacity:.2' : ''}">★</span>`;
+      }
+      return h;
+    }
 
-  // Related projects (up to 3, excluding current)
-  const related = VKREATE_DATA.projects.filter(p => p.id !== project.id).slice(0, 3);
-  const relatedHTML = related.map(p => `
-    <div class="proj-related__card reveal" onclick="location.href='project.html?id=${p.id}'" role="button" tabindex="0" aria-label="View ${p.name}">
-      <img class="proj-related__img" src="${p.thumbnail}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='assets/images/project_lilaa_1.jpg'"/>
-      <div class="proj-related__info">
-        <div class="proj-related__label">${p.industryLabel}</div>
-        <div class="proj-related__title">${p.name}</div>
-      </div>
-    </div>`).join('');
+    // Build metrics display
+    const metricsMap = {
+      'sqft': ['sq ft', 'Area'],
+      'duration': ['', 'Duration'],
+      'budgetRange': ['', 'Investment'],
+      'rooms': ['', 'Rooms / Zones'],
+      'seatingCapacity': [' seats', 'Seating'],
+      'conversionLift': ['', 'Conversion Lift'],
+      'adrIncrease': ['', 'ADR Increase'],
+      'tripadvisor': ['/5', 'TripAdvisor'],
+      'anxietyReduction': ['', 'Anxiety Reduction'],
+      'bedrooms': [' BR', 'Bedrooms'],
+      'zones': ['', 'Design Zones'],
+      'avgTransactionLift': ['', 'Avg Transaction'],
+      'satisfaction': ['', 'Satisfaction'],
+      'timeline': ['', 'Timeline']
+    };
+    const metricEntries = Object.entries(project.metrics || {}).slice(0, 4);
+    const metricsHTML = metricEntries.map(([k, v]) => {
+      const [suffix, label] = metricsMap[k] || ['', k];
+      return `
+        <div class="proj-metrics__item">
+          <div class="proj-metrics__value">${v}${suffix}</div>
+          <div class="proj-metrics__label">${label}</div>
+        </div>`;
+    }).join('');
 
-  // Process phases â€” premium dark timeline
-  const phasesHTML = (project.processPhases || []).map((ph, i) => `
-    <div class="phase-item" data-phase-idx="${i}" style="transition-delay:${i * 0.12}s" role="listitem" aria-label="Phase ${i+1}: ${ph}">
-      <div class="phase-node" aria-hidden="true">${i + 1}</div>
-      <div class="phase-card">
-        <div class="phase-step-num">Step 0${i + 1}</div>
-        <div class="phase-label">${ph}</div>
-      </div>
-    </div>`).join('');
-
-  root.innerHTML = `
-    <!-- Hero -->
-    <section class="proj-hero" aria-label="${project.name} project hero">
-      <div class="proj-hero__bg" style="background-image:url('${project.thumbnail}')" role="img" aria-label="${project.name} interior design"></div>
-      <div class="proj-hero__overlay"></div>
-      <div class="container" style="position:relative;z-index:3;width:100%;">
-        <div class="breadcrumb">
-          <nav class="breadcrumb__inner" aria-label="Breadcrumb">
-            <a class="breadcrumb__link" href="index.html">Home</a>
-            <span class="breadcrumb__sep" aria-hidden="true">&#x203A;</span>
-            <a class="breadcrumb__link" href="index.html#portfolio">Portfolio</a>
-            <span class="breadcrumb__sep" aria-hidden="true">&#x203A;</span>
-            <span class="breadcrumb__current">${project.name}</span>
-          </nav>
+    // Related projects (up to 3, excluding current)
+    const related = (window.VKREATE_DATA?.projects || []).filter(p => p && p.id && project && p.id !== project.id).slice(0, 3);
+    const relatedHTML = related.map(p => `
+      <div class="proj-related__card reveal" onclick="location.href='project.html?id=${p.id}'" role="button" tabindex="0" aria-label="View ${p.name}">
+        <img class="proj-related__img" src="${p.thumbnail || 'assets/images/project_lilaa_1.jpg'}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='assets/images/project_lilaa_1.jpg'"/>
+        <div class="proj-related__info">
+          <div class="proj-related__label">${p.industryLabel || p.industry || 'Commercial'}</div>
+          <div class="proj-related__title">${p.name}</div>
         </div>
-        <div class="proj-hero__content">
-          <div class="proj-hero__meta">
-            <span class="proj-hero__badge">${project.industryLabel}</span>
-            <span class="proj-hero__meta-item">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
-              </svg>
-              ${project.location}
-            </span>
-            <span class="proj-hero__meta-item">${project.area} &middot; ${project.duration}</span>
-            <span class="proj-hero__meta-item">${project.completionDate}</span>
-          </div>
-          <h1 class="proj-hero__title">${project.name}</h1>
-          <p class="proj-hero__tagline">"${project.tagline}"</p>
+      </div>`).join('');
+
+    // Process phases — premium dark timeline
+    const phasesHTML = (project.processPhases || []).map((ph, i) => `
+      <div class="phase-item" data-phase-idx="${i}" style="transition-delay:${i * 0.12}s" role="listitem" aria-label="Phase ${i+1}: ${ph}">
+        <div class="phase-node" aria-hidden="true">${i + 1}</div>
+        <div class="phase-card">
+          <div class="phase-step-num">Step 0${i + 1}</div>
+          <div class="phase-label">${ph}</div>
         </div>
-      </div>
-    </section>
+      </div>`).join('');
 
-    <!-- Metrics bar -->
-    <div class="proj-metrics" role="region" aria-label="Project metrics">
-      <div class="container">
-        <div class="proj-metrics__row">${metricsHTML}</div>
-      </div>
-    </div>
-
-    <!-- Challenge â†’ Solution â†’ Result -->
-    <section class="proj-body" aria-label="Project case study">
-      <div class="container">
-        <div class="proj-body__inner">
-          <div class="proj-narrative reveal">
-            <div class="proj-narrative__label">
-              <span class="proj-narrative__label-num" aria-hidden="true">1</span>
-              <div><div class="proj-narrative__overline">The Challenge</div></div>
+    // Testimonial section HTML (safely handles null / missing testimonial)
+    const testimonialHTML = (project.testimonial && project.testimonial.text) ? `
+      <!-- Client Testimonial -->
+      <section class="proj-testimonial" aria-label="Client testimonial">
+        <div class="container">
+          <div class="proj-testimonial__card reveal">
+            <blockquote class="proj-testimonial__quote">&ldquo;${project.testimonial.text}&rdquo;</blockquote>
+            <div class="proj-testimonial__divider"></div>
+            <div style="text-align:center;">
+              <div class="proj-testimonial__author-name">${project.testimonial.author || 'Verified Client'}</div>
+              <div class="proj-testimonial__author-role">${project.testimonial.role || ''}</div>
             </div>
-            <h2 class="proj-narrative__title">The Problem</h2>
-            <p class="proj-narrative__text">${project.challenge}</p>
           </div>
-          <div class="proj-narrative reveal delay-2">
-            <div class="proj-narrative__label">
-              <span class="proj-narrative__label-num" aria-hidden="true">2</span>
-              <div><div class="proj-narrative__overline">Our Solution</div></div>
+        </div>
+      </section>` : '';
+
+    root.innerHTML = `
+      <!-- Hero -->
+      <section class="proj-hero" aria-label="${project.name} project hero">
+        <div class="proj-hero__bg" style="background-image:url('${project.thumbnail || 'assets/images/project_lilaa_1.jpg'}')" role="img" aria-label="${project.name} interior design"></div>
+        <div class="proj-hero__overlay"></div>
+        <div class="container" style="position:relative;z-index:3;width:100%;">
+          <div class="breadcrumb">
+            <nav class="breadcrumb__inner" aria-label="Breadcrumb">
+              <a class="breadcrumb__link" href="index.html">Home</a>
+              <span class="breadcrumb__sep" aria-hidden="true">&#x203A;</span>
+              <a class="breadcrumb__link" href="index.html#portfolio">Portfolio</a>
+              <span class="breadcrumb__sep" aria-hidden="true">&#x203A;</span>
+              <span class="breadcrumb__current">${project.name}</span>
+            </nav>
+          </div>
+          <div class="proj-hero__content">
+            <div class="proj-hero__meta">
+              <span class="proj-hero__badge">${project.industryLabel || project.industry || 'Commercial'}</span>
+              <span class="proj-hero__meta-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+                </svg>
+                ${project.location || 'Kerala, India'}
+              </span>
+              <span class="proj-hero__meta-item">${project.area || ''} ${project.duration ? '&middot; ' + project.duration : ''}</span>
+              <span class="proj-hero__meta-item">${project.completionDate || ''}</span>
             </div>
-            <h2 class="proj-narrative__title">The Design</h2>
-            <p class="proj-narrative__text">${project.solution}</p>
+            <h1 class="proj-hero__title">${project.name}</h1>
+            <p class="proj-hero__tagline">"${project.tagline || ''}"</p>
           </div>
-          <div class="proj-narrative reveal delay-4">
-            <div class="proj-narrative__label">
-              <span class="proj-narrative__label-num" aria-hidden="true">3</span>
-              <div><div class="proj-narrative__overline">The Outcome</div></div>
+        </div>
+      </section>
+
+      <!-- Metrics bar -->
+      <div class="proj-metrics" role="region" aria-label="Project metrics">
+        <div class="container">
+          <div class="proj-metrics__row">${metricsHTML}</div>
+        </div>
+      </div>
+
+      <!-- Challenge → Solution → Result -->
+      <section class="proj-body" aria-label="Project case study">
+        <div class="container">
+          <div class="proj-body__inner">
+            <div class="proj-narrative reveal">
+              <div class="proj-narrative__label">
+                <span class="proj-narrative__label-num" aria-hidden="true">1</span>
+                <div><div class="proj-narrative__overline">The Challenge</div></div>
+              </div>
+              <h2 class="proj-narrative__title">The Problem</h2>
+              <p class="proj-narrative__text">${project.challenge || 'Design a high-impact interior tailored to client vision.'}</p>
             </div>
-            <h2 class="proj-narrative__title">The Result</h2>
-            <p class="proj-narrative__text">${project.result}</p>
+            <div class="proj-narrative reveal delay-2">
+              <div class="proj-narrative__label">
+                <span class="proj-narrative__label-num" aria-hidden="true">2</span>
+                <div><div class="proj-narrative__overline">Our Solution</div></div>
+              </div>
+              <h2 class="proj-narrative__title">The Design</h2>
+              <p class="proj-narrative__text">${project.solution || 'Integrated spatial strategy combining ambient lighting, bespoke materials, and ergonomic layouts.'}</p>
+            </div>
+            <div class="proj-narrative reveal delay-4">
+              <div class="proj-narrative__label">
+                <span class="proj-narrative__label-num" aria-hidden="true">3</span>
+                <div><div class="proj-narrative__overline">The Outcome</div></div>
+              </div>
+              <h2 class="proj-narrative__title">The Result</h2>
+              <p class="proj-narrative__text">${project.result || 'Delivered on time with 100% client satisfaction.'}</p>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- CoverFlow 3D Gallery -->
-    <section class="cflow-section" id="cflow-gallery" aria-label="${project.name} gallery">
-      <!-- Ambient backdrop -->
-      <div class="cflow-bg" id="cflow-bg"></div>
-
-      <div class="container">
-        <div class="cflow-header section__header section__header--center reveal" style="margin-bottom:var(--space-3xl)">
-          <span class="t-overline section__overline" style="color:#C9A96E">Full Interior Gallery</span>
-          <h2 class="t-h2 section__title" style="color:#fff">Design Renders &amp; Spatial Details</h2>
-          <div class="divider divider--center"></div>
-          <p style="color:rgba(255,255,255,0.4);font-size:0.78rem;letter-spacing:0.1em">â† â†’ Arrow keys or buttons to navigate</p>
-        </div>
-      </div>
-
-      <!-- 3D CoverFlow stage (full-width, outside container) -->
-      <div class="cflow-stage" id="cflow-stage" tabindex="0" aria-label="Image carousel">
-        ${(project.images || []).map((imgUrl, i) => `
-          <div class="cflow-card" data-idx="${i}" role="img" aria-label="${project.name} render ${i+1}">
-            <img src="${imgUrl}" alt="${project.name} render ${i+1}" loading="${i<3?'eager':'lazy'}" onerror="this.onerror=null;this.src='assets/images/project_lilaa_1.jpg'" />
-            <div class="cflow-caption">Render ${i+1} of ${(project.images||[]).length}</div>
-          </div>
-        `).join('')}
-      </div>
-
-      <!-- Nav row -->
-      <div class="cflow-nav">
-        <button class="cflow-btn" id="cflow-prev" aria-label="Previous image">&#8592;</button>
-        <div class="cflow-dots" id="cflow-dots">
-          ${(project.images || []).map((_,i) => `<div class="cflow-dot${i===0?' active':''}" data-idx="${i}"></div>`).join('')}
-        </div>
-        <button class="cflow-btn" id="cflow-next" aria-label="Next image">&#8594;</button>
-      </div>
-      <div class="cflow-counter" id="cflow-counter">01 / ${String((project.images||[]).length).padStart(2,'0')}</div>
-    </section>
-
-
-
-    <!-- Process Timeline -->
-    <section class="proj-process" aria-label="Project process phases">
-      <div class="container">
-        <div class="section__header section__header--center reveal" style="margin-bottom:var(--space-lg)">
-          <span class="t-overline section__overline">How We Did It</span>
-          <h2 class="t-h2 section__title">Project Phases</h2>
-          <div class="divider divider--center"></div>
-        </div>
-        <div class="phases-track" id="phases-track" role="list" aria-label="Completed project phases">
-          ${phasesHTML}
-        </div>
-      </div>
-    </section>
-
-    <!-- Client Testimonial -->
-    <section class="proj-testimonial" aria-label="Client testimonial">
-      <div class="container">
-        <div class="proj-testimonial__card reveal">
-          <blockquote class="proj-testimonial__quote">&ldquo;${project.testimonial.text}&rdquo;</blockquote>
-          <div class="proj-testimonial__divider"></div>
-          <div style="text-align:center;">
-            <div class="proj-testimonial__author-name">${project.testimonial.author}</div>
-            <div class="proj-testimonial__author-role">${project.testimonial.role}</div>
+      <!-- CoverFlow 3D Gallery -->
+      <section class="cflow-section" id="cflow-gallery" aria-label="${project.name} gallery">
+        <div class="cflow-bg" id="cflow-bg"></div>
+        <div class="container">
+          <div class="cflow-header section__header section__header--center reveal" style="margin-bottom:var(--space-3xl)">
+            <span class="t-overline section__overline" style="color:#C9A96E">Full Interior Gallery</span>
+            <h2 class="t-h2 section__title" style="color:#fff">Design Renders &amp; Spatial Details</h2>
+            <div class="divider divider--center"></div>
+            <p style="color:rgba(255,255,255,0.4);font-size:0.78rem;letter-spacing:0.1em">← → Arrow keys or buttons to navigate</p>
           </div>
         </div>
-      </div>
-    </section>
+        <div class="cflow-stage" id="cflow-stage" tabindex="0" aria-label="Image carousel">
+          ${(project.images || []).map((imgUrl, i) => `
+            <div class="cflow-card" data-idx="${i}" role="img" aria-label="${project.name} render ${i+1}">
+              <img src="${imgUrl}" alt="${project.name} render ${i+1}" loading="${i<3?'eager':'lazy'}" onerror="this.onerror=null;this.src='assets/images/project_lilaa_1.jpg'" />
+              <div class="cflow-caption">Render ${i+1} of ${(project.images||[]).length}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="cflow-nav">
+          <button class="cflow-btn" id="cflow-prev" aria-label="Previous image">&#8592;</button>
+          <div class="cflow-dots" id="cflow-dots">
+            ${(project.images || []).map((_,i) => `<div class="cflow-dot${i===0?' active':''}" data-idx="${i}"></div>`).join('')}
+          </div>
+          <button class="cflow-btn" id="cflow-next" aria-label="Next image">&#8594;</button>
+        </div>
+        <div class="cflow-counter" id="cflow-counter">01 / ${String((project.images||[]).length).padStart(2,'0')}</div>
+      </section>
+
+      <!-- Process Timeline -->
+      <section class="proj-process" aria-label="Project process phases">
+        <div class="container">
+          <div class="section__header section__header--center reveal" style="margin-bottom:var(--space-lg)">
+            <span class="t-overline section__overline">How We Did It</span>
+            <h2 class="t-h2 section__title">Project Phases</h2>
+            <div class="divider divider--center"></div>
+          </div>
+          <div class="phases-track" id="phases-track" role="list" aria-label="Completed project phases">
+            ${phasesHTML}
+          </div>
+        </div>
+      </section>
+
+    ${testimonialHTML}
 
     <!-- Related Projects -->
     <section class="proj-related" aria-label="Related projects">

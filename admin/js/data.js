@@ -237,7 +237,10 @@ const DB = {
   // ── Projects CRUD ─────────────────────────────────────────
   projects: {
     all() {
-      return DB._get(DB.KEYS.projects) || [];
+      const list = DB._get(DB.KEYS.projects) || [];
+      const deletedList = DB._get('vk_admin_deleted_projects') || [];
+      const deletedSet = new Set(deletedList);
+      return list.filter(p => p && p.id && !deletedSet.has(p.id));
     },
     get(id) {
       return this.all().find(p => p && p.id && (p.id === id || String(p.id) === String(id))) || null;
@@ -266,20 +269,22 @@ const DB = {
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || `HTTP ${res.status}`);
+          console.warn(`Server project add warning (HTTP ${res.status}): ${err.error || 'Saved locally'}`);
         }
       } catch (e) {
-        if (window.UI && UI.toast) UI.toast(`❌ Project add error: ${e.message}. Rolling back...`, 'error');
-        await DB.loadRemoteData();
-        return null;
+        console.warn(`Server project add fetch exception: ${e.message} — keeping local addition`);
       }
       return p;
     },
     async update(id, data) {
       const l = this.all();
-      const i = l.findIndex(p => p && p.id === id);
-      if (i < 0) return null;
-      l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
+      let i = l.findIndex(p => p && p.id === id);
+      if (i < 0) {
+        l.unshift({ id, ...data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+        i = 0;
+      } else {
+        l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
+      }
       DB._lastLocalWrite.projects = Date.now();
       DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
       DB._broadcast('projects-updated', l);
@@ -293,20 +298,31 @@ const DB = {
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || `HTTP ${res.status}`);
+          console.warn(`Server project update warning (HTTP ${res.status}): ${err.error || 'Saved locally'}`);
         }
       } catch (e) {
-        if (window.UI && UI.toast) UI.toast(`❌ Project update error: ${e.message}. Rolling back...`, 'error');
-        await DB.loadRemoteData();
-        return null;
+        console.warn(`Server project update fetch exception: ${e.message} — keeping local change`);
       }
       return l[i];
     },
     async delete(id) {
+      if (!id) return false;
+      let deletedList = DB._get('vk_admin_deleted_projects') || [];
+      if (!deletedList.includes(id)) {
+        deletedList.push(id);
+        DB._set('vk_admin_deleted_projects', deletedList);
+      }
+
       const remaining = this.all().filter(p => p && p.id !== id);
       DB._lastLocalWrite.projects = Date.now();
       DB._set(DB.KEYS.projects, remaining);
       DB._broadcast('projects-updated', remaining);
+
+      if (typeof ImageDB !== 'undefined' && ImageDB.delete) {
+        for (let i = 0; i < 20; i++) {
+          ImageDB.delete(`proj_${id}_${i}`).catch(() => {});
+        }
+      }
 
       try {
         const res = await fetch((getApiBaseUrl() || '') + `/api/projects/${id}`, {
@@ -316,12 +332,10 @@ const DB = {
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || `HTTP ${res.status}`);
+          console.warn(`Server project delete warning (HTTP ${res.status}): ${err.error || 'Saved locally'}`);
         }
       } catch (e) {
-        if (window.UI && UI.toast) UI.toast(`❌ Project delete error: ${e.message}. Rolling back...`, 'error');
-        await DB.loadRemoteData();
-        return false;
+        console.warn(`Server project delete fetch exception: ${e.message} — keeping local deletion`);
       }
       return true;
     },
@@ -455,12 +469,10 @@ const DB = {
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || `HTTP ${res.status}`);
+          console.warn(`Review server delete warning (HTTP ${res.status}): ${err.error || 'Saved locally'}`);
         }
       } catch (e) {
-        if (window.UI && UI.toast) UI.toast(`❌ Review delete error: ${e.message}. Rolling back...`, 'error');
-        await DB.loadRemoteData();
-        return false;
+        console.warn(`Review server delete fetch exception: ${e.message} — keeping local deletion`);
       }
       return true;
     },
@@ -555,12 +567,10 @@ const DB = {
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || `HTTP ${res.status}`);
+          console.warn(`Inquiry server delete warning (HTTP ${res.status}): ${err.error || 'Saved locally'}`);
         }
       } catch (e) {
-        if (window.UI && UI.toast) UI.toast(`❌ Inquiry delete error: ${e.message}. Rolling back...`, 'error');
-        await DB.loadRemoteData();
-        return false;
+        console.warn(`Inquiry server delete fetch exception: ${e.message} — keeping local deletion`);
       }
       return true;
     },
@@ -661,16 +671,31 @@ const DB = {
       ]);
 
       if (resProjects && resProjects.ok) {
-        const projects = await resProjects.json().catch(() => null);
+        const rawProj = await resProjects.json().catch(() => null);
+        let projects = [];
+        let deletedList = DB._get('vk_admin_deleted_projects') || [];
+        if (Array.isArray(rawProj)) {
+          projects = rawProj;
+        } else if (rawProj && Array.isArray(rawProj.items)) {
+          projects = rawProj.items;
+          const remoteDeleted = rawProj.deletedIds || [];
+          deletedList = Array.from(new Set([...deletedList, ...remoteDeleted]));
+          DB._set('vk_admin_deleted_projects', deletedList);
+        }
+        const deletedSet = new Set(deletedList);
+        projects = projects.filter(p => p && p.id && !deletedSet.has(p.id));
+
         if (Array.isArray(projects)) {
           if (Date.now() - (DB._lastLocalWrite.projects || 0) < 15000) {
-            const currentLocal = DB._get(DB.KEYS.projects) || [];
+            const currentLocal = (DB._get(DB.KEYS.projects) || []).filter(p => p && p.id && !deletedSet.has(p.id));
             const localIdSet = new Set(currentLocal.map(p => p && p.id));
-            const newRemoteAdds = projects.filter(p => p && p.id && !localIdSet.has(p.id));
+            const newRemoteAdds = projects.filter(p => p && p.id && !localIdSet.has(p.id) && !deletedSet.has(p.id));
             if (newRemoteAdds.length > 0) {
               const merged = [...currentLocal, ...newRemoteAdds];
               DB._set(DB.KEYS.projects, merged);
               projectsUpdated = true;
+            } else {
+              DB._set(DB.KEYS.projects, currentLocal);
             }
           } else {
             const prevJson = JSON.stringify(DB._get(DB.KEYS.projects) || []);

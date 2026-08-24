@@ -297,12 +297,20 @@ const ImageDBReader = {
 };
 var VKREATE_DATA = window.VKREATE_DATA;
 
-// ============================================================
-// Sync Engine — Full-Duplex Admin Dashboard & Website Sync
-// ============================================================
+function getDeletedProjectIds() {
+  try {
+    const raw = localStorage.getItem('vk_admin_deleted_projects');
+    return raw ? (JSON.parse(raw) || []) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
 function applyAdminProjects(adminProjects) {
-  if (!Array.isArray(adminProjects) || !adminProjects.length) return;
-  let adminProjMap = new Map(adminProjects.map(p => [p.id, p]));
+  const deletedIds = getDeletedProjectIds();
+  const deletedSet = new Set(deletedIds);
+  const rawList = Array.isArray(adminProjects) ? adminProjects.filter(p => p && p.id && !deletedSet.has(p.id)) : [];
+  let adminProjMap = new Map(rawList.map(p => [p.id, p]));
   const finalProjects = [];
 
   const fixPath = (p) => {
@@ -455,6 +463,7 @@ function applyAdminProjects(adminProjects) {
   ];
 
   staticOriginals.forEach(staticP => {
+    if (deletedSet.has(staticP.id)) return;
     if (adminProjMap.has(staticP.id)) {
       const adminP = adminProjMap.get(staticP.id);
       if (adminP.status === 'published') {
@@ -492,7 +501,7 @@ function applyAdminProjects(adminProjects) {
   });
 
   // B. Process custom admin-created projects
-  adminProjects.forEach(adminP => {
+  rawList.forEach(adminP => {
     if (adminP.status === 'published' && !staticOriginals.some(sp => sp.id === adminP.id)) {
       const rawThumb = adminP.thumbnail || (adminP.images && adminP.images[0]) || '';
       const thumb = fixPath(rawThumb) || 'assets/images/project_lilaa_1.jpg';
@@ -707,6 +716,27 @@ async function loadRemoteAdminProjects() {
     }
 
     if (Array.isArray(remoteProjects)) {
+      try {
+        const rawLocal = localStorage.getItem('vk_admin_projects');
+        const currentLocal = rawLocal ? JSON.parse(rawLocal) : null;
+        if (Array.isArray(currentLocal) && currentLocal.length > 0) {
+          const localMap = new Map();
+          currentLocal.forEach(p => { if (p && p.id) localMap.set(p.id, p); });
+          remoteProjects = remoteProjects.map(remoteP => {
+            if (!remoteP || !remoteP.id) return remoteP;
+            const localP = localMap.get(remoteP.id);
+            if (localP) {
+              return { ...remoteP, ...localP };
+            }
+            return remoteP;
+          });
+        }
+      } catch (e) {}
+
+      const deletedIds = getDeletedProjectIds();
+      const deletedSet = new Set(deletedIds);
+      remoteProjects = remoteProjects.filter(p => p && p.id && !deletedSet.has(p.id));
+
       try { localStorage.setItem('vk_admin_projects', JSON.stringify(remoteProjects)); } catch (e) {}
       applyAdminProjects(remoteProjects);
       window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
