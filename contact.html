@@ -491,8 +491,35 @@
         }
 
         try {
-          localStorage.setItem('vk_admin_inquiries', JSON.stringify(currentInquiries));
+          const rawLocal = localStorage.getItem('vk_admin_inquiries');
+          let localInquiries = rawLocal ? JSON.parse(rawLocal) : [];
+          if (!Array.isArray(localInquiries)) localInquiries = [];
+          if (!localInquiries.some(i => i && i.id === newInquiry.id)) {
+            localInquiries.unshift(newInquiry);
+            localStorage.setItem('vk_admin_inquiries', JSON.stringify(localInquiries));
+          }
         } catch (e) {}
+
+        // Post to API backend if running
+        try {
+          const getApiBaseUrl = () => (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:3000' : '';
+          const apiUrl = (getApiBaseUrl() || '') + '/api/inquiries';
+          await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newInquiry)
+          });
+        } catch(e) {}
+
+        // Broadcast to all open tabs (Admin Panel)
+        if (typeof BroadcastChannel !== 'undefined') {
+          try {
+            const bc = new BroadcastChannel('vk_sync');
+            bc.postMessage({ type: 'inquiries-updated', data: newInquiry });
+            bc.close();
+          } catch (e) {}
+        }
+        window.dispatchEvent(new CustomEvent('vkreate:inquiries-updated'));
 
         const jsonContent = JSON.stringify(currentInquiries, null, 2);
         const bytes = new TextEncoder().encode(jsonContent);

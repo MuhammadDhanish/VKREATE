@@ -594,7 +594,16 @@ const DB = {
       return l[i];
     },
     async delete(id) {
-      const remaining = this.all().filter(i => i && i.id !== id);
+      if (!id) return false;
+      const idStr = String(id);
+      let deletedList = DB._get('vk_admin_deleted_inquiries') || [];
+      if (!deletedList.includes(idStr)) {
+        deletedList.push(idStr);
+        DB._set('vk_admin_deleted_inquiries', deletedList);
+      }
+
+      const remaining = this.all().filter(i => i && String(i.id) !== idStr);
+      DB._lastLocalWrite.inquiries = Date.now();
       DB._set(DB.KEYS.inquiries, remaining);
       DB._broadcast('inquiries-updated', remaining);
 
@@ -803,24 +812,52 @@ const DB = {
       }
 
       if (resInquiries && resInquiries.ok) {
-        const inquiries = await resInquiries.json().catch(() => null);
+        let inquiriesRaw = await resInquiries.json().catch(() => null);
+        let inquiries = [];
+        let remoteDeletedIds = [];
+        if (inquiriesRaw && typeof inquiriesRaw === 'object' && !Array.isArray(inquiriesRaw)) {
+          inquiries = Array.isArray(inquiriesRaw.items) ? inquiriesRaw.items : (Array.isArray(inquiriesRaw.inquiries) ? inquiriesRaw.inquiries : []);
+          remoteDeletedIds = Array.isArray(inquiriesRaw.deletedIds) ? inquiriesRaw.deletedIds : [];
+        } else if (Array.isArray(inquiriesRaw)) {
+          inquiries = inquiriesRaw;
+        }
+
+        const localDeletedIds = DB._get('vk_admin_deleted_inquiries') || [];
+        const deletedSet = new Set([...localDeletedIds, ...remoteDeletedIds]);
+        if (deletedSet.size > localDeletedIds.length) {
+          DB._set('vk_admin_deleted_inquiries', Array.from(deletedSet));
+        }
+
         if (Array.isArray(inquiries)) {
-          if (Date.now() - (DB._lastLocalWrite.inquiries || 0) < 15000) {
-            const currentLocal = DB._get(DB.KEYS.inquiries) || [];
-            const localIdSet = new Set(currentLocal.map(i => i && i.id));
-            const newRemoteAdds = inquiries.filter(i => i && i.id && !localIdSet.has(i.id));
-            if (newRemoteAdds.length > 0) {
-              const merged = [...currentLocal, ...newRemoteAdds];
-              DB._set(DB.KEYS.inquiries, merged);
-              inquiriesUpdated = true;
+          const currentLocal = DB._get(DB.KEYS.inquiries) || [];
+          const remoteIdSet = new Set();
+          const merged = [];
+
+          inquiries.forEach(remoteItem => {
+            if (!remoteItem || !remoteItem.id) return;
+            const itemIdStr = String(remoteItem.id);
+            if (deletedSet.has(itemIdStr)) return;
+            remoteIdSet.add(itemIdStr);
+
+            const localItem = currentLocal.find(l => l && String(l.id) === itemIdStr);
+            if (localItem) {
+              merged.push({ ...remoteItem, ...localItem });
+            } else {
+              merged.push(remoteItem);
             }
-          } else {
-            const prevJson = JSON.stringify(DB._get(DB.KEYS.inquiries) || []);
-            const newJson = JSON.stringify(inquiries);
-            if (prevJson !== newJson) {
-              DB._set(DB.KEYS.inquiries, inquiries);
-              inquiriesUpdated = true;
+          });
+
+          currentLocal.forEach(localItem => {
+            if (localItem && localItem.id && !remoteIdSet.has(String(localItem.id)) && !deletedSet.has(String(localItem.id))) {
+              merged.push(localItem);
             }
+          });
+
+          const prevJson = JSON.stringify(currentLocal);
+          const newJson = JSON.stringify(merged);
+          if (prevJson !== newJson) {
+            DB._set(DB.KEYS.inquiries, merged);
+            inquiriesUpdated = true;
           }
         }
       }
