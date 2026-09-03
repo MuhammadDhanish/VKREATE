@@ -1,30 +1,4 @@
-[
-  {
-    "id": "mszo5l77sz1og",
-    "name": "Dr. Anil Sharma",
-    "email": "dr.anil@skincare.com",
-    "phone": "+91 90001 23456",
-    "industry": "Beauty & Wellness",
-    "projectBudget": "₹20L – ₹30L",
-    "timeline": "4 months",
-    "brief": "Premium dermatology clinic in Bangalore. Need a modern clinical-yet-luxurious feel.",
-    "status": "quoted",
-    "notes": "Sent proposal on 20 July. Follow up scheduled for Aug 3.",
-    "createdAt": "2025-07-15T11:00:00Z",
-    "respondedAt": "2025-07-18T10:00:00Z"
-  },
-  {
-    "id": "mszo5l777f6f5",
-    "name": "Sanjay Pillai",
-    "email": "sanjay@fashionretail.in",
-    "phone": "+91 80000 98765",
-    "industry": "Retail",
-    "projectBudget": "₹35L – ₹45L",
-    "timeline": "5 months",
-    "brief": "High-end fashion boutique in Kochi. 3,000 sq ft with a focus on premium materials.",
-    "status": "won",
-    "notes": "Contract signed on 10 July. Kickoff meeting scheduled for Aug 1.",
-    "createdAt": "2025-07-01T15:00:00Z",
-    "respondedAt": "2025-07-05T09:00:00Z"
-  }
-]
+{
+  "items": [],
+  "deletedIds": []
+}
