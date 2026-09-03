@@ -273,6 +273,43 @@ app.get('/api/auth/credentials', async (req, res) => {
   });
 });
 
+app.all('/api/admin/wipe-all-data', async (req, res) => {
+  const secret = req.query.secret || (req.body && req.body.secret);
+  if (secret !== 'wipe_vkreate_2026') {
+    return res.status(403).json({ success: false, error: 'Unauthorized wipe request' });
+  }
+
+  let mongoWiped = false;
+  try {
+    const db = await connectMongoDB();
+    if (db) {
+      await ProjectModel.deleteMany({});
+      await ReviewModel.deleteMany({});
+      await InquiryModel.deleteMany({});
+      mongoWiped = true;
+    }
+  } catch (e) {
+    console.warn('Wipe MongoDB warning:', e.message);
+  }
+
+  let ghWiped = false;
+  try {
+    await ghWrite('js/admin-projects.json', () => ({ deletedIds: [], items: [] }));
+    await ghWrite('js/admin-reviews.json', () => ({ deletedIds: [], items: [] }));
+    await ghWrite('js/admin-inquiries.json', () => ({ deletedIds: [], items: [] }));
+    ghWiped = true;
+  } catch (e) {
+    console.warn('Wipe ghWrite warning:', e.message);
+  }
+
+  res.json({
+    success: true,
+    mongoWiped,
+    ghWiped,
+    message: 'All project, review, and inquiry datasets wiped clean across MongoDB Atlas and GitHub store.'
+  });
+});
+
 app.get('/api/projects', async (req, res) => {
   let deletedIds = [];
   const db = await connectMongoDB();
