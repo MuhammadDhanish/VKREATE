@@ -301,7 +301,8 @@ var VKREATE_DATA = window.VKREATE_DATA;
 function getDeletedProjectIds() {
   try {
     const raw = localStorage.getItem('vk_admin_deleted_projects');
-    return raw ? (JSON.parse(raw) || []) : [];
+    const list = raw ? (JSON.parse(raw) || []) : [];
+    return list.map(id => String(id));
   } catch (e) {
     return [];
   }
@@ -309,7 +310,7 @@ function getDeletedProjectIds() {
 
 function applyAdminProjects(adminProjects) {
   const deletedIds = getDeletedProjectIds();
-  const deletedSet = new Set(deletedIds);
+  const deletedSet = new Set(deletedIds.map(id => String(id)));
 
   const fixPath = (p) => {
     if (!p || typeof p !== 'string') return '';
@@ -319,7 +320,15 @@ function applyAdminProjects(adminProjects) {
 
   // If server/admin dataset is explicitly provided as an array, use it as single source of truth
   if (Array.isArray(adminProjects)) {
-    const rawList = adminProjects.filter(p => p && p.id && !deletedSet.has(p.id));
+    const rawList = adminProjects.filter(p => {
+      if (!p || !p.id) return false;
+      const pId = String(p.id);
+      if (deletedSet.has(pId) || deletedSet.has(p.id)) return false;
+      const status = (p.status || 'published').toLowerCase().trim();
+      if (status === 'draft' || status === 'archived' || status === 'deleted') return false;
+      return true;
+    });
+
     const finalProjects = rawList.map(adminP => {
       const rawThumb = adminP.thumbnail || (adminP.images && adminP.images[0]) || adminP.cover || '';
       const thumb = fixPath(rawThumb) || '';
