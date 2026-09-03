@@ -273,7 +273,7 @@ app.get('/api/auth/credentials', async (req, res) => {
   });
 });
 
-app.get('/purge-all', async (req, res) => {
+app.all('/api/purge-all', async (req, res) => {
   let mongoWiped = false;
   try {
     const db = await connectMongoDB();
