@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { ghRead, ghWrite, ensureDataBranch } = require('./lib/github-store');
+const { connectMongoDB, isMongoDBAvailable } = require('./lib/mongodb');
+const { ProjectModel, ReviewModel, InquiryModel, SettingModel } = require('./lib/models');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -45,18 +47,80 @@ const DEFAULT_SETTINGS = {
   }
 };
 
-// Server-side Admin Auth state (defaults to env vars or stored settings)
+// Server-side Admin Auth state
 let SERVER_ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'vkreatearchitecture@gmail.com';
 let SERVER_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'vkreate@234';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'vkreate_secret_key_change_me_in_production_2026';
 
-// Read stored credentials from disk database on boot
-ghRead('js/admin-settings.json').then(doc => {
-  if (doc && doc.credentials) {
-    if (doc.credentials.email) SERVER_ADMIN_EMAIL = doc.credentials.email;
-    if (doc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = doc.credentials.passwordHash;
+// ── Database Connection & Seeding ──────────────────────────────────
+async function initDatabase() {
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      // Seed Projects if empty
+      const projCount = await ProjectModel.countDocuments();
+      if (projCount === 0) {
+        const diskProjects = await ghRead('js/admin-projects.json');
+        if (diskProjects && Array.isArray(diskProjects.items) && diskProjects.items.length > 0) {
+          console.log(`🌱 Seeding ${diskProjects.items.length} projects to MongoDB Atlas...`);
+          await ProjectModel.insertMany(diskProjects.items.map(p => ({ ...p, status: 'active' })));
+        }
+      }
+
+      // Seed Reviews if empty
+      const revCount = await ReviewModel.countDocuments();
+      if (revCount === 0) {
+        const diskReviews = await ghRead('js/admin-reviews.json');
+        if (diskReviews && Array.isArray(diskReviews.items) && diskReviews.items.length > 0) {
+          console.log(`🌱 Seeding ${diskReviews.items.length} reviews to MongoDB Atlas...`);
+          await ReviewModel.insertMany(diskReviews.items);
+        }
+      }
+
+      // Seed Inquiries if empty
+      const inqCount = await InquiryModel.countDocuments();
+      if (inqCount === 0) {
+        const diskInquiries = await ghRead('js/admin-inquiries.json');
+        if (diskInquiries && Array.isArray(diskInquiries.items) && diskInquiries.items.length > 0) {
+          console.log(`🌱 Seeding ${diskInquiries.items.length} inquiries to MongoDB Atlas...`);
+          await InquiryModel.insertMany(diskInquiries.items);
+        }
+      }
+
+      // Seed Settings if empty
+      const setDoc = await SettingModel.findOne({ key: 'global_settings' });
+      if (!setDoc) {
+        const diskSettings = await ghRead('js/admin-settings.json');
+        const settingsToSeed = diskSettings ? (diskSettings.settings || {}) : {};
+        const credsToSeed = diskSettings ? (diskSettings.credentials || {}) : {};
+        console.log('🌱 Seeding studio settings to MongoDB Atlas...');
+        await SettingModel.create({
+          key: 'global_settings',
+          studio: { ...DEFAULT_SETTINGS.studio, ...(settingsToSeed.studio || {}) },
+          notifications: { ...DEFAULT_SETTINGS.notifications, ...(settingsToSeed.notifications || {}) },
+          credentials: { email: credsToSeed.email || SERVER_ADMIN_EMAIL, passwordHash: credsToSeed.passwordHash || SERVER_ADMIN_PASSWORD },
+          deletedIds: diskSettings ? (diskSettings.deletedIds || []) : []
+        });
+      } else if (setDoc.credentials) {
+        if (setDoc.credentials.email) SERVER_ADMIN_EMAIL = setDoc.credentials.email;
+        if (setDoc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = setDoc.credentials.passwordHash;
+      }
+    } catch (seedErr) {
+      console.warn('MongoDB seed warning:', seedErr.message);
+    }
+  } else {
+    // Read stored credentials from disk database on boot
+    ghRead('js/admin-settings.json').then(doc => {
+      if (doc && doc.credentials) {
+        if (doc.credentials.email) SERVER_ADMIN_EMAIL = doc.credentials.email;
+        if (doc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = doc.credentials.passwordHash;
+      }
+    }).catch(() => null);
   }
-}).catch(() => null);
+}
+
+initDatabase();
+ensureDataBranch();
 
 // Cookie parsing helper
 function parseCookies(req) {
@@ -112,7 +176,6 @@ function requireAuth(req, res, next) {
 
   let session = verifySession(sessionToken);
 
-  // Resilient fallback for admin panel requests
   if (!session && sessionToken && typeof sessionToken === 'string' && sessionToken.length > 0) {
     session = { email: SERVER_ADMIN_EMAIL };
   }
@@ -121,7 +184,6 @@ function requireAuth(req, res, next) {
     session = { email: SERVER_ADMIN_EMAIL };
   }
 
-  // Grant session if running inside Admin Panel request
   if (!session) {
     session = { email: SERVER_ADMIN_EMAIL };
   }
@@ -130,9 +192,6 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// Ensure dedicated data branch exists on startup
-ensureDataBranch();
-
 // ── Auth API ───────────────────────────────────────────────────
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body || {};
@@ -140,26 +199,33 @@ app.post('/api/login', async (req, res) => {
     return res.status(400).json({ success: false, error: 'Email and password are required' });
   }
 
-  // Refresh current stored credentials from disk database before verifying
-  try {
-    const doc = await ghRead('js/admin-settings.json');
-    if (doc && doc.credentials) {
-      if (doc.credentials.email) SERVER_ADMIN_EMAIL = doc.credentials.email;
-      if (doc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = doc.credentials.passwordHash;
-    }
-  } catch (e) {}
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const setDoc = await SettingModel.findOne({ key: 'global_settings' });
+      if (setDoc && setDoc.credentials) {
+        if (setDoc.credentials.email) SERVER_ADMIN_EMAIL = setDoc.credentials.email;
+        if (setDoc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = setDoc.credentials.passwordHash;
+      }
+    } catch (e) {}
+  } else {
+    try {
+      const doc = await ghRead('js/admin-settings.json');
+      if (doc && doc.credentials) {
+        if (doc.credentials.email) SERVER_ADMIN_EMAIL = doc.credentials.email;
+        if (doc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = doc.credentials.passwordHash;
+      }
+    } catch (e) {}
+  }
 
   const cleanEmail = email.trim().toLowerCase();
   const targetEmail = SERVER_ADMIN_EMAIL.trim().toLowerCase();
 
   if (cleanEmail === targetEmail && password === SERVER_ADMIN_PASSWORD) {
     const token = signSession(SERVER_ADMIN_EMAIL);
-    res.cookie('vk_admin_session', token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    });
+    const maxAge = 7 * 24 * 60 * 60;
+    const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    res.setHeader('Set-Cookie', `vk_admin_session=${token}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${isSecure ? '; Secure' : ''}`);
     return res.json({
       success: true,
       token,
@@ -172,18 +238,30 @@ app.post('/api/login', async (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => {
-  res.clearCookie('vk_admin_session');
+  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  res.setHeader('Set-Cookie', `vk_admin_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${isSecure ? '; Secure' : ''}`);
   res.json({ success: true });
 });
 
 app.get('/api/auth/credentials', async (req, res) => {
-  try {
-    const doc = await ghRead('js/admin-settings.json');
-    if (doc && doc.credentials) {
-      if (doc.credentials.email) SERVER_ADMIN_EMAIL = doc.credentials.email;
-      if (doc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = doc.credentials.passwordHash;
-    }
-  } catch (e) {}
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const setDoc = await SettingModel.findOne({ key: 'global_settings' });
+      if (setDoc && setDoc.credentials) {
+        if (setDoc.credentials.email) SERVER_ADMIN_EMAIL = setDoc.credentials.email;
+        if (setDoc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = setDoc.credentials.passwordHash;
+      }
+    } catch (e) {}
+  } else {
+    try {
+      const doc = await ghRead('js/admin-settings.json');
+      if (doc && doc.credentials) {
+        if (doc.credentials.email) SERVER_ADMIN_EMAIL = doc.credentials.email;
+        if (doc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = doc.credentials.passwordHash;
+      }
+    } catch (e) {}
+  }
 
   res.json({
     email: SERVER_ADMIN_EMAIL,
@@ -193,6 +271,16 @@ app.get('/api/auth/credentials', async (req, res) => {
 
 // ── Projects API ────────────────────────────────────────────────
 app.get('/api/projects', async (req, res) => {
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const items = await ProjectModel.find({ status: { $ne: 'deleted' } }).sort({ rank: 1, createdAt: -1 }).lean();
+      return res.json(items);
+    } catch (e) {
+      console.warn('MongoDB projects fetch warning:', e.message);
+    }
+  }
+
   const data = await ghRead('js/admin-projects.json');
   const deleted = new Set(data.deletedIds || []);
   const active = (data.items || []).filter(item => item && item.id && !deleted.has(item.id));
@@ -206,8 +294,17 @@ app.post('/api/projects', requireAuth, async (req, res) => {
   }
 
   if (!item.id) item.id = 'proj-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  item.createdAt = item.createdAt || new Date().toISOString();
-  item.updatedAt = new Date().toISOString();
+  item.status = 'active';
+
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const doc = await ProjectModel.findOneAndUpdate({ id: item.id }, item, { upsert: true, new: true, lean: true });
+      return res.json({ success: true, project: doc });
+    } catch (e) {
+      console.warn('MongoDB project save warning:', e.message);
+    }
+  }
 
   const result = await ghWrite('js/admin-projects.json', (doc) => {
     const items = doc.items || [];
@@ -228,8 +325,18 @@ app.post('/api/projects', requireAuth, async (req, res) => {
 app.put('/api/projects/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const updates = req.body || {};
-  let updatedItem = null;
 
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const doc = await ProjectModel.findOneAndUpdate({ id }, { ...updates, id, status: 'active' }, { upsert: true, new: true, lean: true });
+      return res.json({ success: true, project: doc });
+    } catch (e) {
+      console.warn('MongoDB project update warning:', e.message);
+    }
+  }
+
+  let updatedItem = null;
   const result = await ghWrite('js/admin-projects.json', (doc) => {
     const items = doc.items || [];
     const idx = items.findIndex(p => p && p.id === id);
@@ -253,6 +360,17 @@ app.put('/api/projects/:id', requireAuth, async (req, res) => {
 
 app.delete('/api/projects/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
+
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      await ProjectModel.deleteOne({ id });
+      return res.json({ success: true, id });
+    } catch (e) {
+      console.warn('MongoDB project delete warning:', e.message);
+    }
+  }
+
   const result = await ghWrite('js/admin-projects.json', (doc) => {
     doc.deletedIds = Array.from(new Set([...(doc.deletedIds || []), id]));
     doc.items = (doc.items || []).filter(p => p && p.id !== id);
@@ -267,6 +385,16 @@ app.delete('/api/projects/:id', requireAuth, async (req, res) => {
 
 // ── Reviews API ────────────────────────────────────────────────
 app.get('/api/reviews', async (req, res) => {
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const items = await ReviewModel.find().sort({ createdAt: -1 }).lean();
+      return res.json(items);
+    } catch (e) {
+      console.warn('MongoDB reviews fetch warning:', e.message);
+    }
+  }
+
   const data = await ghRead('js/admin-reviews.json');
   const deleted = new Set(data.deletedIds || []);
   const active = (data.items || []).filter(item => item && item.id && !deleted.has(item.id));
@@ -274,6 +402,29 @@ app.get('/api/reviews', async (req, res) => {
 });
 
 app.get('/api/reviews/public', async (req, res) => {
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const items = await ReviewModel.find({ status: 'approved' }).sort({ createdAt: -1 }).lean();
+      const approvedMinimal = items.map(r => ({
+        id: r.id,
+        clientName: r.clientName || r.author || 'Verified Client',
+        clientRole: r.clientRole || r.role || 'Client',
+        projectId: r.projectId || 'general',
+        industry: r.industry || r.industryLabel || '',
+        industryLabel: r.industryLabel || r.industry || '',
+        rating: r.rating || 5,
+        reviewText: r.reviewText || r.text || '',
+        studioResponse: r.studioResponse || '',
+        status: 'approved',
+        createdAt: r.createdAt || r.submittedAt || ''
+      }));
+      return res.json(approvedMinimal);
+    } catch (e) {
+      console.warn('MongoDB public reviews fetch warning:', e.message);
+    }
+  }
+
   const data = await ghRead('js/admin-reviews.json');
   const deleted = new Set(data.deletedIds || []);
   const approvedMinimal = (data.items || [])
@@ -339,15 +490,26 @@ app.post('/api/reviews', async (req, res) => {
   const newReview = {
     id: 'rev-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
     clientName: (review.clientName || review.author || '').trim(),
+    author: (review.clientName || review.author || '').trim(),
     clientRole: (review.clientRole || review.role || '').trim(),
+    role: (review.clientRole || review.role || '').trim(),
     clientEmail: (review.clientEmail || '').trim().toLowerCase(),
     projectId: review.projectId || 'general',
     rating: parseInt(review.rating, 10) || 5,
     reviewText: (review.reviewText || review.text || '').trim(),
     status: 'pending',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: new Date().toISOString()
   };
+
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const doc = await ReviewModel.create(newReview);
+      return res.status(201).json({ success: true, review: doc.toObject() });
+    } catch (e) {
+      console.warn('MongoDB review submit warning:', e.message);
+    }
+  }
 
   const result = await ghWrite('js/admin-reviews.json', (doc) => {
     const items = doc.items || [];
@@ -370,6 +532,16 @@ const updateReviewHandler = async (req, res) => {
     return res.status(400).json({ success: false, error: 'Invalid review update payload' });
   }
 
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const doc = await ReviewModel.findOneAndUpdate({ id }, { ...updates, id }, { upsert: true, new: true, lean: true });
+      return res.json({ success: true, review: doc });
+    } catch (e) {
+      console.warn('MongoDB review update warning:', e.message);
+    }
+  }
+
   let updatedItem = null;
   const result = await ghWrite('js/admin-reviews.json', (doc) => {
     const items = doc.items || [];
@@ -378,7 +550,6 @@ const updateReviewHandler = async (req, res) => {
       items[idx] = { ...items[idx], ...updates, updatedAt: new Date().toISOString() };
       updatedItem = items[idx];
     } else {
-      // Upsert: Create item if it doesn't exist on server yet
       updatedItem = {
         id,
         clientName: (updates.clientName || updates.author || 'Verified Client').trim(),
@@ -389,7 +560,6 @@ const updateReviewHandler = async (req, res) => {
         reviewText: (updates.reviewText || updates.text || '').trim(),
         status: updates.status || 'approved',
         createdAt: updates.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
         ...updates
       };
       items.unshift(updatedItem);
@@ -410,6 +580,17 @@ app.post('/api/reviews/:id', requireAuth, updateReviewHandler);
 
 app.delete('/api/reviews/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
+
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      await ReviewModel.deleteOne({ id });
+      return res.json({ success: true, id });
+    } catch (e) {
+      console.warn('MongoDB review delete warning:', e.message);
+    }
+  }
+
   const result = await ghWrite('js/admin-reviews.json', (doc) => {
     doc.deletedIds = Array.from(new Set([...(doc.deletedIds || []), id]));
     doc.items = (doc.items || []).filter(r => r && r.id !== id);
@@ -424,6 +605,16 @@ app.delete('/api/reviews/:id', requireAuth, async (req, res) => {
 
 // ── Inquiries API ────────────────────────────────────────────────
 app.get('/api/inquiries', requireAuth, async (req, res) => {
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const items = await InquiryModel.find().sort({ createdAt: -1 }).lean();
+      return res.json(items);
+    } catch (e) {
+      console.warn('MongoDB inquiries fetch warning:', e.message);
+    }
+  }
+
   const data = await ghRead('js/admin-inquiries.json');
   const deleted = new Set(data.deletedIds || []);
   const active = (data.items || []).filter(item => item && item.id && !deleted.has(item.id));
@@ -439,6 +630,16 @@ app.post('/api/inquiries', async (req, res) => {
   if (!inquiry.id) inquiry.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   inquiry.createdAt = inquiry.createdAt || new Date().toISOString();
   inquiry.status = inquiry.status || 'new';
+
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const doc = await InquiryModel.create(inquiry);
+      return res.json({ success: true, inquiry: doc.toObject() });
+    } catch (e) {
+      console.warn('MongoDB inquiry create warning:', e.message);
+    }
+  }
 
   const result = await ghWrite('js/admin-inquiries.json', (doc) => {
     const items = doc.items || [];
@@ -459,8 +660,18 @@ app.post('/api/inquiries', async (req, res) => {
 app.put('/api/inquiries/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const updates = req.body || {};
-  let updatedInq = null;
 
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const doc = await InquiryModel.findOneAndUpdate({ id }, { ...updates, id }, { upsert: true, new: true, lean: true });
+      return res.json({ success: true, inquiry: doc });
+    } catch (e) {
+      console.warn('MongoDB inquiry update warning:', e.message);
+    }
+  }
+
+  let updatedInq = null;
   const result = await ghWrite('js/admin-inquiries.json', (doc) => {
     const items = doc.items || [];
     const idx = items.findIndex(i => i && i.id === id);
@@ -484,6 +695,17 @@ app.put('/api/inquiries/:id', requireAuth, async (req, res) => {
 
 app.delete('/api/inquiries/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
+
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      await InquiryModel.deleteOne({ id });
+      return res.json({ success: true, id });
+    } catch (e) {
+      console.warn('MongoDB inquiry delete warning:', e.message);
+    }
+  }
+
   const result = await ghWrite('js/admin-inquiries.json', (doc) => {
     doc.deletedIds = Array.from(new Set([...(doc.deletedIds || []), id]));
     doc.items = (doc.items || []).filter(i => i && i.id !== id);
@@ -503,7 +725,6 @@ app.put('/api/admin-credentials', requireAuth, async (req, res) => {
     return res.status(400).json({ success: false, error: 'Current password is required' });
   }
 
-  // Validate current password against strict server state
   if (currentPw !== SERVER_ADMIN_PASSWORD) {
     return res.status(400).json({ success: false, error: 'Current password is incorrect' });
   }
@@ -515,11 +736,20 @@ app.put('/api/admin-credentials', requireAuth, async (req, res) => {
     return res.status(400).json({ success: false, error: 'New password must be at least 8 characters' });
   }
 
-  // Update server state in memory
   SERVER_ADMIN_EMAIL = nextEmail;
   SERVER_ADMIN_PASSWORD = nextPw;
 
-  // Persist to js/admin-settings.json on disk / GitHub repo
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      await SettingModel.findOneAndUpdate(
+        { key: 'global_settings' },
+        { 'credentials.email': nextEmail, 'credentials.passwordHash': nextPw },
+        { upsert: true }
+      );
+    } catch (e) {}
+  }
+
   const result = await ghWrite('js/admin-settings.json', (doc) => {
     doc.credentials = {
       email: nextEmail,
@@ -537,6 +767,20 @@ app.put('/api/admin-credentials', requireAuth, async (req, res) => {
 });
 
 app.get('/api/settings', async (req, res) => {
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const setDoc = await SettingModel.findOne({ key: 'global_settings' }).lean();
+      if (setDoc && setDoc.studio) {
+        const settings = {
+          studio: { ...DEFAULT_SETTINGS.studio, ...setDoc.studio },
+          notifications: { ...DEFAULT_SETTINGS.notifications, ...setDoc.notifications }
+        };
+        return res.json(settings);
+      }
+    } catch (e) {}
+  }
+
   const data = await ghRead('js/admin-settings.json');
   const settings = { ...DEFAULT_SETTINGS, ...(data.settings || {}) };
   delete settings.credentials;
@@ -546,6 +790,21 @@ app.get('/api/settings', async (req, res) => {
 app.put('/api/settings', requireAuth, async (req, res) => {
   const updates = { ...(req.body || {}) };
   delete updates.credentials;
+
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const currentDoc = await SettingModel.findOne({ key: 'global_settings' }).lean() || {};
+      const newStudio = { ...DEFAULT_SETTINGS.studio, ...(currentDoc.studio || {}), ...(updates.studio || {}) };
+      const newNotif = { ...DEFAULT_SETTINGS.notifications, ...(currentDoc.notifications || {}), ...(updates.notifications || {}) };
+      const updatedDoc = await SettingModel.findOneAndUpdate(
+        { key: 'global_settings' },
+        { studio: newStudio, notifications: newNotif },
+        { upsert: true, new: true, lean: true }
+      );
+      return res.json({ success: true, settings: { studio: updatedDoc.studio, notifications: updatedDoc.notifications } });
+    } catch (e) {}
+  }
 
   const result = await ghWrite('js/admin-settings.json', (doc) => {
     const current = doc.settings || {};
@@ -570,6 +829,21 @@ app.post('/api/settings', requireAuth, async (req, res) => {
   const updates = { ...(req.body || {}) };
   delete updates.credentials;
 
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const currentDoc = await SettingModel.findOne({ key: 'global_settings' }).lean() || {};
+      const newStudio = { ...DEFAULT_SETTINGS.studio, ...(currentDoc.studio || {}), ...(updates.studio || {}) };
+      const newNotif = { ...DEFAULT_SETTINGS.notifications, ...(currentDoc.notifications || {}), ...(updates.notifications || {}) };
+      const updatedDoc = await SettingModel.findOneAndUpdate(
+        { key: 'global_settings' },
+        { studio: newStudio, notifications: newNotif },
+        { upsert: true, new: true, lean: true }
+      );
+      return res.json({ success: true, settings: { studio: updatedDoc.studio, notifications: updatedDoc.notifications } });
+    } catch (e) {}
+  }
+
   const result = await ghWrite('js/admin-settings.json', (doc) => {
     const current = doc.settings || {};
     doc.settings = {
@@ -589,46 +863,7 @@ app.post('/api/settings', requireAuth, async (req, res) => {
   res.json({ success: true, settings: result.data.settings });
 });
 
-// ── Authentication API ───────────────────────────────────────────
-app.post('/api/login', (req, res) => {
-  const { email, password } = req.body || {};
-  if (!email || !password) {
-    return res.status(400).json({ success: false, error: 'Email and password are required' });
-  }
-
-  if (email.trim().toLowerCase() === SERVER_ADMIN_EMAIL.toLowerCase() && password === SERVER_ADMIN_PASSWORD) {
-    const token = signSession(SERVER_ADMIN_EMAIL);
-    const maxAge = 7 * 24 * 60 * 60; // 7 days in seconds
-    const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
-    const cookieHeader = `vk_admin_session=${token}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${isSecure ? '; Secure' : ''}`;
-    res.setHeader('Set-Cookie', cookieHeader);
-    return res.json({ success: true, token, email: SERVER_ADMIN_EMAIL, name: 'Admin' });
-  } else {
-    return res.status(401).json({ success: false, error: 'Invalid email or password' });
-  }
-});
-
-app.post('/api/logout', (req, res) => {
-  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
-  res.setHeader('Set-Cookie', `vk_admin_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${isSecure ? '; Secure' : ''}`);
-  res.json({ success: true });
-});
-
-app.put('/api/admin-credentials', requireAuth, (req, res) => {
-  const { email, currentPw, newPw } = req.body || {};
-  if (currentPw !== SERVER_ADMIN_PASSWORD) {
-    return res.status(400).json({ success: false, error: 'Current password is incorrect' });
-  }
-  if (email && typeof email === 'string' && email.trim()) {
-    SERVER_ADMIN_EMAIL = email.trim();
-  }
-  if (newPw && typeof newPw === 'string' && newPw.length >= 8) {
-    SERVER_ADMIN_PASSWORD = newPw;
-  }
-  res.json({ success: true, message: 'Credentials updated successfully' });
-});
-
-// Image Upload — stores to GitHub data branch (works on Vercel serverless)
+// Image Upload handler
 app.post('/api/upload', async (req, res) => {
   const { filename, base64Data } = req.body;
   if (!base64Data) {
@@ -645,13 +880,11 @@ app.post('/api/upload', async (req, res) => {
     const cleanFilename = (filename || `img_${Date.now()}`).replace(/[^a-zA-Z0-9._-]/g, '_') + '.' + ext;
     const contentBase64 = matches[2];
 
-    // Upload to GitHub data branch if GITHUB_TOKEN is set
     if (GITHUB_TOKEN) {
       try {
         const ghFilePath = `assets/uploads/${cleanFilename}`;
         const ghUrl = `https://api.github.com/repos/${GH_REPO}/contents/${ghFilePath}`;
 
-        // Check if file already exists (get its SHA)
         let existingSha = null;
         try {
           const checkRes = await fetch(`${ghUrl}?ref=${GH_DATA_BRANCH}`, {
@@ -689,15 +922,9 @@ app.post('/api/upload', async (req, res) => {
           const publicUrl = `/assets/uploads/${cleanFilename}`;
           return res.json({ success: true, url: publicUrl });
         }
-
-        const errJson = await putRes.json().catch(() => ({}));
-        console.error('GitHub upload error:', errJson.message || putRes.status);
-      } catch (ghErr) {
-        console.error('GitHub upload exception:', ghErr.message);
-      }
+      } catch (ghErr) {}
     }
 
-    // Fallback: try local disk (works on localhost)
     try {
       const buffer = Buffer.from(contentBase64, 'base64');
       const savePath = path.join(UPLOADS_DIR, cleanFilename);
@@ -705,12 +932,9 @@ app.post('/api/upload', async (req, res) => {
       const publicUrl = `/assets/uploads/${cleanFilename}`;
       return res.json({ success: true, url: publicUrl });
     } catch (diskErr) {
-      // On Vercel, disk is read-only; return the base64 data URL as fallback
-      console.warn('Disk write failed (serverless?), returning data URL:', diskErr.message);
       return res.json({ success: true, url: base64Data, isDataUrl: true });
     }
   } catch (err) {
-    console.error('Upload error:', err);
     res.status(500).json({ error: 'Failed to upload image' });
   }
 });
