@@ -57,65 +57,54 @@ async function initDatabase() {
   const db = await connectMongoDB();
   if (db) {
     try {
-      // Sync clean state for Projects
-      const diskProjects = await ghRead('js/admin-projects.json');
-      if (diskProjects && Array.isArray(diskProjects.items)) {
-        if (diskProjects.items.length === 0) {
-          console.log('🧹 Disk projects is empty — syncing clean state to MongoDB Atlas...');
-          await ProjectModel.deleteMany({});
-        } else {
-          const projCount = await ProjectModel.countDocuments();
-          if (projCount === 0) {
-            console.log(`🌱 Seeding ${diskProjects.items.length} projects to MongoDB Atlas...`);
-            await ProjectModel.insertMany(diskProjects.items.map(p => ({ ...p, status: 'active' })));
-          }
-        }
-      }
+      let setDoc = await SettingModel.findOne({ key: 'global_settings' });
+      const isFirstInit = !setDoc;
 
-      // Sync clean state for Reviews
-      const diskReviews = await ghRead('js/admin-reviews.json');
-      if (diskReviews && Array.isArray(diskReviews.items)) {
-        if (diskReviews.items.length === 0) {
-          console.log('🧹 Disk reviews is empty — syncing clean state to MongoDB Atlas...');
-          await ReviewModel.deleteMany({});
-        } else {
-          const revCount = await ReviewModel.countDocuments();
-          if (revCount === 0) {
-            console.log(`🌱 Seeding ${diskReviews.items.length} reviews to MongoDB Atlas...`);
-            await ReviewModel.insertMany(diskReviews.items);
-          }
-        }
-      }
-
-      // Sync clean state for Inquiries
-      const diskInquiries = await ghRead('js/admin-inquiries.json');
-      if (diskInquiries && Array.isArray(diskInquiries.items)) {
-        if (diskInquiries.items.length === 0) {
-          console.log('🧹 Disk inquiries is empty — syncing clean state to MongoDB Atlas...');
-          await InquiryModel.deleteMany({});
-        } else {
-          const inqCount = await InquiryModel.countDocuments();
-          if (inqCount === 0) {
-            console.log(`🌱 Seeding ${diskInquiries.items.length} inquiries to MongoDB Atlas...`);
-            await InquiryModel.insertMany(diskInquiries.items);
-          }
-        }
-      }
-
-      // Seed Settings if empty
-      const setDoc = await SettingModel.findOne({ key: 'global_settings' });
-      if (!setDoc) {
+      if (isFirstInit) {
         const diskSettings = await ghRead('js/admin-settings.json');
         const settingsToSeed = diskSettings ? (diskSettings.settings || {}) : {};
         const credsToSeed = diskSettings ? (diskSettings.credentials || {}) : {};
-        console.log('🌱 Seeding studio settings to MongoDB Atlas...');
-        await SettingModel.create({
+        console.log('🌱 Initializing studio settings in MongoDB Atlas...');
+        setDoc = await SettingModel.create({
           key: 'global_settings',
           studio: { ...DEFAULT_SETTINGS.studio, ...(settingsToSeed.studio || {}) },
           notifications: { ...DEFAULT_SETTINGS.notifications, ...(settingsToSeed.notifications || {}) },
           credentials: { email: credsToSeed.email || SERVER_ADMIN_EMAIL, passwordHash: credsToSeed.passwordHash || SERVER_ADMIN_PASSWORD },
           deletedIds: diskSettings ? (diskSettings.deletedIds || []) : []
         });
+
+        // Seed Projects on initial setup
+        const diskProjects = await ghRead('js/admin-projects.json');
+        if (diskProjects && Array.isArray(diskProjects.items)) {
+          const deleted = new Set(diskProjects.deletedIds || []);
+          const activeProjects = diskProjects.items.filter(p => p && p.id && !deleted.has(p.id));
+          if (activeProjects.length > 0) {
+            console.log(`🌱 Seeding ${activeProjects.length} initial projects to MongoDB Atlas...`);
+            await ProjectModel.insertMany(activeProjects.map(p => ({ ...p, status: 'active' })));
+          }
+        }
+
+        // Seed Reviews on initial setup
+        const diskReviews = await ghRead('js/admin-reviews.json');
+        if (diskReviews && Array.isArray(diskReviews.items)) {
+          const deleted = new Set(diskReviews.deletedIds || []);
+          const activeReviews = diskReviews.items.filter(r => r && r.id && !deleted.has(r.id));
+          if (activeReviews.length > 0) {
+            console.log(`🌱 Seeding ${activeReviews.length} initial reviews to MongoDB Atlas...`);
+            await ReviewModel.insertMany(activeReviews);
+          }
+        }
+
+        // Seed Inquiries on initial setup
+        const diskInquiries = await ghRead('js/admin-inquiries.json');
+        if (diskInquiries && Array.isArray(diskInquiries.items)) {
+          const deleted = new Set(diskInquiries.deletedIds || []);
+          const activeInquiries = diskInquiries.items.filter(i => i && i.id && !deleted.has(i.id));
+          if (activeInquiries.length > 0) {
+            console.log(`🌱 Seeding ${activeInquiries.length} initial inquiries to MongoDB Atlas...`);
+            await InquiryModel.insertMany(activeInquiries);
+          }
+        }
       } else if (setDoc.credentials) {
         if (setDoc.credentials.email) SERVER_ADMIN_EMAIL = setDoc.credentials.email;
         if (setDoc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = setDoc.credentials.passwordHash;

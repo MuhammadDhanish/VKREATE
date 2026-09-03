@@ -725,8 +725,9 @@ function getApiBaseUrl() {
   if (typeof window !== 'undefined' && window.location) {
     const h = window.location.hostname;
     const p = window.location.port;
-    if ((h === 'localhost' || h === '127.0.0.1') && p !== '3000' && p !== '') {
-      return 'http://localhost:3000';
+    const proto = window.location.protocol || 'http:';
+    if (p !== '3000' && p !== '' && p !== '80' && p !== '443') {
+      return `${proto}//${h}:3000`;
     }
   }
   return '';

@@ -6,8 +6,9 @@ function getApiBaseUrl() {
   if (typeof window !== 'undefined' && window.location) {
     const h = window.location.hostname;
     const p = window.location.port;
-    if ((h === 'localhost' || h === '127.0.0.1') && p !== '3000' && p !== '') {
-      return 'http://localhost:3000';
+    const proto = window.location.protocol || 'http:';
+    if (p !== '3000' && p !== '' && p !== '80' && p !== '443') {
+      return `${proto}//${h}:3000`;
     }
   }
   return '';
@@ -139,13 +140,18 @@ const DB = {
   // Initial local seed if storage is empty
   seed() {
     if (!this._get(this.KEYS.projects)) {
-      this._set(this.KEYS.projects, this._defaultProjects());
+      const deletedProjects = new Set(this._get('vk_admin_deleted_projects') || []);
+      const activeDefaults = this._defaultProjects().filter(p => p && p.id && !deletedProjects.has(p.id));
+      this._set(this.KEYS.projects, activeDefaults);
     }
     if (!this._get(this.KEYS.reviews)) {
-      this._set(this.KEYS.reviews, this._defaultReviews());
+      const deletedReviews = new Set((this._get('vk_admin_deleted_reviews') || []).map(String));
+      const activeDefaults = this._defaultReviews().filter(r => r && r.id && !deletedReviews.has(String(r.id)));
+      this._set(this.KEYS.reviews, activeDefaults);
     }
     if (!this._get(this.KEYS.inquiries)) {
-      this._set(this.KEYS.inquiries, [
+      const deletedInquiries = new Set(this._get('vk_admin_deleted_inquiries') || []);
+      const defaultInquiries = [
         {
           id: 'inq-001',
           name: 'Anand Varma',
@@ -164,7 +170,8 @@ const DB = {
           createdAt: '2025-07-01T15:00:00Z',
           respondedAt: '2025-07-05T09:00:00Z',
         },
-      ]);
+      ].filter(i => i && i.id && !deletedInquiries.has(i.id));
+      this._set(this.KEYS.inquiries, defaultInquiries);
     }
     if (!this._get(this.KEYS.settings)) {
       this._set(this.KEYS.settings, {
