@@ -365,7 +365,8 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('vk_admin_inquiries', JSON.stringify(inquiries));
 
         // 1. Post to API
-        fetch('/api/inquiries', {
+        const apiUrl = (typeof getApiBaseUrl === 'function' ? getApiBaseUrl() : '') + '/api/inquiries';
+        fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newInquiry)

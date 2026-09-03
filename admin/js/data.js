@@ -740,24 +740,37 @@ const DB = {
         projects = projects.filter(p => p && p.id && !deletedSet.has(p.id));
 
         if (Array.isArray(projects)) {
-          if (Date.now() - (DB._lastLocalWrite.projects || 0) < 15000) {
-            const currentLocal = (DB._get(DB.KEYS.projects) || []).filter(p => p && p.id && !deletedSet.has(p.id));
-            const localIdSet = new Set(currentLocal.map(p => p && p.id));
-            const newRemoteAdds = projects.filter(p => p && p.id && !localIdSet.has(p.id) && !deletedSet.has(p.id));
-            if (newRemoteAdds.length > 0) {
-              const merged = [...currentLocal, ...newRemoteAdds];
-              DB._set(DB.KEYS.projects, merged);
-              projectsUpdated = true;
-            } else {
-              DB._set(DB.KEYS.projects, currentLocal);
+          const currentLocal = (DB._get(DB.KEYS.projects) || []).filter(p => p && p.id && !deletedSet.has(p.id));
+          const localMap = new Map();
+          currentLocal.forEach(p => { if (p && p.id) localMap.set(String(p.id), p); });
+
+          const activeRemote = projects.filter(p => p && p.id && !deletedSet.has(String(p.id)));
+          const merged = activeRemote.map(remoteItem => {
+            const localItem = localMap.get(String(remoteItem.id));
+            if (localItem) {
+              const localTs = new Date(localItem.updatedAt || localItem.createdAt || 0).getTime();
+              const remoteTs = new Date(remoteItem.updatedAt || remoteItem.createdAt || 0).getTime();
+              const isRecentLocalEdit = (Date.now() - (DB._lastLocalWrite.projects || 0) < 10000);
+              if (localTs > remoteTs && isRecentLocalEdit) {
+                return { ...remoteItem, ...localItem };
+              }
             }
-          } else {
-            const prevJson = JSON.stringify(DB._get(DB.KEYS.projects) || []);
-            const newJson = JSON.stringify(projects);
-            if (prevJson !== newJson) {
-              DB._set(DB.KEYS.projects, projects);
-              projectsUpdated = true;
+            return remoteItem;
+          });
+
+          // Also include any local-only items not yet in remote
+          const remoteIdSet = new Set(activeRemote.map(p => String(p.id)));
+          currentLocal.forEach(localItem => {
+            if (localItem && localItem.id && !remoteIdSet.has(String(localItem.id)) && !deletedSet.has(String(localItem.id))) {
+              merged.push(localItem);
             }
+          });
+
+          const prevJson = JSON.stringify(currentLocal);
+          const newJson = JSON.stringify(merged);
+          if (prevJson !== newJson) {
+            DB._set(DB.KEYS.projects, merged);
+            projectsUpdated = true;
           }
         }
       }
@@ -849,7 +862,14 @@ const DB = {
 
             const localItem = currentLocal.find(l => l && String(l.id) === itemIdStr);
             if (localItem) {
-              merged.push({ ...remoteItem, ...localItem });
+              const localTs = new Date(localItem.updatedAt || localItem.respondedAt || localItem.createdAt || 0).getTime();
+              const remoteTs = new Date(remoteItem.updatedAt || remoteItem.respondedAt || remoteItem.createdAt || 0).getTime();
+              const isRecentLocalEdit = (Date.now() - (DB._lastLocalWrite.inquiries || 0) < 10000);
+              if (localTs > remoteTs && isRecentLocalEdit) {
+                merged.push({ ...remoteItem, ...localItem });
+              } else {
+                merged.push({ ...localItem, ...remoteItem });
+              }
             } else {
               merged.push(remoteItem);
             }
@@ -915,11 +935,12 @@ DB.seed();
 
 // Setup Real-time Sync Listeners
 (function setupSyncListeners() {
-  // 1. BroadcastChannel Listener (re-reads localStorage on message)
+  // 1. BroadcastChannel Listener (re-reads localStorage & remote DB on message)
   if (syncChannel) {
     syncChannel.onmessage = (event) => {
       if (event.data && event.data.type) {
         window.dispatchEvent(new CustomEvent(`vkreate:${event.data.type}`));
+        DB.loadRemoteData();
       }
     };
   }
@@ -931,6 +952,7 @@ DB.seed();
     if (e.key === 'vk_admin_projects') window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
     if (e.key === 'vk_admin_inquiries') window.dispatchEvent(new CustomEvent('vkreate:inquiries-updated'));
     if (e.key === 'vk_admin_settings') window.dispatchEvent(new CustomEvent('vkreate:settings-updated'));
+    DB.loadRemoteData();
   });
 
   // Initial load

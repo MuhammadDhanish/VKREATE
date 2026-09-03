@@ -810,7 +810,7 @@ async function loadRemoteAdminReviews() {
   let remoteReviews = null;
   let remoteDeleted = [];
   try {
-    const res = await fetch(getApiBaseUrl() + '/api/reviews?t=' + Date.now());
+    const res = await fetch(getApiBaseUrl() + '/api/reviews/public?t=' + Date.now());
     if (res.ok) {
       const raw = await res.json();
       if (Array.isArray(raw)) {
