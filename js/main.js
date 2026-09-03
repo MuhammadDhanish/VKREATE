@@ -25,8 +25,28 @@ document.addEventListener('DOMContentLoaded', () => {
         revealObserver.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  }, { threshold: 0.05, rootMargin: '0px 0px 0px 0px' });
   revealEls.forEach(el => revealObserver.observe(el));
+
+  // Immediately reveal elements already in viewport on load
+  function revealInView() {
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight + 100) {
+        el.classList.add('visible');
+      }
+    });
+  }
+  revealInView();
+  window.addEventListener('scroll', revealInView, { passive: true });
+
+  // Hard safety fallback — reveal everything after 1.5s no matter what
+  setTimeout(() => {
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => {
+      el.classList.add('visible');
+    });
+  }, 1500);
+
 
   // ── Sticky Nav ────────────────────────────────────────────
   const nav = document.getElementById('main-nav');
