@@ -273,6 +273,34 @@ app.get('/api/auth/credentials', async (req, res) => {
   });
 });
 
+app.get('/purge-all', async (req, res) => {
+  let mongoWiped = false;
+  try {
+    const db = await connectMongoDB();
+    if (db) {
+      await ProjectModel.deleteMany({});
+      await ReviewModel.deleteMany({});
+      await InquiryModel.deleteMany({});
+      await SettingModel.findOneAndUpdate({ key: 'global_settings' }, { $set: { deletedIds: [] } });
+      mongoWiped = true;
+    }
+  } catch (e) {
+    console.warn('Purge MongoDB error:', e.message);
+  }
+
+  let ghWiped = false;
+  try {
+    await ghWrite('js/admin-projects.json', () => ({ deletedIds: [], items: [] }));
+    await ghWrite('js/admin-reviews.json', () => ({ deletedIds: [], items: [] }));
+    await ghWrite('js/admin-inquiries.json', () => ({ deletedIds: [], items: [] }));
+    ghWiped = true;
+  } catch (e) {
+    console.warn('Purge ghWrite error:', e.message);
+  }
+
+  res.send(`PURGED_ALL_OK (mongoWiped: ${mongoWiped}, ghWiped: ${ghWiped})`);
+});
+
 app.all('/api/admin/wipe-all-data', async (req, res) => {
   const secret = req.query.secret || (req.body && req.body.secret);
   if (secret !== 'wipe_vkreate_2026') {
