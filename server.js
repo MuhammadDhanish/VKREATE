@@ -380,7 +380,11 @@ app.delete('/api/projects/:id', requireAuth, async (req, res) => {
   if (db) {
     try {
       await ProjectModel.deleteOne({ id });
-      return res.json({ success: true, id });
+      await SettingModel.findOneAndUpdate(
+        { key: 'global_settings' },
+        { $addToSet: { deletedIds: id } },
+        { upsert: true }
+      ).catch(() => {});
     } catch (e) {
       console.warn('MongoDB project delete warning:', e.message);
     }
@@ -392,7 +396,7 @@ app.delete('/api/projects/:id', requireAuth, async (req, res) => {
     return doc;
   });
 
-  if (!result.success) {
+  if (!result.success && !db) {
     return res.status(500).json({ success: false, error: result.error });
   }
   res.json({ success: true, id });
@@ -491,7 +495,7 @@ function validateReview(review, isUpdate = false) {
   }
 }
 
-// PUBLIC endpoint for review submissions
+// PUBLIC & ADMIN endpoint for review submissions
 app.post('/api/reviews', async (req, res) => {
   const review = req.body;
   if (!review || typeof review !== 'object' || Array.isArray(review)) {
@@ -503,7 +507,7 @@ app.post('/api/reviews', async (req, res) => {
   }
 
   const newReview = {
-    id: 'rev-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    id: review.id || ('rev-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7)),
     clientName: (review.clientName || review.author || '').trim(),
     author: (review.clientName || review.author || '').trim(),
     clientRole: (review.clientRole || review.role || '').trim(),
@@ -512,15 +516,24 @@ app.post('/api/reviews', async (req, res) => {
     projectId: review.projectId || 'general',
     rating: parseInt(review.rating, 10) || 5,
     reviewText: (review.reviewText || review.text || '').trim(),
-    status: 'pending',
-    createdAt: new Date().toISOString()
+    status: review.status || 'pending',
+    createdAt: review.createdAt || new Date().toISOString()
   };
 
   const db = await connectMongoDB();
   if (db) {
     try {
-      const doc = await ReviewModel.create(newReview);
-      return res.status(201).json({ success: true, review: doc.toObject() });
+      const doc = await ReviewModel.findOneAndUpdate({ id: newReview.id }, newReview, { upsert: true, new: true, lean: true });
+      ghWrite('js/admin-reviews.json', (diskDoc) => {
+        const items = diskDoc.items || [];
+        const idx = items.findIndex(r => r && r.id === newReview.id);
+        if (idx >= 0) items[idx] = newReview;
+        else items.unshift(newReview);
+        diskDoc.items = items;
+        diskDoc.deletedIds = (diskDoc.deletedIds || []).filter(dId => dId !== newReview.id);
+        return diskDoc;
+      }).catch(() => {});
+      return res.status(200).json({ success: true, review: doc });
     } catch (e) {
       console.warn('MongoDB review submit warning:', e.message);
     }
@@ -528,15 +541,18 @@ app.post('/api/reviews', async (req, res) => {
 
   const result = await ghWrite('js/admin-reviews.json', (doc) => {
     const items = doc.items || [];
-    items.unshift(newReview);
+    const idx = items.findIndex(r => r && r.id === newReview.id);
+    if (idx >= 0) items[idx] = newReview;
+    else items.unshift(newReview);
     doc.items = items;
+    doc.deletedIds = (doc.deletedIds || []).filter(dId => dId !== newReview.id);
     return doc;
   });
 
-  if (!result.success) {
+  if (!result.success && !db) {
     return res.status(500).json({ success: false, error: result.error });
   }
-  res.status(201).json({ success: true, review: newReview });
+  res.status(200).json({ success: true, review: newReview });
 });
 
 const updateReviewHandler = async (req, res) => {
@@ -600,7 +616,11 @@ app.delete('/api/reviews/:id', requireAuth, async (req, res) => {
   if (db) {
     try {
       await ReviewModel.deleteOne({ id });
-      return res.json({ success: true, id });
+      await SettingModel.findOneAndUpdate(
+        { key: 'global_settings' },
+        { $addToSet: { deletedIds: id } },
+        { upsert: true }
+      ).catch(() => {});
     } catch (e) {
       console.warn('MongoDB review delete warning:', e.message);
     }
@@ -612,7 +632,7 @@ app.delete('/api/reviews/:id', requireAuth, async (req, res) => {
     return doc;
   });
 
-  if (!result.success) {
+  if (!result.success && !db) {
     return res.status(500).json({ success: false, error: result.error });
   }
   res.json({ success: true, id });
@@ -715,7 +735,11 @@ app.delete('/api/inquiries/:id', requireAuth, async (req, res) => {
   if (db) {
     try {
       await InquiryModel.deleteOne({ id });
-      return res.json({ success: true, id });
+      await SettingModel.findOneAndUpdate(
+        { key: 'global_settings' },
+        { $addToSet: { deletedIds: id } },
+        { upsert: true }
+      ).catch(() => {});
     } catch (e) {
       console.warn('MongoDB inquiry delete warning:', e.message);
     }
@@ -727,7 +751,7 @@ app.delete('/api/inquiries/:id', requireAuth, async (req, res) => {
     return doc;
   });
 
-  if (!result.success) {
+  if (!result.success && !db) {
     return res.status(500).json({ success: false, error: result.error });
   }
   res.json({ success: true, id });

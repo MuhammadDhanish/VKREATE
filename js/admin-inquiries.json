@@ -1,4 +1,12 @@
 {
+  "deletedIds": [
+    "inq-test-1788442667727",
+    "inq-test-1788442682629",
+    "inq-test-1788442694870",
+    "inq-test-1788442719559",
+    "inq-1"
+  ],
   "items": [],
-  "deletedIds": []
+  "_stale": true,
+  "_cached": false
 }

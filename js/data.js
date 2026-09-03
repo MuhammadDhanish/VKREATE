@@ -739,9 +739,18 @@ const syncChannelLive = (typeof BroadcastChannel !== 'undefined') ? new Broadcas
 async function loadRemoteAdminProjects() {
   try {
     let remoteProjects = null;
+    let remoteDeleted = [];
     try {
       const res = await fetch(getApiBaseUrl() + '/api/projects?t=' + Date.now());
-      if (res.ok) remoteProjects = await res.json();
+      if (res.ok) {
+        const raw = await res.json();
+        if (Array.isArray(raw)) {
+          remoteProjects = raw;
+        } else if (raw && typeof raw === 'object') {
+          remoteProjects = Array.isArray(raw.items) ? raw.items : (Array.isArray(raw.projects) ? raw.projects : null);
+          remoteDeleted = Array.isArray(raw.deletedIds) ? raw.deletedIds : [];
+        }
+      }
     } catch (e) {}
 
     if (!remoteProjects) {
@@ -749,14 +758,21 @@ async function loadRemoteAdminProjects() {
         const res = await fetch('js/admin-projects.json?t=' + Date.now());
         if (res.ok) {
           const raw = await res.json();
-          // Handle both plain array and {items, deletedIds} GitHub format
           if (Array.isArray(raw)) {
             remoteProjects = raw;
-          } else if (raw && Array.isArray(raw.items)) {
-            const deletedSet = new Set(raw.deletedIds || []);
-            remoteProjects = raw.items.filter(p => p && p.id && !deletedSet.has(p.id));
+          } else if (raw && typeof raw === 'object') {
+            remoteProjects = Array.isArray(raw.items) ? raw.items : null;
+            remoteDeleted = Array.isArray(raw.deletedIds) ? raw.deletedIds : [];
           }
         }
+      } catch (e) {}
+    }
+
+    if (remoteDeleted.length > 0) {
+      try {
+        const currentDeleted = getDeletedProjectIds();
+        const combined = Array.from(new Set([...currentDeleted, ...remoteDeleted]));
+        localStorage.setItem('vk_admin_deleted_projects', JSON.stringify(combined));
       } catch (e) {}
     }
 
@@ -791,9 +807,18 @@ async function loadRemoteAdminProjects() {
 
 async function loadRemoteAdminReviews() {
   let remoteReviews = null;
+  let remoteDeleted = [];
   try {
     const res = await fetch(getApiBaseUrl() + '/api/reviews?t=' + Date.now());
-    if (res.ok) remoteReviews = await res.json();
+    if (res.ok) {
+      const raw = await res.json();
+      if (Array.isArray(raw)) {
+        remoteReviews = raw;
+      } else if (raw && typeof raw === 'object') {
+        remoteReviews = Array.isArray(raw.items) ? raw.items : (Array.isArray(raw.reviews) ? raw.reviews : null);
+        remoteDeleted = Array.isArray(raw.deletedIds) ? raw.deletedIds : [];
+      }
+    }
   } catch (e) {}
 
   if (!remoteReviews) {
@@ -801,14 +826,21 @@ async function loadRemoteAdminReviews() {
       const res = await fetch('js/admin-reviews.json?t=' + Date.now());
       if (res.ok) {
         const raw = await res.json();
-        // Handle both plain array and {items, deletedIds} GitHub data format
         if (Array.isArray(raw)) {
           remoteReviews = raw;
-        } else if (raw && Array.isArray(raw.items)) {
-          const deletedSet = new Set(raw.deletedIds || []);
-          remoteReviews = raw.items.filter(r => r && r.id && !deletedSet.has(r.id));
+        } else if (raw && typeof raw === 'object') {
+          remoteReviews = Array.isArray(raw.items) ? raw.items : null;
+          remoteDeleted = Array.isArray(raw.deletedIds) ? raw.deletedIds : [];
         }
       }
+    } catch (e) {}
+  }
+
+  if (remoteDeleted.length > 0) {
+    try {
+      const currentDeleted = getDeletedReviewIds();
+      const combined = Array.from(new Set([...currentDeleted, ...remoteDeleted.map(String)]));
+      localStorage.setItem('vk_admin_deleted_reviews', JSON.stringify(combined));
     } catch (e) {}
   }
 

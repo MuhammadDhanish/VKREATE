@@ -1,19 +1,24 @@
 {
-  "studio": {
-    "name": "Vkreate Interior Architecture",
-    "tagline": "Crafting Iconic Spaces",
-    "email": "vkreatearchitecture@gmail.com",
-    "phone": "+91 90371 61861",
-    "address": "LPOne Beyond, Venture Arcade, Thondayad, Kozhikode - 673016",
-    "mapsUrl": "https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw",
-    "instagram": "https://www.instagram.com/vkreate_interior_architecture",
-    "facebook": "",
-    "website": "https://vkreate.com"
+  "deletedIds": [],
+  "settings": {
+    "studio": {
+      "name": "Vkreate Interior Architecture",
+      "tagline": "Crafting Iconic Spaces",
+      "email": "vkreatearchitecture@gmail.com",
+      "phone": "+91 90371 61861",
+      "address": "LPOne Beyond, Venture Arcade, Thondayad, Kozhikode - 673016",
+      "mapsUrl": "https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw",
+      "instagram": "https://www.instagram.com/vkreate_interior_architecture",
+      "facebook": "",
+      "website": "https://vkreate.com"
+    },
+    "notifications": {
+      "newReview": true,
+      "newInquiry": true,
+      "notifEmail": "vkreatearchitecture@gmail.com"
+    },
+    "testKey": "val"
   },
-  "notifications": {
-    "newReview": true,
-    "newInquiry": true,
-    "notifEmail": "vkreatearchitecture@gmail.com"
-  },
-  "testKey": "val"
+  "_stale": true,
+  "_cached": false
 }

@@ -88,7 +88,8 @@ async function runSyncTests() {
 
     // 3. Check disk database file persistence
     const dbProjectsOnDisk = JSON.parse(fs.readFileSync(path.join(__dirname, 'js', 'admin-projects.json'), 'utf8'));
-    const diskFoundP = dbProjectsOnDisk.find(p => p.id === testProjectId);
+    const diskItems = Array.isArray(dbProjectsOnDisk) ? dbProjectsOnDisk : (dbProjectsOnDisk.items || []);
+    const diskFoundP = diskItems.find(p => p && p.id === testProjectId);
     assert(!!diskFoundP && diskFoundP.name === testProject.name, 'Backend persisted project to disk database');
 
     // 4. Admin A updates project
@@ -142,7 +143,7 @@ async function runSyncTests() {
       createdAt: new Date().toISOString()
     };
     const resAddRev = await request('POST', '/api/reviews', testReview);
-    assert(resAddRev.status === 200 && resAddRev.body.success, 'Admin saved and approved new review');
+    assert((resAddRev.status === 200 || resAddRev.status === 201) && resAddRev.body.success, 'Admin saved and approved new review');
 
     // 4. Live Site fetches reviews and verifies approved review is present
     const resGetRevs = await request('GET', '/api/reviews');
@@ -173,7 +174,7 @@ async function runSyncTests() {
     };
 
     const resAddInq = await request('POST', '/api/inquiries', testInquiry);
-    assert(resAddInq.status === 200 && resAddInq.body.success, 'Live Site user submitted contact inquiry');
+    assert((resAddInq.status === 200 || resAddInq.status === 201) && resAddInq.body.success, 'Live Site user submitted contact inquiry');
 
     // 2. Admin fetches inquiries from backend database
     const resGetInq = await request('GET', '/api/inquiries');
@@ -193,7 +194,7 @@ async function runSyncTests() {
       createdAt: new Date().toISOString()
     };
     const resAddPendingRev = await request('POST', '/api/reviews', pendingReview);
-    assert(resAddPendingRev.status === 200 && resAddPendingRev.body.success, 'Live Site user submitted client review');
+    assert((resAddPendingRev.status === 200 || resAddPendingRev.status === 201) && resAddPendingRev.body.success, 'Live Site user submitted client review');
 
     // 4. Admin sees pending review in queue
     const resGetPendingRevs = await request('GET', '/api/reviews');

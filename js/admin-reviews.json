@@ -1,4 +1,94 @@
 {
-  "items": [],
-  "deletedIds": []
+  "deletedIds": [
+    "rev-test-1788442667722",
+    "rev-pending-1788442667732",
+    "rev-test-1788442682626",
+    "rev-pending-1788442682634",
+    "rev-test-1788442694867",
+    "rev-pending-1788442694874",
+    "rev-test-1788442719554",
+    "rev-pending-1788442719565"
+  ],
+  "items": [
+    {
+      "id": "rev-mtlklr6jf1y4x",
+      "clientName": "Marcus Wright",
+      "author": "Marcus Wright",
+      "clientRole": "Director, Resistance Tech",
+      "role": "Director, Resistance Tech",
+      "clientEmail": "",
+      "projectId": "test-proj-1788442694832",
+      "rating": 5,
+      "reviewText": "Outstanding craftsmanship and spatial planning!",
+      "status": "pending",
+      "createdAt": "2026-09-03T13:38:14.875Z"
+    },
+    {
+      "id": "rev-mtlklr6bkw2ha",
+      "clientName": "Sarah Connor",
+      "author": "Sarah Connor",
+      "clientRole": "CEO, Cyberdyne Systems",
+      "role": "CEO, Cyberdyne Systems",
+      "clientEmail": "",
+      "projectId": "test-proj-1788442694832",
+      "rating": 5,
+      "reviewText": "Phenomenal interior architecture delivered on time and within budget.",
+      "status": "pending",
+      "createdAt": "2026-09-03T13:38:14.867Z"
+    },
+    {
+      "id": "rev-mtlklhqj6sw3s",
+      "clientName": "Marcus Wright",
+      "author": "Marcus Wright",
+      "clientRole": "Director, Resistance Tech",
+      "role": "Director, Resistance Tech",
+      "clientEmail": "",
+      "projectId": "test-proj-1788442682591",
+      "rating": 5,
+      "reviewText": "Outstanding craftsmanship and spatial planning!",
+      "status": "pending",
+      "createdAt": "2026-09-03T13:38:02.635Z"
+    },
+    {
+      "id": "rev-mtlklhqaazc3n",
+      "clientName": "Sarah Connor",
+      "author": "Sarah Connor",
+      "clientRole": "CEO, Cyberdyne Systems",
+      "role": "CEO, Cyberdyne Systems",
+      "clientEmail": "",
+      "projectId": "test-proj-1788442682591",
+      "rating": 5,
+      "reviewText": "Phenomenal interior architecture delivered on time and within budget.",
+      "status": "pending",
+      "createdAt": "2026-09-03T13:38:02.626Z"
+    },
+    {
+      "id": "rev-mtlkl68leyerr",
+      "clientName": "Marcus Wright",
+      "author": "Marcus Wright",
+      "clientRole": "Director, Resistance Tech",
+      "role": "Director, Resistance Tech",
+      "clientEmail": "",
+      "projectId": "test-proj-1788442667685",
+      "rating": 5,
+      "reviewText": "Outstanding craftsmanship and spatial planning!",
+      "status": "pending",
+      "createdAt": "2026-09-03T13:37:47.733Z"
+    },
+    {
+      "id": "rev-mtlkl68by6nre",
+      "clientName": "Sarah Connor",
+      "author": "Sarah Connor",
+      "clientRole": "CEO, Cyberdyne Systems",
+      "role": "CEO, Cyberdyne Systems",
+      "clientEmail": "",
+      "projectId": "test-proj-1788442667685",
+      "rating": 5,
+      "reviewText": "Phenomenal interior architecture delivered on time and within budget.",
+      "status": "pending",
+      "createdAt": "2026-09-03T13:37:47.723Z"
+    }
+  ],
+  "_stale": true,
+  "_cached": false
 }

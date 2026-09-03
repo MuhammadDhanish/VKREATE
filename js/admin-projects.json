@@ -1,4 +1,31 @@
 {
-  "items": [],
-  "deletedIds": []
+  "deletedIds": [
+    "test-proj-1788442667685",
+    "test-proj-1788442682591",
+    "test-proj-1788442694832",
+    "test-proj-1788442719504"
+  ],
+  "items": [
+    {
+      "id": "test-proj-1788442656343",
+      "name": "Automated Test Project — Luxury Lounge",
+      "industry": "office",
+      "industryLabel": "Offices & Workspaces",
+      "location": "Trivandrum, Kerala",
+      "area": "3,500 sq ft",
+      "duration": "5 months",
+      "budgetRange": "₹30L – ₹40L",
+      "status": "active",
+      "thumbnail": "assets/images/project_lounge.png",
+      "images": [
+        "assets/images/project_lounge.png"
+      ],
+      "challenge": "Design a state of the art lounge",
+      "solution": "Sculptural furniture and ambient troffers",
+      "result": "100% satisfaction",
+      "createdAt": "2026-09-03T13:37:36.343Z"
+    }
+  ],
+  "_stale": true,
+  "_cached": false
 }
