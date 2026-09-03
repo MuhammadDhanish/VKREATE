@@ -351,30 +351,22 @@
 .nav__hamburger {
   display: none;
   flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-  width: 24px;
-  height: 24px;
-  padding: 0;
+  gap: 5px;
+  padding: 8px;
   cursor: pointer;
   background: transparent;
   border: none;
 }
 .nav__hamburger span {
   display: block;
-  width: 24px;
-  height: 3.5px;
-  background: var(--green-deep, #2E4A40);
-  transition: transform var(--dur-mid), opacity var(--dur-fast), background-color var(--dur-fast);
+  width: 24px; height: 2px;
+  background: var(--charcoal);
+  transition: transform var(--dur-mid), opacity var(--dur-fast);
   transform-origin: center;
-  border-radius: 1px;
 }
-.nav__hamburger:hover span {
-  background: var(--green-mid, #3D5C50);
-}
-.nav__hamburger.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+.nav__hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .nav__hamburger.open span:nth-child(2) { opacity: 0; }
-.nav__hamburger.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+.nav__hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 .nav__mobile {
   display: none;
@@ -392,33 +384,31 @@
   .nav__hamburger {
     display: flex !important;
     z-index: 99999 !important;
+    min-width: 44px;
+    min-height: 44px;
     align-items: center;
     justify-content: center;
   }
   .nav__logo-text-wrap {
     display: none !important;
   }
-
-  /* ── Reference Layout Card Mobile Menu with VKREATE Color Palette ── */
   .nav__mobile {
     display: none !important;
     position: fixed;
-    top: 10px; left: 10px; right: 10px; bottom: 10px;
-    width: calc(100vw - 20px);
-    height: calc(100dvh - 20px);
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
     background: rgba(26, 36, 32, 0.98);
     backdrop-filter: blur(28px) saturate(1.8);
     -webkit-backdrop-filter: blur(28px) saturate(1.8);
-    border-radius: 24px;
-    border: 1px solid rgba(201, 169, 110, 0.3);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(201, 169, 110, 0.15);
-    padding: 28px 28px 32px 28px;
+    padding: 90px 28px 40px 28px;
     flex-direction: column;
     justify-content: space-between;
     z-index: 99980 !important;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity var(--dur-mid) var(--ease-out), transform var(--dur-mid) var(--ease-out);
     transform: translateY(-10px);
     box-sizing: border-box;
   }
@@ -429,111 +419,63 @@
     transform: translateY(0) !important;
     z-index: 99995 !important;
   }
-
-  /* Top Header with Hamburger at top right */
   .nav__mobile-header {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
     margin-bottom: 20px;
-    position: relative;
-    z-index: 99999 !important;
   }
-  .nav__mobile-close-hamburger {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    position: relative;
-    z-index: 99999 !important;
-    pointer-events: auto !important;
+  .nav__mobile-brand {
+    font-family: var(--font-sans, 'Inter', sans-serif);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold, #C9A96E);
   }
-  .nav__mobile-close-hamburger span {
-    display: block;
-    width: 24px;
-    height: 3.5px;
-    background-color: var(--green-deep, #2E4A40);
-    border-radius: 1px;
-    pointer-events: none;
-  }
-
-  /* Links Layout & VKREATE Gold/White Typography */
   .nav__mobile-links {
     display: flex;
     flex-direction: column;
-    gap: 32px;
-    margin-top: 10px;
+    gap: 16px;
   }
   .nav__mobile-link {
-    font-family: var(--font-sans, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
-    font-size: 1.25rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
+    font-family: var(--font-serif, serif);
+    font-size: 1.5rem;
+    font-weight: 500;
     color: var(--white, #FFFFFF);
     text-decoration: none;
-    transition: color 0.2s ease, transform 0.2s ease;
+    transition: color 0.2s ease, padding-left 0.2s ease;
   }
-  .nav__mobile-link.active {
-    color: var(--gold, #C9A96E) !important; /* VKREATE Signature Gold */
-    text-shadow: 0 0 12px rgba(201, 169, 110, 0.35);
-  }
+  .nav__mobile-link.active,
   .nav__mobile-link:hover {
-    color: var(--gold-light, #E8C98A);
-    transform: translateX(4px);
+    color: var(--gold, #C9A96E);
+    padding-left: 6px;
   }
   .nav__mobile-cta {
-    font-family: var(--font-sans, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
-    font-size: 1.15rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--white, #FFFFFF);
-    text-decoration: none;
-    transition: color 0.2s ease;
-  }
-  .nav__mobile-cta.active,
-  .nav__mobile-cta:hover {
-    color: var(--gold, #C9A96E);
-  }
-
-  /* Sleek VKREATE Bottom Pill Button (Matching Login button layout in reference image) */
-  .nav__mobile-footer {
-    padding-top: 16px;
-    border-top: 1px solid rgba(201, 169, 110, 0.15);
-  }
-  .nav__mobile-admin {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    width: 100%;
-    padding: 14px 20px;
-    border-radius: 14px;
-    background: rgba(201, 169, 110, 0.12);
-    border: 1px solid rgba(201, 169, 110, 0.35);
-    color: var(--gold, #C9A96E);
-    font-family: var(--font-sans, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
-    font-size: 0.9rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    text-decoration: none;
-    transition: all 0.25s ease;
-    box-sizing: border-box;
-  }
-  .nav__mobile-admin:hover {
+    margin-top: 12px;
+    padding: 16px 24px;
+    border-radius: 30px;
     background: var(--gold, #C9A96E);
     color: var(--charcoal, #1A2420);
-    box-shadow: 0 6px 20px rgba(201, 169, 110, 0.4);
+    font-family: var(--font-sans, 'Inter', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    box-shadow: 0 6px 20px rgba(201, 169, 110, 0.35);
   }
-}
+  .nav__mobile-footer {
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .nav__mobile-admin {
+    color: var(--gold, #C9A96E);
+    font-family: var(--font-sans, 'Inter', sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
 }
 
 /* ── Hero ───────────────────────────────────────────────── */

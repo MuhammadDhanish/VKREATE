@@ -112,19 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (mobileNav) {
-    const closeBtn = document.getElementById('mobile-nav-close') || mobileNav.querySelector('.nav__mobile-close-hamburger') || mobileNav.querySelector('.nav__mobile-close');
-    if (closeBtn) {
-      const handleClose = (e) => {
-        if (e) {
-          if (e.preventDefault) e.preventDefault();
-          if (e.stopPropagation) e.stopPropagation();
-        }
-        window.toggleMobileNav(e);
-      };
-      closeBtn.addEventListener('click', handleClose);
-      closeBtn.addEventListener('touchstart', handleClose, { passive: false });
-    }
-
     mobileNav.querySelectorAll('a').forEach(a => {
       a.addEventListener('click', () => {
         if (hamburger) {
