@@ -310,6 +310,45 @@ app.all('/api/admin/wipe-all-data', async (req, res) => {
   });
 });
 
+app.get('/api/projects/wipe-all', async (req, res) => {
+  try {
+    const db = await connectMongoDB();
+    if (db) {
+      await ProjectModel.deleteMany({});
+    }
+  } catch (e) {}
+  try {
+    await ghWrite('js/admin-projects.json', () => ({ deletedIds: [], items: [] }));
+  } catch (e) {}
+  res.json({ success: true, message: 'All projects wiped clean from MongoDB Atlas Cloud & GitHub store.' });
+});
+
+app.get('/api/reviews/wipe-all', async (req, res) => {
+  try {
+    const db = await connectMongoDB();
+    if (db) {
+      await ReviewModel.deleteMany({});
+    }
+  } catch (e) {}
+  try {
+    await ghWrite('js/admin-reviews.json', () => ({ deletedIds: [], items: [] }));
+  } catch (e) {}
+  res.json({ success: true, message: 'All reviews wiped clean from MongoDB Atlas Cloud & GitHub store.' });
+});
+
+app.get('/api/inquiries/wipe-all', async (req, res) => {
+  try {
+    const db = await connectMongoDB();
+    if (db) {
+      await InquiryModel.deleteMany({});
+    }
+  } catch (e) {}
+  try {
+    await ghWrite('js/admin-inquiries.json', () => ({ deletedIds: [], items: [] }));
+  } catch (e) {}
+  res.json({ success: true, message: 'All inquiries wiped clean from MongoDB Atlas Cloud & GitHub store.' });
+});
+
 app.get('/api/projects', async (req, res) => {
   let deletedIds = [];
   const db = await connectMongoDB();
