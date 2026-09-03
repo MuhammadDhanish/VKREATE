@@ -357,7 +357,7 @@ app.get('/api/projects', async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
-      if (diskItems.length === 0 && deletedIds.length === 0) {
+      if (diskItems.length === 0) {
         await ProjectModel.deleteMany({});
         await SettingModel.findOneAndUpdate({ key: 'global_settings' }, { $set: { deletedIds: [] } });
         return res.json(req.query.format === 'array' ? [] : { items: [], deletedIds: [] });
@@ -487,7 +487,7 @@ app.get('/api/reviews', async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
-      if (diskItems.length === 0 && deletedIds.length === 0) {
+      if (diskItems.length === 0) {
         await ReviewModel.deleteMany({});
         return res.json(req.query.format === 'array' ? [] : { items: [], deletedIds: [] });
       }
@@ -515,7 +515,7 @@ app.get('/api/reviews/public', async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
-      if (diskItems.length === 0 && (!data.deletedIds || data.deletedIds.length === 0)) {
+      if (diskItems.length === 0) {
         await ReviewModel.deleteMany({});
         return res.json([]);
       }
