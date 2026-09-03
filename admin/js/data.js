@@ -69,155 +69,24 @@ const DB = {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   },
   _defaultProjects() {
-    return [
-      {
-        id: 'lilaa-restaurant',
-        name: 'Lilaa — Malayali Cuisine',
-        industry: 'restaurant',
-        industryLabel: 'Restaurants & Cafes',
-        location: 'Calicut, Kerala',
-        area: '2,500 sq ft',
-        duration: '4 months',
-        completionDate: '2025-06-15',
-        budgetRange: '₹25L – ₹35L',
-        status: 'published',
-        rank: 1,
-        thumbnail: '../assets/images/project_lilaa_1.jpg',
-        images: ['../assets/images/project_lilaa_1.jpg', '../assets/images/project_lilaa_2.png'],
-        challenge: 'Transform an underutilized mall space into a premium dining destination.',
-        solution: 'Multi-zone dining with arched niches, vertical ribbed wood panels, and warm cream palette.',
-        result: '30% increase in table turns, 100% weekend reservation capacity.',
-        processPhases: ['Discovery','Concept','Detailing','Execution','Handover'],
-        testimonial: null,
-        metrics: { sqft: '2500', seatingCapacity: 85, timeline: '4 months' },
-        tags: ['restaurant','dining','premium'],
-        createdAt: '2025-06-15T10:00:00Z',
-        updatedAt: '2025-07-01T08:30:00Z',
-      },
-      {
-        id: 'luxury-salon',
-        name: 'Wings Luxury Beauty & Wellness',
-        industry: 'beauty',
-        industryLabel: 'Beauty & Wellness',
-        location: 'Kochi, Kerala',
-        area: '2,200 sq ft',
-        duration: '3.5 months',
-        completionDate: '2025-04-10',
-        budgetRange: '₹20L – ₹30L',
-        status: 'published',
-        rank: 2,
-        thumbnail: '../assets/images/project_salon_3.png',
-        images: ['../assets/images/project_salon_3.png'],
-        challenge: 'Design a serene luxury salon with private VIP suites and acoustic isolation.',
-        solution: 'Soft curved arches, warm brass accents, micro-cement walls, and indirect LED strip lighting.',
-        result: 'Awarded Regional Wellness Interior of the Year 2025.',
-        processPhases: ['Discovery','Concept','Detailing','Execution','Handover'],
-        testimonial: null,
-        metrics: { sqft: '2200', seatingCapacity: 20, timeline: '3.5 months' },
-        tags: ['beauty','salon','wellness'],
-        createdAt: '2025-04-10T10:00:00Z',
-        updatedAt: '2025-05-01T08:30:00Z',
-      },
-      {
-        id: 'retail-jewellery',
-        name: 'Wings Jewellery & Retail Showroom',
-        industry: 'retail',
-        industryLabel: 'Jewellery & Retail',
-        location: 'Calicut, Kerala',
-        area: '1,800 sq ft',
-        duration: '2 months',
-        completionDate: '2025-02-15',
-        budgetRange: '₹12L – ₹18L',
-        status: 'published',
-        rank: 3,
-        thumbnail: '../assets/images/project_jewellery_1.jpg',
-        images: ['../assets/images/project_jewellery_1.jpg', '../assets/images/project_jewellery_2.jpg'],
-        challenge: 'Stand out in a busy luxury mall corridor with limited square footage.',
-        solution: 'High-impact storefront featuring grand arched maroon grid glass windows and precision spotlighting.',
-        result: '40% increase in corridor foot traffic and a 32% conversion lift.',
-        processPhases: ['Discovery','Concept','Detailing','Execution','Handover'],
-        testimonial: null,
-        metrics: { sqft: '1800', timeline: '2 months' },
-        tags: ['retail','jewellery','luxury'],
-        createdAt: '2025-02-15T10:00:00Z',
-        updatedAt: '2025-03-01T08:30:00Z',
-      },
-      {
-        id: 'corporate-lounge',
-        name: 'Corporate VIP Reception & Lounge',
-        industry: 'office',
-        industryLabel: 'Offices & Workspaces',
-        location: 'Kochi, Kerala',
-        area: '2,900 sq ft',
-        duration: '2.5 months',
-        completionDate: '2025-01-20',
-        budgetRange: '₹15L – ₹20L',
-        status: 'published',
-        rank: 4,
-        thumbnail: '../assets/images/project_lounge.png',
-        images: ['../assets/images/project_lounge.png'],
-        challenge: 'Design an executive reception and waiting lounge that conveys prestige and privacy.',
-        solution: 'Sculptural cream armchairs, warm indirect LED ceiling troffers, and organic cloud chandeliers.',
-        result: '98% executive visitor satisfaction rating.',
-        processPhases: ['Discovery','Concept','Detailing','Execution','Handover'],
-        testimonial: null,
-        metrics: { sqft: '2900', timeline: '2.5 months' },
-        tags: ['office','corporate','lounge'],
-        createdAt: '2025-01-20T10:00:00Z',
-        updatedAt: '2025-02-01T08:30:00Z',
-      }
-    ];
+    return [];
   },
   _defaultReviews() {
-    return [
-      {
-        id: 'rev-priya-nair-wings',
-        clientName: 'Dr. Priya Nair',
-        clientRole: 'Managing Director, Wings Salon & Spa',
-        clientEmail: 'priya@wingsbeauty.in',
-        projectId: 'luxury-salon',
-        industry: 'beauty',
-        rating: 5,
-        reviewText: 'Flawless execution from concept to completion. The layout optimization in our Kochi salon created a serene, high-end sanctuary that our VIP clients absolutely love. Highly recommend VKREATE for luxury wellness spaces.',
-        status: 'approved',
-        studioResponse: 'We are thrilled Dr. Priya! The curved glass arches and acoustic detailing in Wings remain one of our proudest accomplishments.',
-        createdAt: '2025-07-10T09:00:00.000Z',
-        approvedAt: '2025-07-10T10:00:00.000Z'
-      }
-    ];
+    return [];
   },
 
   // Initial local seed if storage is empty
   seed() {
     if (!this._get(this.KEYS.projects)) {
-      const deletedProjects = new Set(this._get('vk_admin_deleted_projects') || []);
-      const activeDefaults = this._defaultProjects().filter(p => p && p.id && !deletedProjects.has(p.id));
-      this._set(this.KEYS.projects, activeDefaults);
+      this._set(this.KEYS.projects, []);
     }
     if (!this._get(this.KEYS.reviews)) {
-      const deletedReviews = new Set((this._get('vk_admin_deleted_reviews') || []).map(String));
-      const activeDefaults = this._defaultReviews().filter(r => r && r.id && !deletedReviews.has(String(r.id)));
-      this._set(this.KEYS.reviews, activeDefaults);
+      this._set(this.KEYS.reviews, []);
     }
     if (!this._get(this.KEYS.inquiries)) {
-      const deletedInquiries = new Set(this._get('vk_admin_deleted_inquiries') || []);
-      const defaultInquiries = [
-        {
-          id: 'inq-001',
-          name: 'Anand Varma',
-          email: 'anand@varmagroup.com',
-          phone: '+91 98470 12345',
-          company: 'Varma Group',
-          projectType: 'restaurant',
-          projectTypeLabel: 'Restaurant / Cafe',
-          location: 'Kochi',
-          estimatedArea: '3,000 sq ft',
-          budgetRange: '₹35L – ₹50L',
-          expectedStartDate: '2025-09-01',
-          message: 'Looking for a complete interior design overhaul for our modern fusion restaurant.',
-          status: 'won',
-          notes: 'Contract signed on 10 July. Kickoff meeting scheduled for Aug 1.',
-          createdAt: '2025-07-01T15:00:00Z',
+      this._set(this.KEYS.inquiries, []);
+    }
+  },
           respondedAt: '2025-07-05T09:00:00Z',
         },
       ].filter(i => i && i.id && !deletedInquiries.has(i.id));
