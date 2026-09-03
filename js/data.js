@@ -308,10 +308,6 @@ function getDeletedProjectIds() {
 function applyAdminProjects(adminProjects) {
   const deletedIds = getDeletedProjectIds();
   const deletedSet = new Set(deletedIds);
-  const hasAdminDataset = (Array.isArray(adminProjects) && adminProjects.length > 0) || !!localStorage.getItem('vk_admin_projects');
-  const rawList = Array.isArray(adminProjects) ? adminProjects.filter(p => p && p.id && !deletedSet.has(p.id)) : [];
-  let adminProjMap = new Map(rawList.map(p => [p.id, p]));
-  const finalProjects = [];
 
   const fixPath = (p) => {
     if (!p || typeof p !== 'string') return '';
@@ -319,7 +315,49 @@ function applyAdminProjects(adminProjects) {
     return p.replace(/^(\.\.\/)+/, '');
   };
 
-  // A. Process built-in static projects
+  // If server/admin dataset is explicitly provided as an array, use it as single source of truth
+  if (Array.isArray(adminProjects)) {
+    const rawList = adminProjects.filter(p => p && p.id && !deletedSet.has(p.id));
+    const finalProjects = rawList.map(adminP => {
+      const rawThumb = adminP.thumbnail || (adminP.images && adminP.images[0]) || adminP.cover || '';
+      const thumb = fixPath(rawThumb) || '';
+      const imgs = (adminP.images && adminP.images.length) ? adminP.images.map(fixPath) : (thumb ? [thumb] : []);
+
+      return {
+        id: adminP.id,
+        name: adminP.name || 'Untitled Project',
+        client: adminP.client || adminP.clientName || 'Client',
+        industry: adminP.industry || 'restaurant',
+        industryLabel: adminP.industryLabel || adminP.industry || 'Commercial',
+        location: adminP.location || 'Kerala, India',
+        area: adminP.area || '',
+        budgetRange: adminP.budgetRange || '',
+        duration: adminP.duration || '',
+        completionDate: adminP.completionDate || '',
+        rating: adminP.rating || adminP.testimonial?.rating || 5,
+        rank: typeof adminP.rank === 'number' ? adminP.rank : (parseInt(adminP.rank) || 99),
+        thumbnail: thumb,
+        images: imgs,
+        beforeImage: fixPath(adminP.beforeImage) || imgs[0] || '',
+        afterImage: fixPath(adminP.afterImage) || thumb,
+        tagline: adminP.tagline || (adminP.solution ? adminP.solution.slice(0, 70) + '...' : 'Designed by VKREATE Studio'),
+        challenge: adminP.challenge || '',
+        solution: adminP.solution || '',
+        result: adminP.result || '',
+        processPhases: (adminP.processPhases && adminP.processPhases.length) ? adminP.processPhases : ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
+        testimonial: adminP.testimonial?.text ? adminP.testimonial : (adminP.testimonial ? { author: adminP.clientName || 'Client', role: adminP.clientRole || 'Owner', text: adminP.testimonial } : null),
+        metrics: adminP.metrics || { sqft: adminP.area || '', satisfaction: '100%' }
+      };
+    });
+
+    VKREATE_DATA.projects = finalProjects;
+    if (VKREATE_DATA.stats && VKREATE_DATA.stats[0]) {
+      VKREATE_DATA.stats[0].value = finalProjects.length.toString();
+    }
+    return;
+  }
+
+  // Fallback static original projects list (only if no dataset loaded)
   const staticOriginals = [
     {
       id: "lilaa-restaurant",
