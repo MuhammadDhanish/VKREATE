@@ -5,11 +5,15 @@
 // Force-purge stale mobile local storage cache
 (function purgeStaleMobileStorage() {
   try {
-    const PURGE_KEY = 'vk_purge_v6';
+    const PURGE_KEY = 'vk_purge_v100_clean_reset';
     if (localStorage.getItem('vk_purge_key') !== PURGE_KEY) {
       localStorage.removeItem('vk_reviews');
       localStorage.removeItem('vk_admin_projects');
       localStorage.removeItem('vk_admin_reviews');
+      localStorage.removeItem('vk_admin_inquiries');
+      localStorage.removeItem('vk_admin_deleted_projects');
+      localStorage.removeItem('vk_admin_deleted_reviews');
+      localStorage.removeItem('vk_admin_deleted_inquiries');
       localStorage.setItem('vk_purge_key', PURGE_KEY);
     }
   } catch (e) {}
@@ -614,25 +618,6 @@ async function loadRemoteAdminReviews() {
           }
           return remoteItem;
         });
-
-        // Also keep any local-only reviews (e.g. submitted while offline or pending server write)
-        const remoteIdSet = new Set(remoteReviews.map(r => r && String(r.id)).filter(Boolean));
-        currentLocal.forEach(localItem => {
-          if (localItem && localItem.id && !isDeletedReview(localItem, deletedIds)) {
-            const idStr = String(localItem.id);
-            const existsById = remoteIdSet.has(idStr);
-            const existsByMatch = remoteReviews.some(r => r && (
-              (r.clientEmail && localItem.clientEmail && r.clientEmail.toLowerCase() === localItem.clientEmail.toLowerCase() && r.reviewText === localItem.reviewText) ||
-              (r.clientName === localItem.clientName && r.reviewText === localItem.reviewText)
-            ));
-            if (!existsById && !existsByMatch) {
-              remoteReviews.unshift(localItem);
-              remoteIdSet.add(idStr);
-            }
-          }
-        });
-      }
-    } catch (e) {}
 
     remoteReviews = remoteReviews.filter(r => r && !isDeletedReview(r, deletedIds));
 
