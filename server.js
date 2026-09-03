@@ -57,33 +57,48 @@ async function initDatabase() {
   const db = await connectMongoDB();
   if (db) {
     try {
-      // Seed Projects if empty
-      const projCount = await ProjectModel.countDocuments();
-      if (projCount === 0) {
-        const diskProjects = await ghRead('js/admin-projects.json');
-        if (diskProjects && Array.isArray(diskProjects.items) && diskProjects.items.length > 0) {
-          console.log(`🌱 Seeding ${diskProjects.items.length} projects to MongoDB Atlas...`);
-          await ProjectModel.insertMany(diskProjects.items.map(p => ({ ...p, status: 'active' })));
+      // Sync clean state for Projects
+      const diskProjects = await ghRead('js/admin-projects.json');
+      if (diskProjects && Array.isArray(diskProjects.items)) {
+        if (diskProjects.items.length === 0) {
+          console.log('🧹 Disk projects is empty — syncing clean state to MongoDB Atlas...');
+          await ProjectModel.deleteMany({});
+        } else {
+          const projCount = await ProjectModel.countDocuments();
+          if (projCount === 0) {
+            console.log(`🌱 Seeding ${diskProjects.items.length} projects to MongoDB Atlas...`);
+            await ProjectModel.insertMany(diskProjects.items.map(p => ({ ...p, status: 'active' })));
+          }
         }
       }
 
-      // Seed Reviews if empty
-      const revCount = await ReviewModel.countDocuments();
-      if (revCount === 0) {
-        const diskReviews = await ghRead('js/admin-reviews.json');
-        if (diskReviews && Array.isArray(diskReviews.items) && diskReviews.items.length > 0) {
-          console.log(`🌱 Seeding ${diskReviews.items.length} reviews to MongoDB Atlas...`);
-          await ReviewModel.insertMany(diskReviews.items);
+      // Sync clean state for Reviews
+      const diskReviews = await ghRead('js/admin-reviews.json');
+      if (diskReviews && Array.isArray(diskReviews.items)) {
+        if (diskReviews.items.length === 0) {
+          console.log('🧹 Disk reviews is empty — syncing clean state to MongoDB Atlas...');
+          await ReviewModel.deleteMany({});
+        } else {
+          const revCount = await ReviewModel.countDocuments();
+          if (revCount === 0) {
+            console.log(`🌱 Seeding ${diskReviews.items.length} reviews to MongoDB Atlas...`);
+            await ReviewModel.insertMany(diskReviews.items);
+          }
         }
       }
 
-      // Seed Inquiries if empty
-      const inqCount = await InquiryModel.countDocuments();
-      if (inqCount === 0) {
-        const diskInquiries = await ghRead('js/admin-inquiries.json');
-        if (diskInquiries && Array.isArray(diskInquiries.items) && diskInquiries.items.length > 0) {
-          console.log(`🌱 Seeding ${diskInquiries.items.length} inquiries to MongoDB Atlas...`);
-          await InquiryModel.insertMany(diskInquiries.items);
+      // Sync clean state for Inquiries
+      const diskInquiries = await ghRead('js/admin-inquiries.json');
+      if (diskInquiries && Array.isArray(diskInquiries.items)) {
+        if (diskInquiries.items.length === 0) {
+          console.log('🧹 Disk inquiries is empty — syncing clean state to MongoDB Atlas...');
+          await InquiryModel.deleteMany({});
+        } else {
+          const inqCount = await InquiryModel.countDocuments();
+          if (inqCount === 0) {
+            console.log(`🌱 Seeding ${diskInquiries.items.length} inquiries to MongoDB Atlas...`);
+            await InquiryModel.insertMany(diskInquiries.items);
+          }
         }
       }
 
