@@ -930,13 +930,18 @@ window.addEventListener('storage', function (e) {
   loadRemoteAdminReviews();
 });
 
-// Active Multi-Device Background Sync Poller (every 5s)
+// Active Multi-Device Background Sync Poller (every 3s) & Focus Listener
 setInterval(() => {
   if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
     loadRemoteAdminProjects();
     loadRemoteAdminReviews();
   }
-}, 5000);
+}, 3000);
+
+window.addEventListener('focus', () => {
+  loadRemoteAdminProjects();
+  loadRemoteAdminReviews();
+});
 
 
 // ============================================================
