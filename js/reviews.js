@@ -81,37 +81,25 @@
     renderReviews();
   }
 
-  // Get all approved reviews from VKREATE_DATA, API cache, or localStorage
+  // Get all approved reviews from API cache or VKREATE_DATA
   function getApprovedReviews() {
     const deletedIds = getDeletedReviewIds();
-    let allReviews = [];
 
-    // 1. Check live VKREATE_DATA.reviews first (kept in sync by js/data.js)
-    if (window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.reviews) && window.VKREATE_DATA.reviews.length > 0) {
-      allReviews = window.VKREATE_DATA.reviews;
+    // 1. Check fetched API memory cache (true single source of truth)
+    if (Array.isArray(cachedApiReviews)) {
+      return cachedApiReviews
+        .map(r => ({ ...r, status: r.status || 'approved' }))
+        .filter(r => r && r.status === 'approved' && !isDeletedReview(r, deletedIds));
     }
 
-    // 2. Check fetched API memory cache
-    if (allReviews.length === 0 && Array.isArray(cachedApiReviews) && cachedApiReviews.length > 0) {
-      allReviews = cachedApiReviews;
+    // 2. Check live VKREATE_DATA.reviews
+    if (window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.reviews)) {
+      return window.VKREATE_DATA.reviews
+        .map(r => ({ ...r, status: r.status || 'approved' }))
+        .filter(r => r && r.status === 'approved' && !isDeletedReview(r, deletedIds));
     }
 
-    // 3. Check localStorage vk_reviews
-    if (allReviews.length === 0) {
-      try {
-        const raw = localStorage.getItem('vk_reviews');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          const list = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.reviews) ? parsed.reviews : []);
-          allReviews = list;
-        }
-      } catch (e) {}
-    }
-
-    // Filter approved reviews strictly and exclude deleted ones
-    return allReviews
-      .map(r => ({ ...r, status: r.status || 'approved' }))
-      .filter(r => r && r.status === 'approved' && !isDeletedReview(r, deletedIds));
+    return [];
   }
 
   // Populate projects dropdown in client submission modal

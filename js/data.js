@@ -5,9 +5,11 @@
 // Force-purge stale mobile local storage cache
 (function purgeStaleMobileStorage() {
   try {
-    const PURGE_KEY = 'vk_purge_v4';
+    const PURGE_KEY = 'vk_purge_v6';
     if (localStorage.getItem('vk_purge_key') !== PURGE_KEY) {
       localStorage.removeItem('vk_reviews');
+      localStorage.removeItem('vk_admin_projects');
+      localStorage.removeItem('vk_admin_reviews');
       localStorage.setItem('vk_purge_key', PURGE_KEY);
     }
   } catch (e) {}
