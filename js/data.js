@@ -920,6 +920,14 @@ window.addEventListener('storage', function (e) {
   loadRemoteAdminReviews();
 });
 
+// Active Multi-Device Background Sync Poller (every 5s)
+setInterval(() => {
+  if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+    loadRemoteAdminProjects();
+    loadRemoteAdminReviews();
+  }
+}, 5000);
+
 
 // ============================================================
 // Async IDB Reader & Resolution — resolve idb: image refs on public pages

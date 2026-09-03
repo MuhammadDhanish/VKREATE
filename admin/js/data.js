@@ -945,4 +945,14 @@ DB.seed();
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') handleFocus();
   });
+
+  // Active Multi-Device Background Sync Poller (every 4s)
+  setInterval(async () => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      await DB.loadRemoteData(true);
+      if (typeof App !== 'undefined' && App.updateSidebar) {
+        App.updateSidebar();
+      }
+    }
+  }, 4000);
 })();

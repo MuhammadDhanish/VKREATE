@@ -35,6 +35,10 @@ function request(method, pathUrl, body = null) {
   });
 }
 
+function parseItems(body) {
+  return Array.isArray(body) ? body : (body?.items || []);
+}
+
 async function runSyncTests() {
   console.log('====================================================');
   console.log('🚀 RUNNING VKREATE BIDIRECTIONAL SYNC TEST SUITE');
@@ -83,7 +87,7 @@ async function runSyncTests() {
 
     // 2. Admin B fetches projects from backend database
     const resGetP = await request('GET', '/api/projects');
-    const foundInB = Array.isArray(resGetP.body) && resGetP.body.find(p => p.id === testProjectId);
+    const foundInB = parseItems(resGetP.body).find(p => p.id === testProjectId);
     assert(!!foundInB && foundInB.name === testProject.name, 'Admin B sees exact change created by Admin A');
 
     // 3. Check disk database file persistence
@@ -99,7 +103,7 @@ async function runSyncTests() {
 
     // 5. Admin B confirms updated project name
     const resGetP2 = await request('GET', '/api/projects');
-    const updatedInB = Array.isArray(resGetP2.body) && resGetP2.body.find(p => p.id === testProjectId);
+    const updatedInB = parseItems(resGetP2.body).find(p => p.id === testProjectId);
     assert(!!updatedInB && updatedInB.name === updatedName, 'Admin B receives updated project name');
 
     console.log();
@@ -147,7 +151,7 @@ async function runSyncTests() {
 
     // 4. Live Site fetches reviews and verifies approved review is present
     const resGetRevs = await request('GET', '/api/reviews');
-    const liveFoundRev = Array.isArray(resGetRevs.body) && resGetRevs.body.find(r => r.id === testReviewId);
+    const liveFoundRev = parseItems(resGetRevs.body).find(r => r.id === testReviewId);
     assert(!!liveFoundRev && liveFoundRev.status === 'approved', 'Live Site displays approved review');
 
     console.log();
@@ -178,7 +182,7 @@ async function runSyncTests() {
 
     // 2. Admin fetches inquiries from backend database
     const resGetInq = await request('GET', '/api/inquiries');
-    const adminFoundInq = Array.isArray(resGetInq.body) && resGetInq.body.find(i => i.id === testInquiryId);
+    const adminFoundInq = parseItems(resGetInq.body).find(i => i.id === testInquiryId);
     assert(!!adminFoundInq && adminFoundInq.name === testInquiry.name, 'Admin dashboard receives live inquiry');
 
     // 3. Live Site user submits a client review (pending state)
@@ -198,7 +202,7 @@ async function runSyncTests() {
 
     // 4. Admin sees pending review in queue
     const resGetPendingRevs = await request('GET', '/api/reviews');
-    const adminFoundPendingRev = Array.isArray(resGetPendingRevs.body) && resGetPendingRevs.body.find(r => r.id === pendingReviewId);
+    const adminFoundPendingRev = parseItems(resGetPendingRevs.body).find(r => r.id === pendingReviewId);
     assert(!!adminFoundPendingRev && adminFoundPendingRev.status === 'pending', 'Admin review queue receives pending review from Live Site');
 
     // 5. Admin approves pending review

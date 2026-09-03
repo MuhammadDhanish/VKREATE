@@ -284,22 +284,27 @@ app.get('/api/auth/credentials', async (req, res) => {
   });
 });
 
-// ── Projects API ────────────────────────────────────────────────
 app.get('/api/projects', async (req, res) => {
+  let deletedIds = [];
   const db = await connectMongoDB();
   if (db) {
     try {
+      const setDoc = await SettingModel.findOne({ key: 'global_settings' }).lean();
+      if (setDoc && Array.isArray(setDoc.deletedIds)) deletedIds = setDoc.deletedIds;
       const items = await ProjectModel.find({ status: { $ne: 'deleted' } }).sort({ rank: 1, createdAt: -1 }).lean();
-      return res.json(items);
+      const active = items.filter(i => i && i.id && !deletedIds.includes(i.id));
+      if (req.query.format === 'array') return res.json(active);
+      return res.json({ items: active, deletedIds });
     } catch (e) {
       console.warn('MongoDB projects fetch warning:', e.message);
     }
   }
 
   const data = await ghRead('js/admin-projects.json');
-  const deleted = new Set(data.deletedIds || []);
-  const active = (data.items || []).filter(item => item && item.id && !deleted.has(item.id));
-  res.json(active);
+  deletedIds = Array.from(new Set([...(data.deletedIds || [])]));
+  const active = (data.items || []).filter(item => item && item.id && !deletedIds.includes(item.id));
+  if (req.query.format === 'array') return res.json(active);
+  res.json({ items: active, deletedIds });
 });
 
 app.post('/api/projects', requireAuth, async (req, res) => {
@@ -402,22 +407,27 @@ app.delete('/api/projects/:id', requireAuth, async (req, res) => {
   res.json({ success: true, id });
 });
 
-// ── Reviews API ────────────────────────────────────────────────
 app.get('/api/reviews', async (req, res) => {
+  let deletedIds = [];
   const db = await connectMongoDB();
   if (db) {
     try {
+      const setDoc = await SettingModel.findOne({ key: 'global_settings' }).lean();
+      if (setDoc && Array.isArray(setDoc.deletedIds)) deletedIds = setDoc.deletedIds;
       const items = await ReviewModel.find().sort({ createdAt: -1 }).lean();
-      return res.json(items);
+      const active = items.filter(i => i && i.id && !deletedIds.includes(i.id));
+      if (req.query.format === 'array') return res.json(active);
+      return res.json({ items: active, deletedIds });
     } catch (e) {
       console.warn('MongoDB reviews fetch warning:', e.message);
     }
   }
 
   const data = await ghRead('js/admin-reviews.json');
-  const deleted = new Set(data.deletedIds || []);
-  const active = (data.items || []).filter(item => item && item.id && !deleted.has(item.id));
-  res.json(active);
+  deletedIds = Array.from(new Set([...(data.deletedIds || [])]));
+  const active = (data.items || []).filter(item => item && item.id && !deletedIds.includes(item.id));
+  if (req.query.format === 'array') return res.json(active);
+  res.json({ items: active, deletedIds });
 });
 
 app.get('/api/reviews/public', async (req, res) => {
@@ -638,22 +648,27 @@ app.delete('/api/reviews/:id', requireAuth, async (req, res) => {
   res.json({ success: true, id });
 });
 
-// ── Inquiries API ────────────────────────────────────────────────
 app.get('/api/inquiries', requireAuth, async (req, res) => {
+  let deletedIds = [];
   const db = await connectMongoDB();
   if (db) {
     try {
+      const setDoc = await SettingModel.findOne({ key: 'global_settings' }).lean();
+      if (setDoc && Array.isArray(setDoc.deletedIds)) deletedIds = setDoc.deletedIds;
       const items = await InquiryModel.find().sort({ createdAt: -1 }).lean();
-      return res.json(items);
+      const active = items.filter(i => i && i.id && !deletedIds.includes(i.id));
+      if (req.query.format === 'array') return res.json(active);
+      return res.json({ items: active, deletedIds });
     } catch (e) {
       console.warn('MongoDB inquiries fetch warning:', e.message);
     }
   }
 
   const data = await ghRead('js/admin-inquiries.json');
-  const deleted = new Set(data.deletedIds || []);
-  const active = (data.items || []).filter(item => item && item.id && !deleted.has(item.id));
-  res.json(active);
+  deletedIds = Array.from(new Set([...(data.deletedIds || [])]));
+  const active = (data.items || []).filter(item => item && item.id && !deletedIds.includes(item.id));
+  if (req.query.format === 'array') return res.json(active);
+  res.json({ items: active, deletedIds });
 });
 
 app.post('/api/inquiries', async (req, res) => {
