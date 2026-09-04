@@ -13,6 +13,10 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
 const GH_REPO = process.env.GH_REPO || 'MuhammadDhanish/VKREATE';
 const GH_DATA_BRANCH = process.env.GH_DATA_BRANCH || 'data';
 
+if (!GITHUB_TOKEN && !process.env.MONGODB_URI) {
+  console.warn('⚠️  Neither GITHUB_TOKEN nor MONGODB_URI set — running in local disk-only mode');
+}
+
 // ── SSE Client Registry for real-time cross-device push ────────────
 const _sseClients = new Set();
 function notifyClients(type) {
@@ -89,7 +93,7 @@ async function initDatabase() {
           const activeProjects = diskProjects.items.filter(p => p && p.id && !deleted.has(p.id));
           if (activeProjects.length > 0) {
             console.log(`🌱 Seeding ${activeProjects.length} initial projects to MongoDB Atlas...`);
-            await ProjectModel.insertMany(activeProjects.map(p => ({ ...p, status: 'active' })));
+            await ProjectModel.insertMany(activeProjects.map(p => ({ ...p, status: p.status || 'published' })));
           }
         }
 
@@ -132,8 +136,9 @@ async function initDatabase() {
   }
 }
 
-initDatabase();
-ensureDataBranch();
+initDatabase().then(() => ensureDataBranch()).catch((e) => {
+  console.warn('Startup init warning:', e.message);
+});
 
 // Cookie parsing helper
 function parseCookies(req) {
@@ -205,13 +210,7 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// ── Auth API ───────────────────────────────────────────────────
-app.post('/api/login', async (req, res) => {
-  const { email, password } = req.body || {};
-  if (!email || !password) {
-    return res.status(400).json({ success: false, error: 'Email and password are required' });
-  }
-
+async function loadCredentials() {
   const db = await connectMongoDB();
   if (db) {
     try {
@@ -219,17 +218,53 @@ app.post('/api/login', async (req, res) => {
       if (setDoc && setDoc.credentials) {
         if (setDoc.credentials.email) SERVER_ADMIN_EMAIL = setDoc.credentials.email;
         if (setDoc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = setDoc.credentials.passwordHash;
-      }
-    } catch (e) {}
-  } else {
-    try {
-      const doc = await ghRead('js/admin-settings.json');
-      if (doc && doc.credentials) {
-        if (doc.credentials.email) SERVER_ADMIN_EMAIL = doc.credentials.email;
-        if (doc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = doc.credentials.passwordHash;
+        return { email: SERVER_ADMIN_EMAIL, passwordHash: SERVER_ADMIN_PASSWORD };
       }
     } catch (e) {}
   }
+  try {
+    const doc = await ghRead('js/admin-settings.json');
+    if (doc && doc.credentials) {
+      if (doc.credentials.email) SERVER_ADMIN_EMAIL = doc.credentials.email;
+      if (doc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = doc.credentials.passwordHash;
+    }
+  } catch (e) {}
+  return { email: SERVER_ADMIN_EMAIL, passwordHash: SERVER_ADMIN_PASSWORD };
+}
+
+async function syncCredentials(email, password) {
+  SERVER_ADMIN_EMAIL = email;
+  SERVER_ADMIN_PASSWORD = password;
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      await SettingModel.findOneAndUpdate(
+        { key: 'global_settings' },
+        { 'credentials.email': email, 'credentials.passwordHash': password },
+        { upsert: true }
+      );
+    } catch (e) {
+      console.warn('MongoDB credentials sync warning:', e.message);
+    }
+  }
+  return ghWrite('js/admin-settings.json', (doc) => {
+    doc.credentials = {
+      email,
+      passwordHash: password,
+      updatedAt: new Date().toISOString()
+    };
+    return doc;
+  });
+}
+
+// ── Auth API ───────────────────────────────────────────────────
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) {
+    return res.status(400).json({ success: false, error: 'Email and password are required' });
+  }
+
+  await loadCredentials();
 
   const cleanEmail = email.trim().toLowerCase();
   const targetEmail = SERVER_ADMIN_EMAIL.trim().toLowerCase();
@@ -257,25 +292,7 @@ app.post('/api/logout', (req, res) => {
 });
 
 app.get('/api/auth/credentials', async (req, res) => {
-  const db = await connectMongoDB();
-  if (db) {
-    try {
-      const setDoc = await SettingModel.findOne({ key: 'global_settings' });
-      if (setDoc && setDoc.credentials) {
-        if (setDoc.credentials.email) SERVER_ADMIN_EMAIL = setDoc.credentials.email;
-        if (setDoc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = setDoc.credentials.passwordHash;
-      }
-    } catch (e) {}
-  } else {
-    try {
-      const doc = await ghRead('js/admin-settings.json');
-      if (doc && doc.credentials) {
-        if (doc.credentials.email) SERVER_ADMIN_EMAIL = doc.credentials.email;
-        if (doc.credentials.passwordHash) SERVER_ADMIN_PASSWORD = doc.credentials.passwordHash;
-      }
-    } catch (e) {}
-  }
-
+  await loadCredentials();
   res.json({
     email: SERVER_ADMIN_EMAIL,
     passwordHash: SERVER_ADMIN_PASSWORD
@@ -962,6 +979,8 @@ app.put('/api/admin-credentials', requireAuth, async (req, res) => {
     return res.status(400).json({ success: false, error: 'Current password is required' });
   }
 
+  await loadCredentials();
+
   if (currentPw !== SERVER_ADMIN_PASSWORD) {
     return res.status(400).json({ success: false, error: 'Current password is incorrect' });
   }
@@ -973,29 +992,7 @@ app.put('/api/admin-credentials', requireAuth, async (req, res) => {
     return res.status(400).json({ success: false, error: 'New password must be at least 8 characters' });
   }
 
-  SERVER_ADMIN_EMAIL = nextEmail;
-  SERVER_ADMIN_PASSWORD = nextPw;
-
-  const db = await connectMongoDB();
-  if (db) {
-    try {
-      await SettingModel.findOneAndUpdate(
-        { key: 'global_settings' },
-        { 'credentials.email': nextEmail, 'credentials.passwordHash': nextPw },
-        { upsert: true }
-      );
-    } catch (e) {}
-  }
-
-  const result = await ghWrite('js/admin-settings.json', (doc) => {
-    doc.credentials = {
-      email: nextEmail,
-      passwordHash: nextPw,
-      updatedAt: new Date().toISOString()
-    };
-    return doc;
-  });
-
+  const result = await syncCredentials(nextEmail, nextPw);
   if (!result.success) {
     return res.status(500).json({ success: false, error: result.error });
   }
@@ -1028,19 +1025,21 @@ app.put('/api/settings', requireAuth, async (req, res) => {
   const updates = { ...(req.body || {}) };
   delete updates.credentials;
 
+  let mongoUpdatedDoc = null;
   const db = await connectMongoDB();
   if (db) {
     try {
       const currentDoc = await SettingModel.findOne({ key: 'global_settings' }).lean() || {};
       const newStudio = { ...DEFAULT_SETTINGS.studio, ...(currentDoc.studio || {}), ...(updates.studio || {}) };
       const newNotif = { ...DEFAULT_SETTINGS.notifications, ...(currentDoc.notifications || {}), ...(updates.notifications || {}) };
-      const updatedDoc = await SettingModel.findOneAndUpdate(
+      mongoUpdatedDoc = await SettingModel.findOneAndUpdate(
         { key: 'global_settings' },
         { studio: newStudio, notifications: newNotif },
         { upsert: true, new: true, lean: true }
       );
-      return res.json({ success: true, settings: { studio: updatedDoc.studio, notifications: updatedDoc.notifications } });
-    } catch (e) {}
+    } catch (e) {
+      console.warn('MongoDB settings update warning:', e.message);
+    }
   }
 
   const result = await ghWrite('js/admin-settings.json', (doc) => {
@@ -1056,29 +1055,37 @@ app.put('/api/settings', requireAuth, async (req, res) => {
     return doc;
   });
 
-  if (!result.success) {
+  if (!result.success && !mongoUpdatedDoc) {
     return res.status(500).json({ success: false, error: result.error });
   }
-  res.json({ success: true, settings: result.data.settings });
+
+  notifyClients('settings');
+  const finalSettings = mongoUpdatedDoc
+    ? { studio: mongoUpdatedDoc.studio, notifications: mongoUpdatedDoc.notifications }
+    : ((result.data && result.data.settings) || updates);
+
+  res.json({ success: true, settings: finalSettings });
 });
 
 app.post('/api/settings', requireAuth, async (req, res) => {
   const updates = { ...(req.body || {}) };
   delete updates.credentials;
 
+  let mongoUpdatedDoc = null;
   const db = await connectMongoDB();
   if (db) {
     try {
       const currentDoc = await SettingModel.findOne({ key: 'global_settings' }).lean() || {};
       const newStudio = { ...DEFAULT_SETTINGS.studio, ...(currentDoc.studio || {}), ...(updates.studio || {}) };
       const newNotif = { ...DEFAULT_SETTINGS.notifications, ...(currentDoc.notifications || {}), ...(updates.notifications || {}) };
-      const updatedDoc = await SettingModel.findOneAndUpdate(
+      mongoUpdatedDoc = await SettingModel.findOneAndUpdate(
         { key: 'global_settings' },
         { studio: newStudio, notifications: newNotif },
         { upsert: true, new: true, lean: true }
       );
-      return res.json({ success: true, settings: { studio: updatedDoc.studio, notifications: updatedDoc.notifications } });
-    } catch (e) {}
+    } catch (e) {
+      console.warn('MongoDB settings update warning:', e.message);
+    }
   }
 
   const result = await ghWrite('js/admin-settings.json', (doc) => {
@@ -1094,10 +1101,16 @@ app.post('/api/settings', requireAuth, async (req, res) => {
     return doc;
   });
 
-  if (!result.success) {
+  if (!result.success && !mongoUpdatedDoc) {
     return res.status(500).json({ success: false, error: result.error });
   }
-  res.json({ success: true, settings: result.data.settings });
+
+  notifyClients('settings');
+  const finalSettings = mongoUpdatedDoc
+    ? { studio: mongoUpdatedDoc.studio, notifications: mongoUpdatedDoc.notifications }
+    : ((result.data && result.data.settings) || updates);
+
+  res.json({ success: true, settings: finalSettings });
 });
 
 // Image Upload handler
