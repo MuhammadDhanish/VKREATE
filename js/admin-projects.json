@@ -1,4 +1,14 @@
 {
-  "deletedIds": [],
+  "deletedIds": [
+    "lilaa-restaurant",
+    "luxury-salon",
+    "retail-jewellery",
+    "corporate-lounge",
+    "serene-villa",
+    "aura-clinic",
+    "grand-horizon-hotel",
+    "emerald-brew-cafe",
+    "test-proj-1788522137279"
+  ],
   "items": []
 }
