@@ -722,12 +722,17 @@ app.get('/api/reviews', async (req, res) => {
 app.get('/api/reviews/public', async (req, res) => {
   const data = await ghRead('js/admin-reviews.json');
   const diskItems = data.items || [];
+  const deletedIds = Array.from(new Set([...(data.deletedIds || [])]));
 
   const db = await connectMongoDB();
   if (db) {
     try {
+      const setDoc = await SettingModel.findOne({ key: 'global_settings' }).lean();
+      let mongoDeleted = deletedIds;
+      if (setDoc && Array.isArray(setDoc.deletedIds)) mongoDeleted = Array.from(new Set([...deletedIds, ...setDoc.deletedIds]));
       const items = await ReviewModel.find({ status: 'approved' }).sort({ createdAt: -1 }).lean();
-      const approvedMinimal = items.map(r => ({
+      const active = items.filter(r => r && r.id && !mongoDeleted.includes(r.id) && !mongoDeleted.includes(String(r.id)));
+      const approvedMinimal = active.map(r => ({
         id: r.id,
         clientName: r.clientName || r.author || 'Verified Client',
         clientRole: r.clientRole || r.role || 'Client',
