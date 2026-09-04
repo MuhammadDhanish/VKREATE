@@ -88,14 +88,46 @@ const DB = {
   _get(key) {
     try { return JSON.parse(localStorage.getItem(key)) || null; } catch { return null; }
   },
+  _sanitizeItem(item) {
+    if (!item || typeof item !== 'object') return item;
+    const clean = Array.isArray(item) ? [...item] : { ...item };
+    if (Array.isArray(clean)) {
+      return clean.map(i => this._sanitizeItem(i));
+    }
+    for (const k in clean) {
+      if (typeof clean[k] === 'string' && clean[k].startsWith('data:image/') && clean[k].length > 500) {
+        clean[k] = clean.id ? `idb:proj_${clean.id}_0` : '../assets/images/project_lilaa_1.jpg';
+      } else if (Array.isArray(clean[k])) {
+        clean[k] = clean[k].map(img => (typeof img === 'string' && img.startsWith('data:image/') && img.length > 500) ? '../assets/images/project_lilaa_1.jpg' : img);
+      }
+    }
+    return clean;
+  },
+
   _set(key, val) {
     try {
-      localStorage.setItem(key, JSON.stringify(val));
+      const sanitized = this._sanitizeItem(val);
+      localStorage.setItem(key, JSON.stringify(sanitized));
       return true;
     } catch (e) {
-      if (window.UI && UI.toast) UI.toast('Storage limit reached. Please use smaller image files.', 'error');
-      console.warn('LocalStorage error:', e);
-      return false;
+      console.warn('LocalStorage error, attempting deep fallback sanitization:', e);
+      try {
+        const minimal = (Array.isArray(val) ? val : [val]).map(item => {
+          if (!item || typeof item !== 'object') return item;
+          const copy = { ...item };
+          if (copy.images) copy.images = (copy.images || []).filter(i => typeof i === 'string' && !i.startsWith('data:'));
+          if (copy.thumbnail && copy.thumbnail.startsWith('data:')) copy.thumbnail = copy.images[0] || '';
+          if (copy.afterImage && copy.afterImage.startsWith('data:')) copy.afterImage = copy.thumbnail || '';
+          if (copy.beforeImage && copy.beforeImage.startsWith('data:')) copy.beforeImage = copy.thumbnail || '';
+          return copy;
+        });
+        localStorage.setItem(key, JSON.stringify(minimal));
+        return true;
+      } catch (err2) {
+        if (window.UI && UI.toast) UI.toast('Storage quota reached. Clearing stale cache...', 'warning');
+        console.warn('LocalStorage deep error:', err2);
+        return false;
+      }
     }
   },
   _id() {
