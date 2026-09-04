@@ -277,13 +277,25 @@ const VKREATE_SYNC = {
 
     let remoteList = null;
     try {
-      const res = await fetch(this.getBaseUrl() + '/api/projects?t=' + Date.now());
+      const res = await fetch(this.getBaseUrl() + '/api/projects/public?t=' + Date.now());
       if (res.ok) {
         const raw = await res.json();
         if (Array.isArray(raw)) remoteList = raw;
         else if (raw && Array.isArray(raw.items)) remoteList = raw.items;
       }
     } catch (e) {}
+
+    // Fallback to /api/projects if /api/projects/public is unavailable
+    if (!remoteList) {
+      try {
+        const res = await fetch(this.getBaseUrl() + '/api/projects?t=' + Date.now());
+        if (res.ok) {
+          const raw = await res.json();
+          if (Array.isArray(raw)) remoteList = raw;
+          else if (raw && Array.isArray(raw.items)) remoteList = raw.items;
+        }
+      } catch (e) {}
+    }
 
     // Offline JSON Fallback
     if (!remoteList) {

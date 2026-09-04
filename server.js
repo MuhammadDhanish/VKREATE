@@ -532,6 +532,31 @@ app.get('/api/projects', async (req, res) => {
   res.json({ items: active, deletedIds });
 });
 
+app.get('/api/projects/public', async (req, res) => {
+  const data = await ghRead('js/admin-projects.json');
+  const diskItems = data.items || [];
+  const deletedIds = Array.from(new Set([...(data.deletedIds || [])]));
+
+  const db = await connectMongoDB();
+  if (db) {
+    try {
+      const setDoc = await SettingModel.findOne({ key: 'global_settings' }).lean();
+      let mongoDeleted = deletedIds;
+      if (setDoc && Array.isArray(setDoc.deletedIds)) mongoDeleted = Array.from(new Set([...deletedIds, ...setDoc.deletedIds]));
+      const items = await ProjectModel.find({ status: 'published' }).sort({ rank: 1, createdAt: -1 }).lean();
+      const active = items.filter(i => i && i.id && !mongoDeleted.includes(i.id) && !mongoDeleted.includes(String(i.id)));
+      return res.json(active);
+    } catch (e) {
+      console.warn('MongoDB public projects fetch warning:', e.message);
+    }
+  }
+
+  const published = diskItems
+    .filter(item => item && item.id && !deletedIds.includes(item.id) && (item.status || 'published') === 'published')
+    .sort((a, b) => (a.rank || 99) - (b.rank || 99));
+  res.json(published);
+});
+
 app.post('/api/projects', requireAuth, async (req, res) => {
   const item = req.body;
   if (!item || typeof item !== 'object' || Array.isArray(item)) {

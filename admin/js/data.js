@@ -189,6 +189,50 @@ const DB = {
     get(id) {
       return this.all().find(p => p && p.id && (p.id === id || String(p.id) === String(id))) || null;
     },
+    _syncPublicMirror(list) {
+      try {
+        if (!Array.isArray(list)) return;
+        const publishedOnly = list
+          .filter(p => p && typeof p === 'object' && p.id && (p.status === 'published' || String(p.status || '').toLowerCase() === 'published'))
+          .map(p => {
+            const rawThumb = p.thumbnail || (p.images && p.images[0]) || '';
+            const imgs = (p.images && p.images.length) ? p.images : (rawThumb ? [rawThumb] : []);
+            return {
+              id: p.id,
+              name: p.name || 'Untitled Project',
+              client: p.client || p.clientName || 'Client',
+              industry: p.industry || 'commercial',
+              industryLabel: p.industryLabel || p.industry || 'Commercial',
+              location: p.location || 'Kerala, India',
+              area: p.area || '',
+              budgetRange: p.budgetRange || '',
+              duration: p.duration || '',
+              completionDate: p.completionDate || '',
+              rating: p.rating || p.testimonial?.rating || 5,
+              rank: typeof p.rank === 'number' ? p.rank : (parseInt(p.rank) || 99),
+              thumbnail: rawThumb,
+              images: imgs,
+              beforeImage: p.beforeImage || imgs[0] || '',
+              afterImage: p.afterImage || rawThumb || '',
+              tagline: p.tagline || (p.solution ? p.solution.slice(0, 70) + '...' : 'Designed by VKREATE Studio'),
+              challenge: p.challenge || '',
+              solution: p.solution || '',
+              result: p.result || '',
+              processPhases: (p.processPhases && p.processPhases.length) ? p.processPhases : ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
+              testimonial: p.testimonial?.text ? p.testimonial : null,
+              metrics: p.metrics || { sqft: p.area || '', satisfaction: '100%' }
+            };
+          });
+
+        publishedOnly.sort((a, b) => (a.rank || 99) - (b.rank || 99));
+
+        if (typeof window !== 'undefined') {
+          if (!window.VKREATE_DATA) window.VKREATE_DATA = {};
+          window.VKREATE_DATA.projects = publishedOnly;
+        }
+        localStorage.setItem('vk_projects_cache', JSON.stringify(publishedOnly));
+      } catch (e) {}
+    },
     async add(p) {
       p.id = p.id || DB._id();
       p.createdAt = p.createdAt || new Date().toISOString();
@@ -202,6 +246,7 @@ const DB = {
       if (existingIdx >= 0) { l[existingIdx] = p; } else { l.unshift(p); }
       DB._lastLocalWrite.projects = Date.now();
       DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
+      this._syncPublicMirror(l);
       DB._broadcast('projects-updated', l);
 
       try {
@@ -231,6 +276,7 @@ const DB = {
       }
       DB._lastLocalWrite.projects = Date.now();
       DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
+      this._syncPublicMirror(l);
       DB._broadcast('projects-updated', l);
 
       try {
@@ -260,6 +306,7 @@ const DB = {
       const remaining = this.all().filter(p => p && p.id !== id);
       DB._lastLocalWrite.projects = Date.now();
       DB._set(DB.KEYS.projects, remaining);
+      this._syncPublicMirror(remaining);
       DB._broadcast('projects-updated', remaining);
 
       if (typeof ImageDB !== 'undefined' && ImageDB.delete) {
@@ -745,6 +792,7 @@ const DB = {
           const newJson = JSON.stringify(merged);
           if (prevJson !== newJson) {
             DB._set(DB.KEYS.projects, merged);
+            DB.projects._syncPublicMirror(merged);
             projectsUpdated = true;
           }
         }

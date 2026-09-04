@@ -218,6 +218,7 @@ const Projects = {
     UI.toast(`Project preference set to Top #${r}!`, 'success');
     this._refreshTable();
     if (window.App && App.updateSidebar) App.updateSidebar();
+    DB.afterMutation();
   },
 
   _updatePrefButtons(rankVal) {
