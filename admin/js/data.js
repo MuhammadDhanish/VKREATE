@@ -265,7 +265,17 @@ const DB = {
           credentials: 'include',
           body: JSON.stringify(p)
         });
-        if (!res.ok) {
+        if (res.ok) {
+          const json = await res.json().catch(() => ({}));
+          if (json && json.project && json.project.id) {
+            const list = this.all();
+            const idx = list.findIndex(x => x && x.id === json.project.id);
+            if (idx >= 0) list[idx] = { ...list[idx], ...json.project };
+            else list.unshift(json.project);
+            DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(list)));
+            this._syncPublicMirror(list);
+          }
+        } else {
           const err = await res.json().catch(() => ({}));
           console.warn(`Server project add warning (HTTP ${res.status}): ${err.error || 'Saved locally'}`);
         }
@@ -295,7 +305,18 @@ const DB = {
           credentials: 'include',
           body: JSON.stringify(l[i])
         });
-        if (!res.ok) {
+        if (res.ok) {
+          const json = await res.json().catch(() => ({}));
+          if (json && json.project && json.project.id) {
+            const list = this.all();
+            const idx = list.findIndex(x => x && x.id === id);
+            if (idx >= 0) {
+              list[idx] = { ...list[idx], ...json.project };
+              DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(list)));
+              this._syncPublicMirror(list);
+            }
+          }
+        } else {
           const err = await res.json().catch(() => ({}));
           console.warn(`Server project update warning (HTTP ${res.status}): ${err.error || 'Saved locally'}`);
         }
