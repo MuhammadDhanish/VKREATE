@@ -12,6 +12,14 @@ const Projects = {
 
   _fixAdminPath(src) {
     if (!src) return '';
+    if (typeof src !== 'string') {
+      if (typeof src === 'object' && src !== null) {
+        src = src.ref || src.preview || src.url || src.src || '';
+      } else {
+        src = String(src || '');
+      }
+    }
+    if (!src) return '';
     if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://') || src.startsWith('idb:')) return src;
     return src.startsWith('../') ? src : '../' + src;
   },
@@ -19,9 +27,9 @@ const Projects = {
   render() {
     try {
       const projects = this._filtered() || [];
-      const allProjs = (typeof DB.projects.all === 'function') ? DB.projects.all() : [];
-      const publishedProjs = (typeof DB.projects.published === 'function') ? DB.projects.published() : allProjs.filter(p => p && p.status === 'published');
-      const draftProjs = (typeof DB.projects.drafts === 'function') ? DB.projects.drafts() : allProjs.filter(p => p && p.status === 'draft');
+      const allProjs = (typeof DB.projects.all === 'function') ? (DB.projects.all() || []) : [];
+      const publishedProjs = (typeof DB.projects.published === 'function') ? (DB.projects.published() || []) : allProjs.filter(p => p && (p.status === 'published' || p.status === 'active' || !p.status));
+      const draftProjs = (typeof DB.projects.drafts === 'function') ? (DB.projects.drafts() || []) : allProjs.filter(p => p && p.status === 'draft');
 
       const mainEl = document.getElementById('main-content');
       if (!mainEl) return;
@@ -48,7 +56,7 @@ const Projects = {
             <div class="filters-bar">
               <div class="search-bar">
                 ${UI.icon('search', 'search-bar__icon')}
-                <input type="search" placeholder="Search projects..." value="${this._filter.search}"
+                <input type="search" placeholder="Search projects..." value="${UI.escapeHTML(this._filter.search)}"
                   oninput="Projects._filter.search=this.value;Projects._refreshTable()">
               </div>
               <select class="form-control" style="width:auto;padding:9px 14px"
@@ -101,8 +109,9 @@ const Projects = {
     ];
     const pairsMap = new Map(defaultPairs);
 
-    DB.projects.all().forEach(p => {
-      if (p.industry && !pairsMap.has(p.industry)) {
+    const all = (typeof DB !== 'undefined' && DB.projects && typeof DB.projects.all === 'function') ? DB.projects.all() : [];
+    (Array.isArray(all) ? all : []).forEach(p => {
+      if (p && p.industry && typeof p.industry === 'string' && !pairsMap.has(p.industry)) {
         pairsMap.set(p.industry, p.industryLabel || p.industry);
       }
     });
@@ -113,13 +122,14 @@ const Projects = {
   },
 
   _filtered() {
-    let list = DB.projects.all();
+    const all = (typeof DB !== 'undefined' && DB.projects && typeof DB.projects.all === 'function') ? DB.projects.all() : [];
+    let list = Array.isArray(all) ? all : [];
     if (this._filter.search) {
-      const q = this._filter.search.toLowerCase();
-      list = list.filter(p => (p.name||'').toLowerCase().includes(q) || (p.location||'').toLowerCase().includes(q));
+      const q = String(this._filter.search).toLowerCase();
+      list = list.filter(p => p && ((p.name||'').toLowerCase().includes(q) || (p.location||'').toLowerCase().includes(q)));
     }
-    if (this._filter.industry !== 'all') list = list.filter(p => p.industry === this._filter.industry);
-    if (this._filter.status   !== 'all') list = list.filter(p => p.status   === this._filter.status);
+    if (this._filter.industry !== 'all') list = list.filter(p => p && p.industry === this._filter.industry);
+    if (this._filter.status   !== 'all') list = list.filter(p => p && (p.status || 'published') === this._filter.status);
     return list;
   },
 
@@ -129,7 +139,7 @@ const Projects = {
   },
 
   _tableHTML(projects) {
-    if (!projects.length) return `
+    if (!Array.isArray(projects) || !projects.length) return `
       <div class="empty-state">
         <div class="empty-state__icon">🏗️</div>
         <div class="empty-state__title">No projects found</div>
@@ -152,9 +162,17 @@ const Projects = {
       </tr></thead>
       <tbody>
         ${projects.map(p => {
-          const rawSrc = p.thumbnail || (p.images && p.images[0]) || '';
+          if (!p || typeof p !== 'object') return '';
+          let rawSrc = p.thumbnail || (Array.isArray(p.images) ? p.images[0] : (typeof p.images === 'string' ? p.images : '')) || '';
+          if (rawSrc && typeof rawSrc === 'object') {
+            rawSrc = rawSrc.ref || rawSrc.preview || rawSrc.url || rawSrc.src || '';
+          }
+          rawSrc = String(rawSrc || '');
           const isIdb = rawSrc.startsWith('idb:');
           const thumbSrc = this._fixAdminPath(rawSrc);
+          const pRank = (typeof p.rank === 'number' && !isNaN(p.rank)) ? p.rank : (parseInt(p.rank) || 99);
+          const pStatus = (p.status || 'published').toLowerCase();
+          const pId = String(p.id || '');
           return `
           <tr>
             <td>
@@ -164,35 +182,35 @@ const Projects = {
             </td>
             <td class="text-sm fw-600">
               <select class="form-control pref-select" style="padding:4px 8px;font-size:0.75rem;font-weight:700;border-radius:20px;width:auto;cursor:pointer;${
-                p.rank === 1 ? 'background:rgba(201,169,110,0.25);color:#856404;border:1px solid #C9A96E;' :
-                p.rank === 2 ? 'background:rgba(100,116,139,0.2);color:#1E293B;border:1px solid #64748B;' :
-                p.rank === 3 ? 'background:rgba(217,119,6,0.2);color:#78350F;border:1px solid #D97706;' :
-                p.rank <= 5 ? 'background:rgba(16,185,129,0.2);color:#064E3B;border:1px solid #10B981;' :
-                p.rank <= 10 ? 'background:rgba(59,130,246,0.2);color:#1E3A8A;border:1px solid #3B82F6;' :
+                pRank === 1 ? 'background:rgba(201,169,110,0.25);color:#856404;border:1px solid #C9A96E;' :
+                pRank === 2 ? 'background:rgba(100,116,139,0.2);color:#1E293B;border:1px solid #64748B;' :
+                pRank === 3 ? 'background:rgba(217,119,6,0.2);color:#78350F;border:1px solid #D97706;' :
+                pRank <= 5 ? 'background:rgba(16,185,129,0.2);color:#064E3B;border:1px solid #10B981;' :
+                pRank <= 10 ? 'background:rgba(59,130,246,0.2);color:#1E3A8A;border:1px solid #3B82F6;' :
                 'background:rgba(0,0,0,0.04);color:var(--text-2);border:1px solid var(--border);'
-              }" onchange="Projects.setRank('${p.id}', this.value)">
+              }" onchange="Projects.setRank('${pId}', this.value)">
                 ${Array.from({length: 10}, (_, i) => i + 1).map(n => `
-                  <option value="${n}" ${p.rank === n ? 'selected' : ''}>⭐ TOP #${n}</option>
+                  <option value="${n}" ${pRank === n ? 'selected' : ''}>⭐ TOP #${n}</option>
                 `).join('')}
-                <option value="99" ${(!p.rank || p.rank > 10) ? 'selected' : ''}>Standard (#${p.rank && p.rank <= 99 ? p.rank : '99'})</option>
+                <option value="99" ${(pRank > 10) ? 'selected' : ''}>Standard (#${pRank <= 99 ? pRank : '99'})</option>
               </select>
             </td>
-            <td class="td-name">${p.name || 'Untitled'}</td>
-            <td><span class="text-sm text-muted">${p.industryLabel||p.industry||'Commercial'}</span></td>
-            <td>${UI.badge(p.status)}</td>
-            <td class="text-sm text-muted">${p.location||'—'}</td>
+            <td class="td-name">${UI.escapeHTML(p.name || 'Untitled')}</td>
+            <td><span class="text-sm text-muted">${UI.escapeHTML(p.industryLabel||p.industry||'Commercial')}</span></td>
+            <td>${UI.badge(pStatus)}</td>
+            <td class="text-sm text-muted">${UI.escapeHTML(p.location||'—')}</td>
             <td class="text-sm">${(p.views||0).toLocaleString()}</td>
             <td class="text-sm">${p.leads||0}</td>
-            <td class="text-xs text-muted">${UI.dateShort(p.updatedAt)}</td>
+            <td class="text-xs text-muted">${UI.dateShort(p.updatedAt || p.createdAt)}</td>
             <td>
               <div class="td-actions">
-                <button class="btn btn-ghost btn-sm btn-icon" onclick="Projects.openForm('${p.id}')" title="Edit">✏️</button>
-                <label class="toggle" title="${p.status==='published'?'Unpublish':'Publish'}">
-                  <input type="checkbox" ${p.status==='published'?'checked':''}
-                    onchange="Projects.toggleStatus('${p.id}',this.checked)">
+                <button class="btn btn-ghost btn-sm btn-icon" onclick="Projects.openForm('${pId}')" title="Edit">✏️</button>
+                <label class="toggle" title="${pStatus==='published'?'Unpublish':'Publish'}">
+                  <input type="checkbox" ${pStatus==='published'?'checked':''}
+                    onchange="Projects.toggleStatus('${pId}',this.checked)">
                   <span class="toggle-slider"></span>
                 </label>
-                <button class="btn btn-ghost btn-sm btn-icon" onclick="Projects.delete('${p.id}')" title="Delete" style="color:var(--danger)">🗑️</button>
+                <button class="btn btn-ghost btn-sm btn-icon" onclick="Projects.delete('${pId}')" title="Delete" style="color:var(--danger)">🗑️</button>
               </div>
             </td>
           </tr>`;
