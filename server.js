@@ -517,7 +517,9 @@ app.get('/api/projects', async (req, res) => {
       let mongoDeleted = deletedIds;
       if (setDoc && Array.isArray(setDoc.deletedIds)) mongoDeleted = Array.from(new Set([...deletedIds, ...setDoc.deletedIds]));
       const items = await ProjectModel.find({ id: { $exists: true } }).sort({ rank: 1, createdAt: -1 }).lean();
+      console.log(`[MongoDB] GET /api/projects — found ${items.length} total projects in DB`);
       const active = items.filter(i => i && i.id && !mongoDeleted.includes(i.id) && !mongoDeleted.includes(String(i.id)));
+      console.log(`[MongoDB] GET /api/projects — returning ${active.length} active projects`);
       if (req.query.format === 'array') return res.json(active);
       return res.json({ items: active, deletedIds: mongoDeleted });
     } catch (e) {
