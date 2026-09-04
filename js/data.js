@@ -10,7 +10,7 @@ if (typeof window !== 'undefined' && window.location && window.location.hostname
 // Force-purge stale mobile local storage cache
 (function purgeStaleMobileStorage() {
   try {
-    const PURGE_KEY = 'vk_purge_v2026_clean_all_zero_state';
+    const PURGE_KEY = 'vk_purge_v2026_clean_code_zero_all_state_v3';
     if (localStorage.getItem('vk_purge_key') !== PURGE_KEY) {
       localStorage.removeItem('vk_reviews');
       localStorage.removeItem('vk_reviews_list');
@@ -40,7 +40,7 @@ window.VKREATE_DATA = {
       subtitle: "Concept · Spatial Layout · Palette",
       description: "Conceptual phase defining spatial layout, aesthetic vision, material palette, and functional requirements. Transforms briefs into detailed plans optimized for flow and well-being.",
       features: ["Spatial Layout", "Aesthetic Vision", "Material Palette", "Ergonomics"],
-      projectLink: "lilaa-restaurant"
+      projectLink: ""
     },
     {
       id: "fitout-contracting",
@@ -50,7 +50,7 @@ window.VKREATE_DATA = {
       subtitle: "Tendering · On-Site Management · Partitioning",
       description: "Execution phase where design plans are physically realized. Involves competitive tendering, project scheduling, on-site construction management, and built-in components.",
       features: ["On-Site Management", "Project Scheduling", "Finishes & Partitioning", "Tendering"],
-      projectLink: "luxury-salon"
+      projectLink: ""
     },
     {
       id: "design-build",
@@ -60,7 +60,7 @@ window.VKREATE_DATA = {
       subtitle: "Single Entity · Streamlined · Fast Delivery",
       description: "Integrated project delivery model where a single entity manages both design and construction. Streamlines communication and ensures faster completion.",
       features: ["Single-Entity Delivery", "Risk Reduction", "Overlapped Timelines", "Seamless Comms"],
-      projectLink: "retail-jewellery"
+      projectLink: ""
     },
     {
       id: "brand-integration",
@@ -70,7 +70,7 @@ window.VKREATE_DATA = {
       subtitle: "Identity · Experiential · Narrative",
       description: "Strategic step ensuring the physical space acts as a tangible extension of your organization's identity, values, and culture through bespoke touchpoints.",
       features: ["Brand Identity", "Bespoke Elements", "Experiential Touchpoints", "Culture"],
-      projectLink: "corporate-lounge"
+      projectLink: ""
     },
     {
       id: "3d-visualisation",
@@ -80,7 +80,7 @@ window.VKREATE_DATA = {
       subtitle: "Photorealistic · VR Walkthroughs · Renders",
       description: "Powerful tool generating photorealistic imagery, virtual reality (VR) walkthroughs, and rendered videos allowing stakeholders to approve finishes before construction.",
       features: ["Photorealistic Renders", "VR Walkthroughs", "Rendered Videos", "Finish Approval"],
-      projectLink: "lilaa-restaurant"
+      projectLink: ""
     },
     {
       id: "material-detailing",
@@ -90,7 +90,7 @@ window.VKREATE_DATA = {
       subtitle: "Construction Drawings · Joinery · Specs",
       description: "Technical process of creating precise, highly-detailed construction drawings specifying how materials meet, join, and integrate for longevity and quality.",
       features: ["Construction Drawings", "Material Joinery", "Technical Compliance", "Bespoke Specs"],
-      projectLink: "luxury-salon"
+      projectLink: ""
     }
   ],
 
@@ -104,7 +104,7 @@ window.VKREATE_DATA = {
     {
       name: "Shreya Mehta",
       role: "Principal Interior Designer",
-      bio: "Specialises in hospitality, restaurant, and retail environments. Her material instincts defined Lilaa Restaurant and Wings Salon.",
+      bio: "Specialises in hospitality, restaurant, and retail environments with bespoke material instincts and contemporary spatial styling.",
       initial: "SM"
     },
     {
@@ -116,9 +116,9 @@ window.VKREATE_DATA = {
   ],
 
   stats: [
-    { value: "4", label: "Projects Completed" },
+    { value: "0", label: "Projects Completed" },
     { value: "12+", label: "Years of Excellence" },
-    { value: "4.9", label: "Average Rating" },
+    { value: "5.0", label: "Average Rating" },
     { value: "100%", label: "On-Time Delivery" }
   ],
 

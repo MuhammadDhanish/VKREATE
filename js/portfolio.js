@@ -52,6 +52,18 @@
     const visibleProjects = isExpanded ? sorted : sorted.slice(0, limit);
 
     grid.innerHTML = '';
+
+    if (visibleProjects.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--color-muted, #888);">
+          <p style="font-size: 1.1rem; margin-bottom: 8px; color: var(--gold, #C9A96E); font-weight: 500;">Portfolio Under Curation</p>
+          <p style="font-size: 0.85rem; opacity: 0.7;">New projects added from the admin dashboard will appear here automatically.</p>
+        </div>
+      `;
+      if (moreWrap) moreWrap.style.display = 'none';
+      return;
+    }
+
     visibleProjects.forEach((proj, idx) => {
       const card = document.createElement('article');
       card.className = 'portfolio__card card-hover';
@@ -151,9 +163,7 @@
   // Initial render
   const doInitialRender = () => {
     const list = getProjectsData();
-    if (list && list.length) {
-      renderCards(list);
-    }
+    renderCards(list);
   };
 
   doInitialRender();

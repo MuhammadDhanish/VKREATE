@@ -312,7 +312,7 @@ const Projects = {
         <div class="form-grid form-grid-2">
           <div class="form-group">
             <label class="form-label">Project Name <span>*</span></label>
-            <input class="form-control" name="name" placeholder="e.g. Lilaa — Malayali Cuisine" required value="${p?.name||''}">
+            <input class="form-control" name="name" placeholder="e.g. Modern Commercial Interior" required value="${p?.name||''}">
           </div>
           <div class="form-group">
             <label class="form-label">Industry <span>*</span></label>

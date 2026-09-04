@@ -504,7 +504,7 @@ const Reviews = {
           </div>
           <div class="form-group mb-16">
             <label class="form-label" for="adm-rev-role">Client Role / Title</label>
-            <input id="adm-rev-role" type="text" class="form-control" placeholder="e.g. Managing Director, Wings Salon" autocomplete="off">
+            <input id="adm-rev-role" type="text" class="form-control" placeholder="e.g. Managing Director, Retail Group" autocomplete="off">
           </div>
           <div class="form-group mb-16">
             <label class="form-label" for="adm-rev-email">Client Email (Optional)</label>
@@ -695,7 +695,7 @@ const Reviews = {
             </div>
             <div class="form-group">
               <label class="form-label" style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:6px;">Role / Title *</label>
-              <input type="text" id="adm-rev-role" class="form-control" placeholder="e.g. Founder, Lilaa Restaurants" required />
+              <input type="text" id="adm-rev-role" class="form-control" placeholder="e.g. Managing Director, Retail Group" required />
             </div>
           </div>
 

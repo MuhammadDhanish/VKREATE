@@ -478,10 +478,10 @@
           </div>
 
           <div class="about__image-wrap reveal-right">
-            <img src="assets/images/project_lilaa_1.jpg" alt="VKREATE interior design showcase — Lilaa Malayali Dining Interior" loading="lazy" />
+            <img src="assets/images/project_lilaa_1.jpg" alt="VKREATE interior architecture and design showcase" loading="lazy" />
             <div class="about__image-tag">
-              <div class="about__image-tag-number">4</div>
-              <div class="about__image-tag-label">Projects Delivered</div>
+              <div class="about__image-tag-number">12+</div>
+              <div class="about__image-tag-label">Years of Excellence</div>
             </div>
           </div>
         </div>
@@ -745,7 +745,7 @@
           </div>
           <div class="form-group">
             <label for="pub-client-role">Role / Title *</label>
-            <input type="text" id="pub-client-role" name="clientRole" placeholder="e.g. Founder, Lilaa Hospitality" required />
+            <input type="text" id="pub-client-role" name="clientRole" placeholder="e.g. Managing Director, Retail Group" required />
           </div>
         </div>
 
@@ -830,8 +830,8 @@
       <div class="service-card__subtitle">${svc.subtitle}</div>
       <p class="service-card__desc">${svc.description}</p>
       <div class="service-card__toggle">
-        <a href="project.html?id=${svc.projectLink}" class="service-card__link" onclick="event.stopPropagation()">
-          See this in action →
+        <a href="${svc.projectLink ? 'project.html?id=' + svc.projectLink : 'projects.html'}" class="service-card__link" onclick="event.stopPropagation()">
+          ${svc.projectLink ? 'See this in action →' : 'Explore Portfolio →'}
         </a>
         <div class="service-card__toggle-icon" aria-hidden="true">+</div>
       </div>
