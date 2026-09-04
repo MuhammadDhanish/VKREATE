@@ -540,20 +540,7 @@
   const id = params.get('id');
   const root = document.getElementById('project-root');
 
-  function getDeletedProjectIds() {
-    try {
-      return JSON.parse(localStorage.getItem('vk_admin_deleted_projects')) || [];
-    } catch (e) {
-      return [];
-    }
-  }
-
   function findProject(targetId) {
-    if (targetId) {
-      const cleanId = String(targetId).toLowerCase().trim();
-      const deletedList = getDeletedProjectIds().map(d => String(d).toLowerCase().trim());
-      if (deletedList.includes(cleanId)) return null;
-    }
 
     if (window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.projects)) {
       if (targetId) {

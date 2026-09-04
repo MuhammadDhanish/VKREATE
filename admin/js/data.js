@@ -10,7 +10,7 @@ if (typeof window !== 'undefined' && window.location && window.location.hostname
 // Force-purge stale mobile local storage cache & initialize clean zero-state
 (function purgeStaleMobileStorage() {
   try {
-    const PURGE_KEY = 'vk_purge_v2026_clean_code_zero_all_state_v5';
+    const PURGE_KEY = 'vk_purge_v2026_dynamic_fetch_v2';
     if (localStorage.getItem('vk_purge_key') !== PURGE_KEY) {
       localStorage.removeItem('vk_reviews');
       localStorage.removeItem('vk_reviews_list');
@@ -18,23 +18,9 @@ if (typeof window !== 'undefined' && window.location && window.location.hostname
       localStorage.removeItem('vk_admin_projects');
       localStorage.removeItem('vk_admin_reviews');
       localStorage.removeItem('vk_admin_inquiries');
-      localStorage.setItem('vk_admin_projects', JSON.stringify([]));
-      localStorage.setItem('vk_admin_reviews', JSON.stringify([]));
-      localStorage.setItem('vk_admin_inquiries', JSON.stringify([]));
-      localStorage.setItem('vk_admin_deleted_projects', JSON.stringify([
-        "lilaa-restaurant", "luxury-salon", "retail-jewellery", "corporate-lounge",
-        "serene-villa", "aura-clinic", "grand-horizon-hotel", "emerald-brew-cafe"
-      ]));
-      localStorage.setItem('vk_admin_deleted_reviews', JSON.stringify([
-        "rev-wings-02", "rev-pending-03", "rev-priya-nair-wings", "rev-mt4xw123qgosh",
-        "rev-mt4w0c6j6dn54", "rev-mt4vnci40knjh", "rev-mt4tvyssnlwwh", "rev-mt4t2zjjo9f3w",
-        "rev-mt4t26qada0do", "rev-mt4rpe5nrdrk", "rev-mt48lf1marot", "rev-mt3h8utypbbf",
-        "rev-mt3gxc6yt16a", "rev-mt3gvg572wcm", "rev-mt3gpo3vqr4q", "rev-mt3fw3lrsuat",
-        "rev-mt3fm739ujbc", "rev-mt3entmw49q0", "rev-mt3eejft4r4d", "rev-mt39uiseqgdc5"
-      ]));
-      localStorage.setItem('vk_admin_deleted_inquiries', JSON.stringify([
-        "mszo5l77sz1og", "mszo5l777f6f5"
-      ]));
+      localStorage.removeItem('vk_admin_deleted_projects');
+      localStorage.removeItem('vk_admin_deleted_reviews');
+      localStorage.removeItem('vk_admin_deleted_inquiries');
       localStorage.setItem('vk_purge_key', PURGE_KEY);
     }
   } catch (e) {}
