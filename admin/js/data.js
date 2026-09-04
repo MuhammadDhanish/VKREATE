@@ -7,7 +7,7 @@ if (typeof window !== 'undefined' && window.location && window.location.hostname
   window.location.replace('https://www.vkreatearchitecture.com' + window.location.pathname + window.location.search + window.location.hash);
 }
 
-// Force-purge stale mobile local storage cache & initialize clean zero-state
+// Force-purge stale mobile public cache & initialize clean zero-state
 (function purgeStaleMobileStorage() {
   try {
     const PURGE_KEY = 'vk_purge_v2026_dynamic_fetch_v2';
@@ -15,12 +15,6 @@ if (typeof window !== 'undefined' && window.location && window.location.hostname
       localStorage.removeItem('vk_reviews');
       localStorage.removeItem('vk_reviews_list');
       localStorage.removeItem('vk_projects_cache');
-      localStorage.removeItem('vk_admin_projects');
-      localStorage.removeItem('vk_admin_reviews');
-      localStorage.removeItem('vk_admin_inquiries');
-      localStorage.removeItem('vk_admin_deleted_projects');
-      localStorage.removeItem('vk_admin_deleted_reviews');
-      localStorage.removeItem('vk_admin_deleted_inquiries');
       localStorage.setItem('vk_purge_key', PURGE_KEY);
     }
   } catch (e) {}
@@ -759,34 +753,40 @@ const DB = {
         projects = projects.filter(p => p && p.id && !deletedSet.has(p.id));
 
         if (Array.isArray(projects)) {
-          const currentLocal = (DB._get(DB.KEYS.projects) || []).filter(p => p && p.id && !deletedSet.has(p.id));
+          const currentLocal = (DB._get(DB.KEYS.projects) || []).filter(p => p && p.id && !deletedSet.has(String(p.id)));
           const localMap = new Map();
           currentLocal.forEach(p => { if (p && p.id) localMap.set(String(p.id), p); });
 
           const activeRemote = projects.filter(p => p && p.id && !deletedSet.has(String(p.id)));
-          const merged = activeRemote.map(remoteItem => {
+          const mergedMap = new Map();
+
+          activeRemote.forEach(remoteItem => {
             const localItem = localMap.get(String(remoteItem.id));
             if (localItem) {
               const localTs = new Date(localItem.updatedAt || localItem.createdAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.createdAt || 0).getTime();
-              const isRecentLocalEdit = (Date.now() - (DB._lastLocalWrite.projects || 0) < 10000);
-              if (localTs > remoteTs && isRecentLocalEdit) {
-                return { ...remoteItem, ...localItem };
+              if (localTs > remoteTs) {
+                mergedMap.set(String(remoteItem.id), { ...remoteItem, ...localItem });
+              } else {
+                mergedMap.set(String(remoteItem.id), { ...localItem, ...remoteItem });
               }
+            } else {
+              mergedMap.set(String(remoteItem.id), remoteItem);
             }
-            return remoteItem;
           });
 
-          // Only include local items if an unpersisted local write is actively in-flight
-          const isRecentLocalEdit = (Date.now() - (DB._lastLocalWrite.projects || 0) < 4000);
-          if (isRecentLocalEdit) {
-            const remoteIdSet = new Set(activeRemote.map(p => String(p.id)));
-            currentLocal.forEach(localItem => {
-              if (localItem && localItem.id && !remoteIdSet.has(String(localItem.id)) && !deletedSet.has(String(localItem.id))) {
-                merged.push(localItem);
+          // Always preserve local non-deleted items so data is never wiped if remote is empty
+          currentLocal.forEach(localItem => {
+            if (localItem && localItem.id && !deletedSet.has(String(localItem.id))) {
+              if (!mergedMap.has(String(localItem.id))) {
+                mergedMap.set(String(localItem.id), localItem);
+                // Background push to persist missing item to server
+                DB.projects.add(localItem).catch(() => {});
               }
-            });
-          }
+            }
+          });
+
+          const merged = Array.from(mergedMap.values());
 
           const prevJson = JSON.stringify(currentLocal);
           const newJson = JSON.stringify(merged);
@@ -816,40 +816,39 @@ const DB = {
         if (Array.isArray(reviews)) {
           const deletedSet = new Set(deletedList.map(id => String(id)));
           const currentLocal = (DB._get(DB.KEYS.reviews) || []).filter(r => r && r.id && !deletedSet.has(String(r.id)));
-          
-          // Create a map of local items to preserve locally modified status
           const localMap = new Map();
           currentLocal.forEach(r => { if (r && r.id) localMap.set(String(r.id), r); });
 
-          // Filter out deleted items from remote reviews
           const activeRemote = reviews.filter(r => r && r.id && !deletedSet.has(String(r.id)));
+          const mergedMap = new Map();
 
-          const merged = activeRemote.map(remoteItem => {
+          activeRemote.forEach(remoteItem => {
             const localItem = localMap.get(String(remoteItem.id));
             if (localItem) {
               const localStatus = (localItem.status || 'pending').toLowerCase().trim();
-              if (localStatus === 'approved' || localStatus === 'rejected') {
-                return { ...remoteItem, ...localItem, status: localStatus };
-              }
               const localTs = new Date(localItem.updatedAt || localItem.approvedAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.approvedAt || 0).getTime();
-              if (localTs > remoteTs) {
-                return { ...remoteItem, ...localItem };
+              if (localStatus === 'approved' || localStatus === 'rejected' || localTs > remoteTs) {
+                mergedMap.set(String(remoteItem.id), { ...remoteItem, ...localItem });
+              } else {
+                mergedMap.set(String(remoteItem.id), { ...localItem, ...remoteItem });
               }
+            } else {
+              mergedMap.set(String(remoteItem.id), remoteItem);
             }
-            return remoteItem;
           });
 
-          // Only include local items if an unpersisted local write is actively in-flight
-          const isRecentRevEdit = (Date.now() - (DB._lastLocalWrite.reviews || 0) < 4000);
-          if (isRecentRevEdit) {
-            const remoteIdSet = new Set(activeRemote.map(r => String(r.id)));
-            currentLocal.forEach(localItem => {
-              if (localItem && localItem.id && !remoteIdSet.has(String(localItem.id)) && !deletedSet.has(String(localItem.id))) {
-                merged.push(localItem);
+          // Always preserve local non-deleted reviews
+          currentLocal.forEach(localItem => {
+            if (localItem && localItem.id && !deletedSet.has(String(localItem.id))) {
+              if (!mergedMap.has(String(localItem.id))) {
+                mergedMap.set(String(localItem.id), localItem);
+                DB.reviews.add(localItem).catch(() => {});
               }
-            });
-          }
+            }
+          });
+
+          const merged = Array.from(mergedMap.values());
 
           const prevJson = JSON.stringify(currentLocal);
           const newJson = JSON.stringify(merged);
@@ -880,39 +879,33 @@ const DB = {
 
         if (Array.isArray(inquiries)) {
           const currentLocal = DB._get(DB.KEYS.inquiries) || [];
-          const remoteIdSet = new Set();
-          const merged = [];
+          const mergedMap = new Map();
 
-          inquiries.forEach(remoteItem => {
-            if (!remoteItem || !remoteItem.id) return;
-            const itemIdStr = String(remoteItem.id);
-            if (deletedSet.has(itemIdStr)) return;
-            remoteIdSet.add(itemIdStr);
-
-            const localItem = currentLocal.find(l => l && String(l.id) === itemIdStr);
+          const activeRemote = inquiries.filter(i => i && i.id && !deletedSet.has(String(i.id)));
+          activeRemote.forEach(remoteItem => {
+            const localItem = currentLocal.find(l => l && String(l.id) === String(remoteItem.id));
             if (localItem) {
               const localTs = new Date(localItem.updatedAt || localItem.respondedAt || localItem.createdAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.respondedAt || remoteItem.createdAt || 0).getTime();
-              const isRecentLocalEdit = (Date.now() - (DB._lastLocalWrite.inquiries || 0) < 10000);
-              if (localTs > remoteTs && isRecentLocalEdit) {
-                merged.push({ ...remoteItem, ...localItem });
+              if (localTs > remoteTs) {
+                mergedMap.set(String(remoteItem.id), { ...remoteItem, ...localItem });
               } else {
-                merged.push({ ...localItem, ...remoteItem });
+                mergedMap.set(String(remoteItem.id), { ...localItem, ...remoteItem });
               }
             } else {
-              merged.push(remoteItem);
+              mergedMap.set(String(remoteItem.id), remoteItem);
             }
           });
 
-          const isRecentInqEdit = (Date.now() - (DB._lastLocalWrite.inquiries || 0) < 4000);
-          if (isRecentInqEdit) {
-            currentLocal.forEach(localItem => {
-              if (localItem && localItem.id && !remoteIdSet.has(String(localItem.id)) && !deletedSet.has(String(localItem.id))) {
-                merged.push(localItem);
+          currentLocal.forEach(localItem => {
+            if (localItem && localItem.id && !deletedSet.has(String(localItem.id))) {
+              if (!mergedMap.has(String(localItem.id))) {
+                mergedMap.set(String(localItem.id), localItem);
               }
-            });
-          }
+            }
+          });
 
+          const merged = Array.from(mergedMap.values());
           const prevJson = JSON.stringify(currentLocal);
           const newJson = JSON.stringify(merged);
           if (prevJson !== newJson) {

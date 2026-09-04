@@ -15,12 +15,6 @@ if (typeof window !== 'undefined' && window.location && window.location.hostname
       localStorage.removeItem('vk_reviews');
       localStorage.removeItem('vk_reviews_list');
       localStorage.removeItem('vk_projects_cache');
-      localStorage.removeItem('vk_admin_projects');
-      localStorage.removeItem('vk_admin_reviews');
-      localStorage.removeItem('vk_admin_inquiries');
-      localStorage.removeItem('vk_admin_deleted_projects');
-      localStorage.removeItem('vk_admin_deleted_reviews');
-      localStorage.removeItem('vk_admin_deleted_inquiries');
       localStorage.setItem('vk_purge_key', PURGE_KEY);
     }
   } catch (e) {}
