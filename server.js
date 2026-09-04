@@ -518,7 +518,13 @@ app.get('/api/projects', async (req, res) => {
       if (setDoc && Array.isArray(setDoc.deletedIds)) mongoDeleted = Array.from(new Set([...deletedIds, ...setDoc.deletedIds]));
       const items = await ProjectModel.find({ id: { $exists: true } }).sort({ rank: 1, createdAt: -1 }).lean();
       console.log(`[MongoDB] GET /api/projects — found ${items.length} total projects in DB`);
-      const active = items.filter(i => i && i.id && !mongoDeleted.includes(i.id) && !mongoDeleted.includes(String(i.id)));
+      const active = items.filter(i => i && i.id && !mongoDeleted.includes(i.id) && !mongoDeleted.includes(String(i.id))).map(i => {
+        if (!i.status || i.status === 'active') {
+          i.status = 'published';
+          ProjectModel.updateOne({ id: i.id }, { $set: { status: 'published' } }).catch(() => {});
+        }
+        return i;
+      });
       console.log(`[MongoDB] GET /api/projects — returning ${active.length} active projects`);
       if (req.query.format === 'array') return res.json(active);
       return res.json({ items: active, deletedIds: mongoDeleted });
@@ -527,7 +533,10 @@ app.get('/api/projects', async (req, res) => {
     }
   }
 
-  const active = diskItems.filter(item => item && item.id && !deletedIds.includes(item.id));
+  const active = diskItems.filter(item => item && item.id && !deletedIds.includes(item.id)).map(i => {
+    if (!i.status || i.status === 'active') i.status = 'published';
+    return i;
+  });
   if (req.query.format === 'array') return res.json(active);
   res.json({ items: active, deletedIds });
 });
@@ -543,8 +552,14 @@ app.get('/api/projects/public', async (req, res) => {
       const setDoc = await SettingModel.findOne({ key: 'global_settings' }).lean();
       let mongoDeleted = deletedIds;
       if (setDoc && Array.isArray(setDoc.deletedIds)) mongoDeleted = Array.from(new Set([...deletedIds, ...setDoc.deletedIds]));
-      const items = await ProjectModel.find({ status: 'published' }).sort({ rank: 1, createdAt: -1 }).lean();
-      const active = items.filter(i => i && i.id && !mongoDeleted.includes(i.id) && !mongoDeleted.includes(String(i.id)));
+      const items = await ProjectModel.find({ status: { $in: ['published', 'active', null] } }).sort({ rank: 1, createdAt: -1 }).lean();
+      const active = items.filter(i => i && i.id && !mongoDeleted.includes(i.id) && !mongoDeleted.includes(String(i.id))).map(i => {
+        if (!i.status || i.status === 'active') {
+          i.status = 'published';
+          ProjectModel.updateOne({ id: i.id }, { $set: { status: 'published' } }).catch(() => {});
+        }
+        return i;
+      });
       return res.json(active);
     } catch (e) {
       console.warn('MongoDB public projects fetch warning:', e.message);
@@ -552,7 +567,8 @@ app.get('/api/projects/public', async (req, res) => {
   }
 
   const published = diskItems
-    .filter(item => item && item.id && !deletedIds.includes(item.id) && (item.status || 'published') === 'published')
+    .filter(item => item && item.id && !deletedIds.includes(item.id) && (item.status === 'published' || item.status === 'active' || !item.status))
+    .map(i => ({ ...i, status: 'published' }))
     .sort((a, b) => (a.rank || 99) - (b.rank || 99));
   res.json(published);
 });
@@ -564,16 +580,13 @@ app.post('/api/projects', requireAuth, async (req, res) => {
   }
 
   if (!item.id) item.id = 'proj-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  // Bug Fix: Do NOT override item.status with 'active'.
-  // The admin sends the real status ('published'/'draft') — preserve it so public
-  // pages can correctly filter out drafts. Default to 'published' if missing.
-  if (!item.status) item.status = 'published';
+  if (!item.status || item.status === 'active') item.status = 'published';
 
   const db = await connectMongoDB();
   if (db) {
     try {
       console.log(`[MongoDB] Saving project id=${item.id} name="${item.name}"`);
-      const doc = await ProjectModel.findOneAndUpdate({ id: item.id }, item, { upsert: true, new: true, lean: true });
+      const doc = await ProjectModel.findOneAndUpdate({ id: item.id }, { $set: item }, { upsert: true, new: true, lean: true });
       console.log(`[MongoDB] Project saved successfully id=${item.id}`);
       // Always update GitHub JSON even when MongoDB succeeds — keeps fallback in sync.
       ghWrite('js/admin-projects.json', (diskDoc) => {
@@ -613,12 +626,15 @@ app.post('/api/projects', requireAuth, async (req, res) => {
 app.put('/api/projects/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const updates = req.body || {};
+  if (!updates.status || updates.status === 'active') {
+    updates.status = 'published';
+  }
 
   const db = await connectMongoDB();
   if (db) {
     try {
       console.log(`[MongoDB] Updating project id=${id}`);
-      const doc = await ProjectModel.findOneAndUpdate({ id }, { ...updates, id }, { upsert: true, new: true, lean: true });
+      const doc = await ProjectModel.findOneAndUpdate({ id }, { $set: { ...updates, id } }, { upsert: true, new: true, lean: true });
       console.log(`[MongoDB] Project updated successfully id=${id}`);
       // Always update GitHub JSON as well — keeps fallback in sync.
       ghWrite('js/admin-projects.json', (diskDoc) => {
