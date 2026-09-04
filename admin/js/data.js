@@ -66,6 +66,19 @@ const DB = {
   },
 
   _lastLocalWrite: { reviews: 0, projects: 0, inquiries: 0, settings: 0 },
+  _getLastLocalWrite(type) {
+    try {
+      const val = localStorage.getItem(`vk_last_write_${type}`);
+      return val ? parseInt(val, 10) : (this._lastLocalWrite[type] || 0);
+    } catch {
+      return this._lastLocalWrite[type] || 0;
+    }
+  },
+  _setLastLocalWrite(type) {
+    const ts = Date.now();
+    this._lastLocalWrite[type] = ts;
+    try { localStorage.setItem(`vk_last_write_${type}`, ts.toString()); } catch {}
+  },
 
   afterMutation() {
     // Custom events and BroadcastChannel manage sync
@@ -240,7 +253,7 @@ const DB = {
       const l = this.all();
       const existingIdx = l.findIndex(x => x && x.id === p.id);
       if (existingIdx >= 0) { l[existingIdx] = p; } else { l.unshift(p); }
-      DB._lastLocalWrite.projects = Date.now();
+      DB._setLastLocalWrite('projects');
       DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
       this._syncPublicMirror(l);
       DB._broadcast('projects-updated', l);
@@ -270,7 +283,7 @@ const DB = {
       } else {
         l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
       }
-      DB._lastLocalWrite.projects = Date.now();
+      DB._setLastLocalWrite('projects');
       DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
       this._syncPublicMirror(l);
       DB._broadcast('projects-updated', l);
@@ -300,7 +313,7 @@ const DB = {
       }
 
       const remaining = this.all().filter(p => p && p.id !== id);
-      DB._lastLocalWrite.projects = Date.now();
+      DB._setLastLocalWrite('projects');
       DB._set(DB.KEYS.projects, remaining);
       this._syncPublicMirror(remaining);
       DB._broadcast('projects-updated', remaining);
@@ -769,9 +782,15 @@ const DB = {
 
           activeRemote.forEach(remoteItem => {
             const localItem = localMap.get(String(remoteItem.id));
+            if (remoteItem && (!remoteItem.status || remoteItem.status === 'active')) {
+              remoteItem.status = 'published';
+            }
             if (localItem) {
+              if (!localItem.status || localItem.status === 'active') {
+                localItem.status = 'published';
+              }
               const now = Date.now();
-              const isRecentLocalWrite = (now - (DB._lastLocalWrite.projects || 0)) < 10000;
+              const isRecentLocalWrite = (now - DB._getLastLocalWrite('projects')) < 10000;
               const localTs = new Date(localItem.updatedAt || localItem.createdAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.createdAt || 0).getTime();
               if (isRecentLocalWrite || localTs >= remoteTs) {
@@ -835,7 +854,7 @@ const DB = {
             const localItem = localMap.get(String(remoteItem.id));
             if (localItem) {
               const now = Date.now();
-              const isRecentLocalReviewWrite = (now - (DB._lastLocalWrite.reviews || 0)) < 10000;
+              const isRecentLocalReviewWrite = (now - DB._getLastLocalWrite('reviews')) < 10000;
               const localStatus = (localItem.status || 'pending').toLowerCase().trim();
               const localTs = new Date(localItem.updatedAt || localItem.approvedAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.approvedAt || 0).getTime();
@@ -897,7 +916,7 @@ const DB = {
             const localItem = currentLocal.find(l => l && String(l.id) === String(remoteItem.id));
             if (localItem) {
               const now = Date.now();
-              const isRecentLocalInquiryWrite = (now - (DB._lastLocalWrite.inquiries || 0)) < 10000;
+              const isRecentLocalInquiryWrite = (now - DB._getLastLocalWrite('inquiries')) < 10000;
               const localTs = new Date(localItem.updatedAt || localItem.respondedAt || localItem.createdAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.respondedAt || remoteItem.createdAt || 0).getTime();
               if (isRecentLocalInquiryWrite || localTs >= remoteTs) {
