@@ -2,6 +2,11 @@
 // VKREATE — Static Data Layer
 // ============================================================
 
+// Canonical Domain Redirect: ensure all visitors and admin tabs share identical www origin and localStorage
+if (typeof window !== 'undefined' && window.location && window.location.hostname === 'vkreatearchitecture.com') {
+  window.location.replace('https://www.vkreatearchitecture.com' + window.location.pathname + window.location.search + window.location.hash);
+}
+
 // Force-purge stale mobile local storage cache
 (function purgeStaleMobileStorage() {
   try {

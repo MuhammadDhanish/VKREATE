@@ -2,6 +2,11 @@
    VKREATE Admin — Data Layer (Unified API, Sync Engine & Fallback)
    ============================================================ */
 
+// Canonical Domain Redirect: ensure all visitors and admin tabs share identical www origin and localStorage
+if (typeof window !== 'undefined' && window.location && window.location.hostname === 'vkreatearchitecture.com') {
+  window.location.replace('https://www.vkreatearchitecture.com' + window.location.pathname + window.location.search + window.location.hash);
+}
+
 function getApiBaseUrl() {
   if (typeof window !== 'undefined' && window.location) {
     const h = window.location.hostname;

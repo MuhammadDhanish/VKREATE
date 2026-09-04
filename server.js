@@ -599,10 +599,6 @@ app.get('/api/reviews', async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
-      if (diskItems.length === 0) {
-        await ReviewModel.deleteMany({});
-        return res.json(req.query.format === 'array' ? [] : { items: [], deletedIds: [] });
-      }
       const setDoc = await SettingModel.findOne({ key: 'global_settings' }).lean();
       let mongoDeleted = deletedIds;
       if (setDoc && Array.isArray(setDoc.deletedIds)) mongoDeleted = Array.from(new Set([...deletedIds, ...setDoc.deletedIds]));
@@ -627,10 +623,6 @@ app.get('/api/reviews/public', async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
-      if (diskItems.length === 0) {
-        await ReviewModel.deleteMany({});
-        return res.json([]);
-      }
       const items = await ReviewModel.find({ status: 'approved' }).sort({ createdAt: -1 }).lean();
       const approvedMinimal = items.map(r => ({
         id: r.id,
@@ -770,12 +762,11 @@ const updateReviewHandler = async (req, res) => {
     return res.status(400).json({ success: false, error: 'Invalid review update payload' });
   }
 
+  let mongoDoc = null;
   const db = await connectMongoDB();
   if (db) {
     try {
-      const doc = await ReviewModel.findOneAndUpdate({ id }, { ...updates, id }, { upsert: true, new: true, lean: true });
-      notifyClients('reviews-updated');
-      return res.json({ success: true, review: doc });
+      mongoDoc = await ReviewModel.findOneAndUpdate({ id }, { ...updates, id }, { upsert: true, new: true, lean: true });
     } catch (e) {
       console.warn('MongoDB review update warning:', e.message);
     }
@@ -808,11 +799,11 @@ const updateReviewHandler = async (req, res) => {
     return doc;
   });
 
-  if (!result.success) {
+  if (!result.success && !mongoDoc) {
     return res.status(500).json({ success: false, error: result.error });
   }
   notifyClients('reviews-updated');
-  res.json({ success: true, review: updatedItem });
+  res.json({ success: true, review: mongoDoc || updatedItem });
 };
 
 app.put('/api/reviews/:id', requireAuth, updateReviewHandler);
@@ -1225,6 +1216,19 @@ HTML_PAGES.forEach(page => {
     } else {
       res.sendFile(path.join(__dirname, 'index.html'));
     }
+  });
+});
+
+app.get('/api/sync-status', async (req, res) => {
+  const db = await connectMongoDB();
+  const hasDb = !!db;
+  const hasGh = !!GITHUB_TOKEN;
+  res.json({
+    ok: true,
+    mongoConnected: hasDb,
+    githubTokenConfigured: hasGh,
+    storageBackend: hasDb ? 'mongodb' : (hasGh ? 'github-store' : 'local-ephemeral-disk'),
+    isProductionPersistent: hasDb || hasGh
   });
 });
 
