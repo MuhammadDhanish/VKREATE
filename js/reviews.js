@@ -57,20 +57,25 @@
     return false;
   }
 
-  // Fetch live reviews from Express backend API
+  // Fetch live reviews from Express backend API with in-flight guard
+  let _isFetchingLiveReviews = false;
   async function fetchLiveReviews() {
+    if (_isFetchingLiveReviews) return;
+    _isFetchingLiveReviews = true;
     const deletedIds = getDeletedReviewIds();
     try {
       const res = await fetch(getApiBaseUrl() + '/api/reviews/public?t=' + Date.now());
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
-          cachedApiReviews = data.map(r => ({ ...r, status: r.status || 'approved' })).filter(r => r && r.status === 'approved' && !isDeletedReview(r, deletedIds));
+          const fresh = data.map(r => ({ ...r, status: r.status || 'approved' })).filter(r => r && r.status === 'approved' && !isDeletedReview(r, deletedIds));
+          cachedApiReviews = fresh;
           try {
-            localStorage.setItem('vk_reviews', JSON.stringify({
-              cachedAt: Date.now(),
-              reviews: cachedApiReviews
-            }));
+            const prevStr = localStorage.getItem('vk_reviews');
+            const newStr = JSON.stringify(fresh);
+            if (prevStr !== newStr) {
+              localStorage.setItem('vk_reviews', newStr);
+            }
           } catch (e) {}
           renderReviews();
           return;
@@ -78,6 +83,8 @@
       }
     } catch (err) {
       console.warn('Live API fetch skipped/failed, using local fallback:', err);
+    } finally {
+      _isFetchingLiveReviews = false;
     }
     renderReviews();
   }
@@ -580,11 +587,14 @@
     });
   }
 
-  // Handle remote update events by invalidating memory cache & re-fetching
+  // Handle remote update events by invalidating memory cache & re-fetching (debounced)
+  let _reviewsUpdateDebounce = null;
   function onReviewsUpdated() {
-    cachedApiReviews = null;
-    fetchLiveReviews();
-    renderReviews();
+    if (_reviewsUpdateDebounce) clearTimeout(_reviewsUpdateDebounce);
+    _reviewsUpdateDebounce = setTimeout(() => {
+      cachedApiReviews = null;
+      fetchLiveReviews();
+    }, 400);
   }
 
   function checkAutoOpenModal() {
@@ -615,8 +625,7 @@
     initEngine();
   }
 
-  // Listen to remote update events
+  // Listen to remote update events (js/data.js dispatches this on remote sync or storage change)
   window.addEventListener('vkreate:reviews-updated', onReviewsUpdated);
-  window.addEventListener('storage', onReviewsUpdated);
 
 })();

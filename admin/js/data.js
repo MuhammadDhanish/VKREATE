@@ -646,8 +646,11 @@ const DB = {
         } else if (rawProj && Array.isArray(rawProj.items)) {
           projects = rawProj.items;
           const remoteDeleted = rawProj.deletedIds || [];
-          deletedList = Array.from(new Set([...deletedList, ...remoteDeleted]));
-          DB._set('vk_admin_deleted_projects', deletedList);
+          const combined = Array.from(new Set([...deletedList, ...remoteDeleted]));
+          if (combined.length > deletedList.length) {
+            deletedList = combined;
+            DB._set('vk_admin_deleted_projects', deletedList);
+          }
         }
         const deletedSet = new Set(deletedList);
         projects = projects.filter(p => p && p.id && !deletedSet.has(p.id));
@@ -697,8 +700,11 @@ const DB = {
         } else if (rawRev && Array.isArray(rawRev.items)) {
           reviews = rawRev.items;
           const remoteDeleted = (rawRev.deletedIds || []).map(id => String(id));
-          deletedList = Array.from(new Set([...deletedList, ...remoteDeleted]));
-          DB._set('vk_admin_deleted_reviews', deletedList);
+          const combined = Array.from(new Set([...deletedList, ...remoteDeleted]));
+          if (combined.length > deletedList.length) {
+            deletedList = combined;
+            DB._set('vk_admin_deleted_reviews', deletedList);
+          }
         }
         if (Array.isArray(reviews)) {
           const deletedSet = new Set(deletedList.map(id => String(id)));
@@ -857,23 +863,32 @@ DB.seed();
 // Setup Real-time Sync Listeners
 (function setupSyncListeners() {
   // 1. BroadcastChannel Listener (re-reads localStorage & remote DB on message)
+  let _adminChannelDebounce = null;
   if (syncChannel) {
     syncChannel.onmessage = (event) => {
       if (event.data && event.data.type) {
         window.dispatchEvent(new CustomEvent(`vkreate:${event.data.type}`));
-        DB.loadRemoteData();
+        if (_adminChannelDebounce) clearTimeout(_adminChannelDebounce);
+        _adminChannelDebounce = setTimeout(() => {
+          DB.loadRemoteData();
+        }, 1000);
       }
     };
   }
 
   // 2. Storage event listener (cross-tab in same browser)
+  let _adminStorageDebounce = null;
   window.addEventListener('storage', (e) => {
-    if (!e.key || !e.key.startsWith('vk_')) return;
+    if (!e.key || !e.key.startsWith('vk_admin_')) return;
     if (e.key === 'vk_admin_reviews') window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
     if (e.key === 'vk_admin_projects') window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
     if (e.key === 'vk_admin_inquiries') window.dispatchEvent(new CustomEvent('vkreate:inquiries-updated'));
     if (e.key === 'vk_admin_settings') window.dispatchEvent(new CustomEvent('vkreate:settings-updated'));
-    DB.loadRemoteData();
+
+    if (_adminStorageDebounce) clearTimeout(_adminStorageDebounce);
+    _adminStorageDebounce = setTimeout(() => {
+      DB.loadRemoteData(true);
+    }, 1200);
   });
 
   // Initial load
@@ -888,7 +903,7 @@ DB.seed();
       if (typeof App !== 'undefined' && App.updateSidebar) {
         App.updateSidebar();
       }
-    }, 200);
+    }, 500);
   };
 
   window.addEventListener('focus', handleFocus);
@@ -907,8 +922,6 @@ DB.seed();
   }, 4000);
 
   // Bug 5 Fix: SSE Push Listener for near-instant cross-device sync in admin panel
-  // When another admin device makes changes, the server pushes an event here
-  // so we immediately fetch fresh data instead of waiting for next poll cycle.
   try {
     const sseBase = (function() {
       if (typeof window !== 'undefined' && window.location) {
@@ -923,16 +936,20 @@ DB.seed();
     })();
 
     const adminEvtSource = new EventSource((sseBase || '') + '/api/events');
-    adminEvtSource.onmessage = async (e) => {
+    let _adminSseDebounce = null;
+
+    adminEvtSource.onmessage = (e) => {
       const data = (e.data || '').trim();
       if (data === 'projects-updated' || data === 'reviews-updated' || data === 'all-updated') {
-        await DB.loadRemoteData(true);
-        if (typeof App !== 'undefined' && App.updateSidebar) App.updateSidebar();
+        if (_adminSseDebounce) clearTimeout(_adminSseDebounce);
+        _adminSseDebounce = setTimeout(async () => {
+          await DB.loadRemoteData(true);
+          if (typeof App !== 'undefined' && App.updateSidebar) App.updateSidebar();
+        }, 500);
       }
     };
     adminEvtSource.onerror = () => {
       adminEvtSource.close();
-      // polling fallback is already active
     };
   } catch (e) {
     // SSE not supported — polling fallback handles sync

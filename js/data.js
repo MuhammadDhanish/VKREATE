@@ -487,7 +487,12 @@ function getApiBaseUrl() {
 // ============================================================
 const syncChannelLive = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('vk_sync') : null;
 
+let _isLoadingProjects = false;
+let _isLoadingReviews = false;
+
 async function loadRemoteAdminProjects() {
+  if (_isLoadingProjects) return;
+  _isLoadingProjects = true;
   try {
     let remoteProjects = null;
     let remoteDeleted = [];
@@ -519,19 +524,20 @@ async function loadRemoteAdminProjects() {
       } catch (e) {}
     }
 
-    // Merge remote deletedIds with local — server deletedIds are authoritative
+    // Merge remote deletedIds with local — only write if changed
     if (remoteDeleted.length > 0) {
       try {
         const currentDeleted = getDeletedProjectIds();
         const combined = Array.from(new Set([...currentDeleted, ...remoteDeleted]));
-        localStorage.setItem('vk_admin_deleted_projects', JSON.stringify(combined));
+        const currJson = JSON.stringify(currentDeleted);
+        const newJson = JSON.stringify(combined);
+        if (currJson !== newJson) {
+          localStorage.setItem('vk_admin_deleted_projects', newJson);
+        }
       } catch (e) {}
     }
 
     if (Array.isArray(remoteProjects)) {
-      // Bug 1 Fix: Server is the source of truth.
-      // We only preserve local-only items (items that exist locally but haven't reached the server yet).
-      // We do NOT let stale local data overwrite fresh server data.
       const deletedIds = getDeletedProjectIds();
       const deletedSet = new Set(deletedIds);
 
@@ -548,133 +554,157 @@ async function loadRemoteAdminProjects() {
         if (Array.isArray(currentLocal)) {
           currentLocal.forEach(localP => {
             if (localP && localP.id && !deletedSet.has(String(localP.id)) && !remoteIdSet.has(String(localP.id))) {
-              // This item exists locally but not on server — keep it (pending server sync)
               remoteProjects.push(localP);
             }
           });
         }
       } catch (e) {}
 
-      try { localStorage.setItem('vk_admin_projects', JSON.stringify(remoteProjects)); } catch (e) {}
-      applyAdminProjects(remoteProjects);
-      window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
+      const prevJson = localStorage.getItem('vk_admin_projects');
+      const newJson = JSON.stringify(remoteProjects);
+      if (prevJson !== newJson) {
+        try { localStorage.setItem('vk_admin_projects', newJson); } catch (e) {}
+        applyAdminProjects(remoteProjects);
+        window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
+      }
     }
-  } catch (e) {}
+  } catch (e) {
+  } finally {
+    _isLoadingProjects = false;
+  }
 }
 
 async function loadRemoteAdminReviews() {
-  let remoteReviews = null;
-  let remoteDeleted = [];
+  if (_isLoadingReviews) return;
+  _isLoadingReviews = true;
   try {
-    const res = await fetch(getApiBaseUrl() + '/api/reviews/public?t=' + Date.now());
-    if (res.ok) {
-      const raw = await res.json();
-      if (Array.isArray(raw)) {
-        remoteReviews = raw;
-      } else if (raw && typeof raw === 'object') {
-        remoteReviews = Array.isArray(raw.items) ? raw.items : (Array.isArray(raw.reviews) ? raw.reviews : null);
-        remoteDeleted = Array.isArray(raw.deletedIds) ? raw.deletedIds : [];
-      }
-    }
-  } catch (e) {}
-
-  if (!remoteReviews) {
+    let remoteReviews = null;
+    let remoteDeleted = [];
     try {
-      const res = await fetch('js/admin-reviews.json?t=' + Date.now());
+      const res = await fetch(getApiBaseUrl() + '/api/reviews/public?t=' + Date.now());
       if (res.ok) {
         const raw = await res.json();
         if (Array.isArray(raw)) {
           remoteReviews = raw;
         } else if (raw && typeof raw === 'object') {
-          remoteReviews = Array.isArray(raw.items) ? raw.items : null;
+          remoteReviews = Array.isArray(raw.items) ? raw.items : (Array.isArray(raw.reviews) ? raw.reviews : null);
           remoteDeleted = Array.isArray(raw.deletedIds) ? raw.deletedIds : [];
         }
       }
     } catch (e) {}
-  }
 
-  // Merge remote deletedIds with local — server deletedIds are authoritative
-  if (remoteDeleted.length > 0) {
-    try {
-      const currentDeleted = getDeletedReviewIds();
-      const combined = Array.from(new Set([...currentDeleted, ...remoteDeleted.map(String)]));
-      localStorage.setItem('vk_admin_deleted_reviews', JSON.stringify(combined));
-    } catch (e) {}
-  }
-
-  const deletedIds = getDeletedReviewIds();
-
-  if (Array.isArray(remoteReviews)) {
-    // Bug 2 Fix: Corrected brace structure — all processing is at the same level.
-    // Step 1: Filter out deleted reviews
-    remoteReviews = remoteReviews.filter(r => r && !isDeletedReview(r, deletedIds));
-
-    // Step 2: Preserve local approved/rejected status decisions
-    try {
-      const rawLocal = localStorage.getItem('vk_admin_reviews');
-      const currentLocal = rawLocal ? JSON.parse(rawLocal) : null;
-      if (Array.isArray(currentLocal) && currentLocal.length > 0) {
-        const localMap = new Map();
-        currentLocal.forEach(r => {
-          if (r && r.id && !isDeletedReview(r, deletedIds)) localMap.set(String(r.id), r);
-        });
-
-        remoteReviews = remoteReviews.map(remoteItem => {
-          if (!remoteItem || !remoteItem.id) return remoteItem;
-          const localItem = localMap.get(String(remoteItem.id));
-          if (localItem) {
-            const localStatus = (localItem.status || 'pending').toLowerCase().trim();
-            if (localStatus === 'approved' || localStatus === 'rejected') {
-              return { ...remoteItem, ...localItem, status: localStatus };
-            }
+    if (!remoteReviews) {
+      try {
+        const res = await fetch('js/admin-reviews.json?t=' + Date.now());
+        if (res.ok) {
+          const raw = await res.json();
+          if (Array.isArray(raw)) {
+            remoteReviews = raw;
+          } else if (raw && typeof raw === 'object') {
+            remoteReviews = Array.isArray(raw.items) ? raw.items : null;
+            remoteDeleted = Array.isArray(raw.deletedIds) ? raw.deletedIds : [];
           }
-          return remoteItem;
-        });
+        }
+      } catch (e) {}
+    }
+
+    // Merge remote deletedIds with local — only write if changed
+    if (remoteDeleted.length > 0) {
+      try {
+        const currentDeleted = getDeletedReviewIds();
+        const combined = Array.from(new Set([...currentDeleted, ...remoteDeleted.map(String)]));
+        const currJson = JSON.stringify(currentDeleted);
+        const newJson = JSON.stringify(combined);
+        if (currJson !== newJson) {
+          localStorage.setItem('vk_admin_deleted_reviews', newJson);
+        }
+      } catch (e) {}
+    }
+
+    const deletedIds = getDeletedReviewIds();
+
+    if (Array.isArray(remoteReviews)) {
+      // Step 1: Filter out deleted reviews
+      remoteReviews = remoteReviews.filter(r => r && !isDeletedReview(r, deletedIds));
+
+      // Step 2: Preserve local approved/rejected status decisions
+      try {
+        const rawLocal = localStorage.getItem('vk_admin_reviews');
+        const currentLocal = rawLocal ? JSON.parse(rawLocal) : null;
+        if (Array.isArray(currentLocal) && currentLocal.length > 0) {
+          const localMap = new Map();
+          currentLocal.forEach(r => {
+            if (r && r.id && !isDeletedReview(r, deletedIds)) localMap.set(String(r.id), r);
+          });
+
+          remoteReviews = remoteReviews.map(remoteItem => {
+            if (!remoteItem || !remoteItem.id) return remoteItem;
+            const localItem = localMap.get(String(remoteItem.id));
+            if (localItem) {
+              const localStatus = (localItem.status || 'pending').toLowerCase().trim();
+              if (localStatus === 'approved' || localStatus === 'rejected') {
+                return { ...remoteItem, ...localItem, status: localStatus };
+              }
+            }
+            return remoteItem;
+          });
+        }
+      } catch (e) {}
+
+      // Step 3: Final delete filter pass
+      remoteReviews = remoteReviews.filter(r => r && !isDeletedReview(r, deletedIds));
+
+      // Step 4: Authoritative update — only write to storage and dispatch if content changed
+      const prevJson = localStorage.getItem('vk_admin_reviews');
+      const newJson = JSON.stringify(remoteReviews);
+      if (prevJson !== newJson) {
+        try {
+          localStorage.setItem('vk_admin_reviews', newJson);
+          localStorage.setItem('vk_reviews', newJson);
+        } catch (e) {}
+        applyAdminReviews(remoteReviews, true);
+        window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
       }
-    } catch (e) {}
 
-    // Step 3: Final delete filter pass
-    remoteReviews = remoteReviews.filter(r => r && !isDeletedReview(r, deletedIds));
-
-    // Step 4: Authoritative update — save merged list to localStorage
-    try {
-      localStorage.setItem('vk_admin_reviews', JSON.stringify(remoteReviews));
-      localStorage.setItem('vk_reviews', JSON.stringify(remoteReviews));
-    } catch (e) {}
-
-    // Step 5: Apply to VKREATE_DATA (public website data)
-    applyAdminReviews(remoteReviews, true);
-
-  } else {
-    // No remote reviews available — clear public data to avoid stale display
-    VKREATE_DATA.reviews = [];
+    } else {
+      if (VKREATE_DATA.reviews && VKREATE_DATA.reviews.length > 0) {
+        VKREATE_DATA.reviews = [];
+        window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+      }
+    }
+  } catch (e) {
+  } finally {
+    _isLoadingReviews = false;
   }
-
-  window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
 }
 
 // Initial remote load
 loadRemoteAdminProjects();
 loadRemoteAdminReviews();
 
-// ── Setup Live Sync Listeners ─────────────────────────────
-if (syncChannelLive) {
-  syncChannelLive.onmessage = (event) => {
+// ── Setup Live Sync Listeners (Debounced to prevent cross-tab ping-pong storms) ──
+let _publicSyncDebounce = null;
+function triggerDebouncedPublicSync() {
+  if (_publicSyncDebounce) clearTimeout(_publicSyncDebounce);
+  _publicSyncDebounce = setTimeout(() => {
     loadRemoteAdminProjects();
     loadRemoteAdminReviews();
+  }, 1000);
+}
+
+if (syncChannelLive) {
+  syncChannelLive.onmessage = () => {
+    triggerDebouncedPublicSync();
   };
 }
 
 window.addEventListener('storage', function (e) {
   // Only reload on relevant keys to avoid excessive re-fetches
-  if (!e.key || e.key.startsWith('vk_admin_') || e.key === 'vk_reviews') {
-    loadRemoteAdminProjects();
-    loadRemoteAdminReviews();
-  }
+  if (!e.key || (!e.key.startsWith('vk_admin_') && e.key !== 'vk_reviews')) return;
+  triggerDebouncedPublicSync();
 });
 
 // Active Multi-Device Background Sync Poller (every 4s) & Focus Listener
-// Increased from 3s to 4s to reduce server load (still fast enough for real-time feel)
 setInterval(() => {
   if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
     loadRemoteAdminProjects();
@@ -682,39 +712,41 @@ setInterval(() => {
   }
 }, 4000);
 
+let _focusDebounce = null;
 window.addEventListener('focus', () => {
-  loadRemoteAdminProjects();
-  loadRemoteAdminReviews();
+  if (_focusDebounce) clearTimeout(_focusDebounce);
+  _focusDebounce = setTimeout(() => {
+    loadRemoteAdminProjects();
+    loadRemoteAdminReviews();
+  }, 500);
 });
 
 // ── Bug 5 Fix: SSE Push Listener for near-instant cross-device sync ──
-// When the admin makes changes, the server sends a push event to all connected clients.
-// This eliminates the 4-second polling delay for real-time updates.
 (function setupSSEListener() {
   try {
     const sseBase = getApiBaseUrl();
-    // Only connect SSE when we have a server (not pure static file mode)
     if (!sseBase && window.location.protocol === 'file:') return;
 
     const evtSource = new EventSource((sseBase || '') + '/api/events');
+    let _sseDebounce = null;
 
     evtSource.onmessage = (e) => {
       const data = (e.data || '').trim();
-      if (data === 'projects-updated' || data === 'all-updated') {
-        loadRemoteAdminProjects();
-      }
-      if (data === 'reviews-updated' || data === 'all-updated') {
-        loadRemoteAdminReviews();
-      }
+      if (_sseDebounce) clearTimeout(_sseDebounce);
+      _sseDebounce = setTimeout(() => {
+        if (data === 'projects-updated' || data === 'all-updated') {
+          loadRemoteAdminProjects();
+        }
+        if (data === 'reviews-updated' || data === 'all-updated') {
+          loadRemoteAdminReviews();
+        }
+      }, 400);
     };
 
     evtSource.onerror = () => {
-      // SSE connection failed — polling fallback is already active, so no action needed
       evtSource.close();
     };
-  } catch (e) {
-    // SSE not supported or server not available — polling fallback handles sync
-  }
+  } catch (e) {}
 })();
 
 
