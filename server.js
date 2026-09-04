@@ -418,16 +418,14 @@ app.get('/api/projects', async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
-      if (diskItems.length === 0) {
-        await ProjectModel.deleteMany({});
-        await SettingModel.findOneAndUpdate({ key: 'global_settings' }, { $set: { deletedIds: [] } });
-        return res.json(req.query.format === 'array' ? [] : { items: [], deletedIds: [] });
-      }
+      // Bug Fix: Never wipe MongoDB just because the GitHub JSON is empty.
+      // The GitHub JSON may simply not have been synced yet (MongoDB is the primary store).
+      // Only return empty when MongoDB itself has no projects.
       const setDoc = await SettingModel.findOne({ key: 'global_settings' }).lean();
       let mongoDeleted = deletedIds;
       if (setDoc && Array.isArray(setDoc.deletedIds)) mongoDeleted = Array.from(new Set([...deletedIds, ...setDoc.deletedIds]));
-      const items = await ProjectModel.find({ status: { $ne: 'deleted' } }).sort({ rank: 1, createdAt: -1 }).lean();
-      const active = items.filter(i => i && i.id && !mongoDeleted.includes(i.id));
+      const items = await ProjectModel.find({ id: { $exists: true } }).sort({ rank: 1, createdAt: -1 }).lean();
+      const active = items.filter(i => i && i.id && !mongoDeleted.includes(i.id) && !mongoDeleted.includes(String(i.id)));
       if (req.query.format === 'array') return res.json(active);
       return res.json({ items: active, deletedIds: mongoDeleted });
     } catch (e) {
@@ -447,12 +445,27 @@ app.post('/api/projects', requireAuth, async (req, res) => {
   }
 
   if (!item.id) item.id = 'proj-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  item.status = 'active';
+  // Bug Fix: Do NOT override item.status with 'active'.
+  // The admin sends the real status ('published'/'draft') — preserve it so public
+  // pages can correctly filter out drafts. Default to 'published' if missing.
+  if (!item.status) item.status = 'published';
 
   const db = await connectMongoDB();
   if (db) {
     try {
       const doc = await ProjectModel.findOneAndUpdate({ id: item.id }, item, { upsert: true, new: true, lean: true });
+      // Bug Fix: Always update GitHub JSON even when MongoDB succeeds.
+      // Without this, GitHub JSON stays empty, causing the GET to return
+      // empty projects (and previously wipe MongoDB) on next request.
+      ghWrite('js/admin-projects.json', (diskDoc) => {
+        const items = diskDoc.items || [];
+        const idx = items.findIndex(p => p && p.id === item.id);
+        if (idx >= 0) items[idx] = item;
+        else items.unshift(item);
+        diskDoc.items = items;
+        diskDoc.deletedIds = (diskDoc.deletedIds || []).filter(id => id !== item.id);
+        return diskDoc;
+      }).catch(() => {});
       notifyClients('projects-updated');
       return res.json({ success: true, project: doc });
     } catch (e) {
@@ -484,7 +497,23 @@ app.put('/api/projects/:id', requireAuth, async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
-      const doc = await ProjectModel.findOneAndUpdate({ id }, { ...updates, id, status: 'active' }, { upsert: true, new: true, lean: true });
+      // Bug Fix: Do NOT override status with 'active' — preserve the real status.
+      // Without this, unpublishing a project (setting status: 'draft') is ignored
+      // by the server and other devices always see the project as published.
+      const doc = await ProjectModel.findOneAndUpdate({ id }, { ...updates, id }, { upsert: true, new: true, lean: true });
+      // Bug Fix: Always update GitHub JSON, just like reviews do.
+      ghWrite('js/admin-projects.json', (diskDoc) => {
+        const items = diskDoc.items || [];
+        const idx = items.findIndex(p => p && p.id === id);
+        if (idx >= 0) {
+          items[idx] = { ...items[idx], ...updates, updatedAt: new Date().toISOString() };
+        } else {
+          items.unshift({ id, ...updates, updatedAt: new Date().toISOString() });
+        }
+        diskDoc.items = items;
+        diskDoc.deletedIds = (diskDoc.deletedIds || []).filter(dId => dId !== id);
+        return diskDoc;
+      }).catch(() => {});
       notifyClients('projects-updated');
       return res.json({ success: true, project: doc });
     } catch (e) {
