@@ -713,12 +713,16 @@ const DB = {
     }
   },
 
-  // ── Re-entrancy Guard for Remote Data Loading ───────────
+  // ── Re-entrancy Guard & Throttle for Remote Data Loading ───────────
   _isLoadingRemote: false,
+  _lastRemoteLoadTime: 0,
 
   // Single Source of Truth Remote Data Loading
   async loadRemoteData(silent = false) {
     if (this._isLoadingRemote) return;
+    const now = Date.now();
+    if (silent && (now - this._lastRemoteLoadTime) < 1500) return;
+    this._lastRemoteLoadTime = now;
     this._isLoadingRemote = true;
 
     let reviewsUpdated = false;
@@ -766,9 +770,11 @@ const DB = {
           activeRemote.forEach(remoteItem => {
             const localItem = localMap.get(String(remoteItem.id));
             if (localItem) {
+              const now = Date.now();
+              const isRecentLocalWrite = (now - (DB._lastLocalWrite.projects || 0)) < 10000;
               const localTs = new Date(localItem.updatedAt || localItem.createdAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.createdAt || 0).getTime();
-              if (localTs > remoteTs) {
+              if (isRecentLocalWrite || localTs >= remoteTs) {
                 mergedMap.set(String(remoteItem.id), { ...remoteItem, ...localItem });
               } else {
                 mergedMap.set(String(remoteItem.id), { ...localItem, ...remoteItem });
@@ -828,10 +834,12 @@ const DB = {
           activeRemote.forEach(remoteItem => {
             const localItem = localMap.get(String(remoteItem.id));
             if (localItem) {
+              const now = Date.now();
+              const isRecentLocalReviewWrite = (now - (DB._lastLocalWrite.reviews || 0)) < 10000;
               const localStatus = (localItem.status || 'pending').toLowerCase().trim();
               const localTs = new Date(localItem.updatedAt || localItem.approvedAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.approvedAt || 0).getTime();
-              if (localStatus === 'approved' || localStatus === 'rejected' || localTs > remoteTs) {
+              if (isRecentLocalReviewWrite || localStatus === 'approved' || localStatus === 'rejected' || localTs >= remoteTs) {
                 mergedMap.set(String(remoteItem.id), { ...remoteItem, ...localItem });
               } else {
                 mergedMap.set(String(remoteItem.id), { ...localItem, ...remoteItem });
@@ -888,9 +896,11 @@ const DB = {
           activeRemote.forEach(remoteItem => {
             const localItem = currentLocal.find(l => l && String(l.id) === String(remoteItem.id));
             if (localItem) {
+              const now = Date.now();
+              const isRecentLocalInquiryWrite = (now - (DB._lastLocalWrite.inquiries || 0)) < 10000;
               const localTs = new Date(localItem.updatedAt || localItem.respondedAt || localItem.createdAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.respondedAt || remoteItem.createdAt || 0).getTime();
-              if (localTs > remoteTs) {
+              if (isRecentLocalInquiryWrite || localTs >= remoteTs) {
                 mergedMap.set(String(remoteItem.id), { ...remoteItem, ...localItem });
               } else {
                 mergedMap.set(String(remoteItem.id), { ...localItem, ...remoteItem });
