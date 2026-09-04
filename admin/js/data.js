@@ -435,7 +435,7 @@ const DB = {
       const existingIdx = l.findIndex(x => x && x.id === r.id);
       if (existingIdx >= 0) { l[existingIdx] = r; } else { l.unshift(r); }
 
-      DB._lastLocalWrite.reviews = Date.now();
+      DB._setLastLocalWrite('reviews');
       DB._set(DB.KEYS.reviews, JSON.parse(JSON.stringify(l)));
       this._syncPublicMirror(l);
       DB._broadcast('reviews-updated', l);
@@ -470,7 +470,7 @@ const DB = {
       merged.reviewText = merged.reviewText || merged.text || '';
       l[i] = merged;
 
-      DB._lastLocalWrite.reviews = Date.now();
+      DB._setLastLocalWrite('reviews');
       DB._set(DB.KEYS.reviews, JSON.parse(JSON.stringify(l)));
       this._syncPublicMirror(l);
       DB._broadcast('reviews-updated', l);
@@ -504,7 +504,7 @@ const DB = {
       } catch (e) {}
 
       const remaining = this.all().filter(r => r && r.id !== id && String(r.id) !== idStr);
-      DB._lastLocalWrite.reviews = Date.now();
+      DB._setLastLocalWrite('reviews');
       DB._set(DB.KEYS.reviews, remaining);
       this._syncPublicMirror(remaining);
       DB._broadcast('reviews-updated', remaining);
@@ -568,6 +568,7 @@ const DB = {
 
       const l = this.all();
       l.unshift(item);
+      DB._setLastLocalWrite('inquiries');
       DB._set(DB.KEYS.inquiries, l);
       DB._broadcast('inquiries-updated', l);
 
@@ -594,6 +595,7 @@ const DB = {
       const i = l.findIndex(x => x && x.id === id);
       if (i < 0) return null;
       l[i] = { ...l[i], ...data };
+      DB._setLastLocalWrite('inquiries');
       DB._set(DB.KEYS.inquiries, l);
       DB._broadcast('inquiries-updated', l);
 
@@ -625,7 +627,7 @@ const DB = {
       }
 
       const remaining = this.all().filter(i => i && String(i.id) !== idStr);
-      DB._lastLocalWrite.inquiries = Date.now();
+      DB._setLastLocalWrite('inquiries');
       DB._set(DB.KEYS.inquiries, remaining);
       DB._broadcast('inquiries-updated', remaining);
 
@@ -812,9 +814,10 @@ const DB = {
               }
               const now = Date.now();
               const isRecentLocalWrite = (now - DB._getLastLocalWrite('projects')) < 10000;
+              const localStatus = (localItem.status || 'published').toLowerCase().trim();
               const localTs = new Date(localItem.updatedAt || localItem.createdAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.createdAt || 0).getTime();
-              if (isRecentLocalWrite || localTs >= remoteTs) {
+              if (isRecentLocalWrite || localStatus === 'published' || localStatus === 'draft' || localStatus === 'archived' || localTs >= remoteTs) {
                 mergedMap.set(String(remoteItem.id), { ...remoteItem, ...localItem });
               } else {
                 mergedMap.set(String(remoteItem.id), { ...localItem, ...remoteItem });
