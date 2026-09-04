@@ -744,13 +744,16 @@ const DB = {
             return remoteItem;
           });
 
-          // Also include any local-only items not yet in remote
-          const remoteIdSet = new Set(activeRemote.map(p => String(p.id)));
-          currentLocal.forEach(localItem => {
-            if (localItem && localItem.id && !remoteIdSet.has(String(localItem.id)) && !deletedSet.has(String(localItem.id))) {
-              merged.push(localItem);
-            }
-          });
+          // Only include local items if an unpersisted local write is actively in-flight
+          const isRecentLocalEdit = (Date.now() - (DB._lastLocalWrite.projects || 0) < 4000);
+          if (isRecentLocalEdit) {
+            const remoteIdSet = new Set(activeRemote.map(p => String(p.id)));
+            currentLocal.forEach(localItem => {
+              if (localItem && localItem.id && !remoteIdSet.has(String(localItem.id)) && !deletedSet.has(String(localItem.id))) {
+                merged.push(localItem);
+              }
+            });
+          }
 
           const prevJson = JSON.stringify(currentLocal);
           const newJson = JSON.stringify(merged);
@@ -803,13 +806,16 @@ const DB = {
             return remoteItem;
           });
 
-          // Also include any local-only items not yet in remote
-          const remoteIdSet = new Set(activeRemote.map(r => String(r.id)));
-          currentLocal.forEach(localItem => {
-            if (localItem && localItem.id && !remoteIdSet.has(String(localItem.id)) && !deletedSet.has(String(localItem.id))) {
-              merged.push(localItem);
-            }
-          });
+          // Only include local items if an unpersisted local write is actively in-flight
+          const isRecentRevEdit = (Date.now() - (DB._lastLocalWrite.reviews || 0) < 4000);
+          if (isRecentRevEdit) {
+            const remoteIdSet = new Set(activeRemote.map(r => String(r.id)));
+            currentLocal.forEach(localItem => {
+              if (localItem && localItem.id && !remoteIdSet.has(String(localItem.id)) && !deletedSet.has(String(localItem.id))) {
+                merged.push(localItem);
+              }
+            });
+          }
 
           const prevJson = JSON.stringify(currentLocal);
           const newJson = JSON.stringify(merged);
@@ -864,11 +870,14 @@ const DB = {
             }
           });
 
-          currentLocal.forEach(localItem => {
-            if (localItem && localItem.id && !remoteIdSet.has(String(localItem.id)) && !deletedSet.has(String(localItem.id))) {
-              merged.push(localItem);
-            }
-          });
+          const isRecentInqEdit = (Date.now() - (DB._lastLocalWrite.inquiries || 0) < 4000);
+          if (isRecentInqEdit) {
+            currentLocal.forEach(localItem => {
+              if (localItem && localItem.id && !remoteIdSet.has(String(localItem.id)) && !deletedSet.has(String(localItem.id))) {
+                merged.push(localItem);
+              }
+            });
+          }
 
           const prevJson = JSON.stringify(currentLocal);
           const newJson = JSON.stringify(merged);

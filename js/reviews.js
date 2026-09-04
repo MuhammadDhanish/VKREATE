@@ -57,57 +57,17 @@
     return false;
   }
 
-  // Fetch live reviews from Express backend API with in-flight guard
-  let _isFetchingLiveReviews = false;
-  async function fetchLiveReviews() {
-    if (_isFetchingLiveReviews) return;
-    _isFetchingLiveReviews = true;
-    const deletedIds = getDeletedReviewIds();
-    try {
-      const res = await fetch(getApiBaseUrl() + '/api/reviews/public?t=' + Date.now());
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          const fresh = data.map(r => ({ ...r, status: r.status || 'approved' })).filter(r => r && r.status === 'approved' && !isDeletedReview(r, deletedIds));
-          cachedApiReviews = fresh;
-          try {
-            const prevStr = localStorage.getItem('vk_reviews');
-            const newStr = JSON.stringify(fresh);
-            if (prevStr !== newStr) {
-              localStorage.setItem('vk_reviews', newStr);
-            }
-          } catch (e) {}
-          renderReviews();
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn('Live API fetch skipped/failed, using local fallback:', err);
-    } finally {
-      _isFetchingLiveReviews = false;
-    }
-    renderReviews();
-  }
-
-  // Get all approved reviews from API cache or VKREATE_DATA
+  // Get all approved reviews from VKREATE_DATA or local offline snapshot
   function getApprovedReviews() {
-    const deletedIds = getDeletedReviewIds();
-
-    // 1. Check fetched API memory cache (true single source of truth)
-    if (Array.isArray(cachedApiReviews)) {
-      return cachedApiReviews
-        .map(r => ({ ...r, status: r.status || 'approved' }))
-        .filter(r => r && r.status === 'approved' && !isDeletedReview(r, deletedIds));
-    }
-
-    // 2. Check live VKREATE_DATA.reviews
     if (window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.reviews)) {
-      return window.VKREATE_DATA.reviews
-        .map(r => ({ ...r, status: r.status || 'approved' }))
-        .filter(r => r && r.status === 'approved' && !isDeletedReview(r, deletedIds));
+      return window.VKREATE_DATA.reviews;
     }
-
-    return [];
+    try {
+      const raw = localStorage.getItem('vk_reviews');
+      return raw ? (JSON.parse(raw) || []) : [];
+    } catch (e) {
+      return [];
+    }
   }
 
   // Populate projects dropdown in client submission modal
@@ -587,14 +547,9 @@
     });
   }
 
-  // Handle remote update events by invalidating memory cache & re-fetching (debounced)
-  let _reviewsUpdateDebounce = null;
+  // Handle remote update events by re-rendering reviews
   function onReviewsUpdated() {
-    if (_reviewsUpdateDebounce) clearTimeout(_reviewsUpdateDebounce);
-    _reviewsUpdateDebounce = setTimeout(() => {
-      cachedApiReviews = null;
-      fetchLiveReviews();
-    }, 400);
+    renderReviews();
   }
 
   function checkAutoOpenModal() {
@@ -615,7 +570,6 @@
     setupStarSelector();
     setupModalControls();
     setupFormSubmit();
-    fetchLiveReviews();
     checkAutoOpenModal();
   }
 

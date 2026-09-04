@@ -1,16 +1,16 @@
 // ============================================================
-// VKREATE — Static Data Layer
+// VKREATE — Static Data & Real-Time Sync Engine
 // ============================================================
 
-// Canonical Domain Redirect: ensure all visitors and admin tabs share identical www origin and localStorage
+// Canonical Domain Redirect: ensure all visitors share identical origin and localStorage
 if (typeof window !== 'undefined' && window.location && window.location.hostname === 'vkreatearchitecture.com') {
   window.location.replace('https://www.vkreatearchitecture.com' + window.location.pathname + window.location.search + window.location.hash);
 }
 
-// Force-purge stale mobile local storage cache & initialize clean zero-state
-(function purgeStaleMobileStorage() {
+// ── 1. Storage Purge & Clean Initialization ──────────────────
+(function initCleanStorage() {
   try {
-    const PURGE_KEY = 'vk_purge_v2026_clean_code_zero_all_state_v5';
+    const PURGE_KEY = 'vk_purge_v2026_rebuilt_sync_v1';
     if (localStorage.getItem('vk_purge_key') !== PURGE_KEY) {
       localStorage.removeItem('vk_reviews');
       localStorage.removeItem('vk_reviews_list');
@@ -39,10 +39,10 @@ if (typeof window !== 'undefined' && window.location && window.location.hostname
     }
   } catch (e) {}
 })();
+
+// ── 2. Primary VKREATE Data Store ────────────────────────────
 window.VKREATE_DATA = {
-
   projects: [],
-
   reviews: [],
 
   services: [
@@ -147,634 +147,22 @@ window.VKREATE_DATA = {
     }
   ],
 
-  reviews: []
+  studio: {
+    name: 'Vkreate Interior Architecture',
+    tagline: 'Where Design Speaks',
+    email: 'vkreatearchitecture@gmail.com',
+    phone: '+91 90371 61861',
+    address: 'LPOne Beyond, Venture Arcade, Thondayad, Kozhikode - 673016',
+    mapsUrl: 'https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw',
+    instagram: 'https://www.instagram.com/vkreate_interior_architecture',
+    website: 'https://vkreatearchitecture.com'
+  }
 };
 
-// ============================================================
-// ImageDB Reader — resolves idb: image references from IndexedDB
-// (same DB used by the admin dashboard)
-// ============================================================
-const ImageDBReader = {
-  _db: null,
-  open() {
-    return new Promise((resolve, reject) => {
-      if (this._db) return resolve(this._db);
-      const req = indexedDB.open('vkreate_images', 1);
-      req.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains('images')) {
-          db.createObjectStore('images', { keyPath: 'id' });
-        }
-      };
-      req.onsuccess  = (e) => { this._db = e.target.result; resolve(this._db); };
-      req.onerror    = (e) => reject(e.target.error);
-    });
-  },
-  async get(key) {
-    try {
-      const db = await this.open();
-      return new Promise((resolve) => {
-        const tx = db.transaction('images', 'readonly');
-        const req = tx.objectStore('images').get(key);
-        req.onsuccess = (e) => resolve(e.target.result?.dataUrl || null);
-        req.onerror   = () => resolve(null);
-      });
-    } catch { return null; }
-  },
-  async resolve(ref) {
-    if (!ref || typeof ref !== 'string') return ref;
-    if (ref.startsWith('idb:')) return (await this.get(ref.slice(4))) || 'assets/images/project_lilaa_1.jpg';
-    return ref;
-  },
-  async resolveProject(proj) {
-    // Replace all idb: refs in a project with real dataURLs
-    const has = (v) => v && typeof v === 'string' && v.startsWith('idb:');
-    if (has(proj.thumbnail))   proj.thumbnail   = await this.resolve(proj.thumbnail);
-    if (has(proj.afterImage))  proj.afterImage   = await this.resolve(proj.afterImage);
-    if (has(proj.beforeImage)) proj.beforeImage  = await this.resolve(proj.beforeImage);
-    if (proj.images) {
-      proj.images = await Promise.all(proj.images.map(img => this.resolve(img)));
-    }
-    return proj;
-  },
-};
 var VKREATE_DATA = window.VKREATE_DATA;
 
-function getDeletedProjectIds() {
-  try {
-    const raw = localStorage.getItem('vk_admin_deleted_projects');
-    const list = raw ? (JSON.parse(raw) || []) : [];
-    return list.map(id => String(id));
-  } catch (e) {
-    return [];
-  }
-}
-
-function applyAdminProjects(adminProjects) {
-  const deletedIds = getDeletedProjectIds();
-  const deletedSet = new Set(deletedIds.map(id => String(id)));
-
-  const fixPath = (p) => {
-    if (!p || typeof p !== 'string') return '';
-    if (p.startsWith('data:') || p.startsWith('http://') || p.startsWith('https://') || p.startsWith('idb:')) return p;
-    return p.replace(/^(\.\.\/)+/, '');
-  };
-
-  // If server/admin dataset is explicitly provided as an array, use it as single source of truth
-  if (Array.isArray(adminProjects)) {
-    const rawList = adminProjects.filter(p => {
-      if (!p || !p.id) return false;
-      const pId = String(p.id);
-      if (deletedSet.has(pId) || deletedSet.has(p.id)) return false;
-      const status = (p.status || 'published').toLowerCase().trim();
-      if (status === 'draft' || status === 'archived' || status === 'deleted') return false;
-      return true;
-    });
-
-    const finalProjects = rawList.map(adminP => {
-      const rawThumb = adminP.thumbnail || (adminP.images && adminP.images[0]) || adminP.cover || '';
-      const thumb = fixPath(rawThumb) || '';
-      const imgs = (adminP.images && adminP.images.length) ? adminP.images.map(fixPath) : (thumb ? [thumb] : []);
-
-      return {
-        id: adminP.id,
-        name: adminP.name || 'Untitled Project',
-        client: adminP.client || adminP.clientName || 'Client',
-        industry: adminP.industry || 'restaurant',
-        industryLabel: adminP.industryLabel || adminP.industry || 'Commercial',
-        location: adminP.location || 'Kerala, India',
-        area: adminP.area || '',
-        budgetRange: adminP.budgetRange || '',
-        duration: adminP.duration || '',
-        completionDate: adminP.completionDate || '',
-        rating: adminP.rating || adminP.testimonial?.rating || 5,
-        rank: typeof adminP.rank === 'number' ? adminP.rank : (parseInt(adminP.rank) || 99),
-        thumbnail: thumb,
-        images: imgs,
-        beforeImage: fixPath(adminP.beforeImage) || imgs[0] || '',
-        afterImage: fixPath(adminP.afterImage) || thumb,
-        tagline: adminP.tagline || (adminP.solution ? adminP.solution.slice(0, 70) + '...' : 'Designed by VKREATE Studio'),
-        challenge: adminP.challenge || '',
-        solution: adminP.solution || '',
-        result: adminP.result || '',
-        processPhases: (adminP.processPhases && adminP.processPhases.length) ? adminP.processPhases : ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
-        testimonial: adminP.testimonial?.text ? adminP.testimonial : (adminP.testimonial ? { author: adminP.clientName || 'Client', role: adminP.clientRole || 'Owner', text: adminP.testimonial } : null),
-        metrics: adminP.metrics || { sqft: adminP.area || '', satisfaction: '100%' }
-      };
-    });
-
-    VKREATE_DATA.projects = finalProjects;
-    if (VKREATE_DATA.stats && VKREATE_DATA.stats[0]) {
-      VKREATE_DATA.stats[0].value = finalProjects.length.toString();
-    }
-    return;
-  }
-
-  // Fallback static original projects list (only if no dataset loaded)
-  const staticOriginals = [];
-
-  staticOriginals.forEach(staticP => {
-    if (deletedSet.has(staticP.id)) return;
-    if (adminProjMap.has(staticP.id)) {
-      const adminP = adminProjMap.get(staticP.id);
-      if (adminP.status === 'published') {
-        const adminImgs = (adminP.images && adminP.images.length) ? adminP.images.map(fixPath) : null;
-        const adminThumb = fixPath(adminP.thumbnail) || (adminImgs && adminImgs[0]) || null;
-
-        finalProjects.push({
-          ...staticP,
-          name: adminP.name || staticP.name,
-          industry: adminP.industry || staticP.industry,
-          industryLabel: adminP.industryLabel || staticP.industryLabel,
-          location: adminP.location || staticP.location,
-          area: adminP.area || staticP.area,
-          duration: adminP.duration || staticP.duration,
-          budgetRange: adminP.budgetRange || staticP.budgetRange,
-          rank: typeof adminP.rank === 'number' ? adminP.rank : (staticP.rank || 99),
-          thumbnail: adminThumb || staticP.thumbnail,
-          images: adminImgs || staticP.images,
-          beforeImage: (adminImgs && adminImgs[1]) || (adminImgs && adminImgs[0]) || staticP.beforeImage,
-          afterImage: adminThumb || staticP.afterImage,
-          challenge: adminP.challenge || staticP.challenge,
-          solution: adminP.solution || staticP.solution,
-          result: adminP.result || staticP.result,
-          testimonial: adminP.testimonial?.text ? {
-            author: adminP.testimonial.author,
-            role: adminP.testimonial.role,
-            text: adminP.testimonial.text,
-            rating: adminP.testimonial.rating || 5
-          } : null
-        });
-      }
-    } else if (!hasAdminDataset) {
-      finalProjects.push(staticP);
-    }
-  });
-
-  // B. Process custom admin-created projects
-  rawList.forEach(adminP => {
-    if (adminP.status === 'published' && !staticOriginals.some(sp => sp.id === adminP.id)) {
-      const rawThumb = adminP.thumbnail || (adminP.images && adminP.images[0]) || '';
-      const thumb = fixPath(rawThumb) || 'assets/images/project_lilaa_1.jpg';
-      const imgs = (adminP.images && adminP.images.length) ? adminP.images.map(fixPath) : [thumb];
-
-      finalProjects.push({
-        id: adminP.id,
-        name: adminP.name || 'Untitled Project',
-        client: adminP.client || adminP.testimonial?.author || 'Client',
-        industry: adminP.industry || 'restaurant',
-        industryLabel: adminP.industryLabel || adminP.industry || 'Commercial',
-        location: adminP.location || 'Kerala, India',
-        area: adminP.area || '2,000 sq ft',
-        budgetRange: adminP.budgetRange || '',
-        duration: adminP.duration || '3 months',
-        completionDate: adminP.completionDate || '',
-        rating: adminP.testimonial?.rating || 5,
-        rank: typeof adminP.rank === 'number' ? adminP.rank : (parseInt(adminP.rank) || 99),
-        thumbnail: thumb,
-        images: imgs,
-        beforeImage: fixPath(adminP.beforeImage) || imgs[0],
-        afterImage: fixPath(adminP.afterImage) || thumb,
-        tagline: adminP.tagline || (adminP.solution ? adminP.solution.slice(0, 70) + '...' : 'Designed by VKREATE Studio'),
-        challenge: adminP.challenge || 'Design a high-impact interior tailored to client vision.',
-        solution: adminP.solution || 'Integrated spatial strategy combining ambient lighting, bespoke materials, and ergonomic layouts.',
-        result: adminP.result || 'Delivered on time with 100% client satisfaction.',
-        processPhases: (adminP.processPhases && adminP.processPhases.length) ? adminP.processPhases : ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
-        testimonial: adminP.testimonial?.text ? adminP.testimonial : { author: 'Client', role: 'Owner', text: 'VKREATE delivered a stunning interior transformation.' },
-        metrics: adminP.metrics || { sqft: adminP.area || '2,000', satisfaction: '100%' }
-      });
-    }
-  });
-
-  VKREATE_DATA.projects = finalProjects;
-  if (VKREATE_DATA.stats && VKREATE_DATA.stats[0]) {
-    VKREATE_DATA.stats[0].value = finalProjects.length.toString();
-  }
-}
-
-// ============================================================
-// Sync Engine — Full-Duplex Admin Dashboard & Website Sync
-// ============================================================
-(function syncEngine() {
-  try {
-    // ── 1. LocalStorage Sync ─────────────────────────────────
-    const rawProjects = localStorage.getItem('vk_admin_projects');
-    if (rawProjects !== null) {
-      try {
-        const adminProjects = JSON.parse(rawProjects);
-        if (Array.isArray(adminProjects)) {
-          applyAdminProjects(adminProjects);
-        }
-      } catch (e) {}
-    } else {
-      const deletedIds = getDeletedProjectIds();
-      if (deletedIds.length > 0 && Array.isArray(VKREATE_DATA.projects)) {
-        const deletedSet = new Set(deletedIds);
-        VKREATE_DATA.projects = VKREATE_DATA.projects.filter(p => p && p.id && !deletedSet.has(p.id));
-      }
-    }
-
-    // ── 2. Reviews Sync ──────────────────────────────────────
-    const deletedReviewIds = getDeletedReviewIds();
-    const rawReviews = localStorage.getItem('vk_admin_reviews');
-    if (rawReviews !== null) {
-      try {
-        const adminReviews = JSON.parse(rawReviews);
-        if (Array.isArray(adminReviews)) {
-          applyAdminReviews(adminReviews);
-        }
-      } catch (e) {}
-    } else {
-      if (Array.isArray(VKREATE_DATA.reviews)) {
-        VKREATE_DATA.reviews = VKREATE_DATA.reviews.filter(r => !isDeletedReview(r, deletedReviewIds));
-      }
-    }
-
-    // ── 3. Studio Settings Sync ──────────────────────────────
-    VKREATE_DATA.studio = {
-      name: 'Vkreate Interior Architecture',
-      tagline: 'Where Design Speaks',
-      email: 'vkreatearchitecture@gmail.com',
-      phone: '+91 90371 61861',
-      address: 'LPOne Beyond, Venture Arcade, Thondayad, Kozhikode - 673016',
-      mapsUrl: 'https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw',
-      instagram: 'https://www.instagram.com/vkreate_interior_architecture',
-      website: 'https://vkreatearchitecture.com'
-    };
-    const rawSettings = localStorage.getItem('vk_admin_settings');
-    if (rawSettings) {
-      try {
-        const settings = JSON.parse(rawSettings);
-        if (settings.studio) {
-          settings.studio.name = 'Vkreate Interior Architecture';
-          settings.studio.email = 'vkreatearchitecture@gmail.com';
-          settings.studio.address = 'LPOne Beyond, Venture Arcade, Thondayad, Kozhikode - 673016';
-          settings.studio.mapsUrl = 'https://maps.app.goo.gl/452k5apcwZBYBL2v6?g_st=aw';
-          localStorage.setItem('vk_admin_settings', JSON.stringify(settings));
-          VKREATE_DATA.studio = settings.studio;
-        }
-      } catch (err) {}
-    }
-
-  } catch (e) {
-    console.warn('Error in syncEngine:', e);
-  }
-})();
-
-function getDeletedReviewIds() {
-  try {
-    return JSON.parse(localStorage.getItem('vk_admin_deleted_reviews')) || [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function isDeletedReview(r, deletedIds) {
-  if (!r || !deletedIds || !deletedIds.length) return false;
-  const strSet = new Set(deletedIds.map(id => String(id)));
-  if (r.id && (strSet.has(String(r.id)) || deletedIds.includes(r.id))) return true;
-  if (r.projectId && (strSet.has(String(r.projectId)) || strSet.has('proj:' + String(r.projectId)))) return true;
-  const name = (r.clientName || r.author || '').toLowerCase().trim();
-  if (name && (strSet.has(name) || strSet.has('name:' + name))) return true;
-  return false;
-}
-
-const staticDefaultReviews = [];
-
-function applyAdminReviews(adminReviews, hasAdminSource = false) {
-  const deletedIds = getDeletedReviewIds();
-  const reviewsMap = new Map();
-
-  // Always seed static default showcase reviews first (unless deleted)
-  staticDefaultReviews.forEach(r => {
-    if (!isDeletedReview(r, deletedIds)) {
-      reviewsMap.set(r.id, r);
-    }
-  });
-
-  if (Array.isArray(adminReviews)) {
-    adminReviews.forEach(r => {
-      const isApproved = r.status === 'approved' || (r.status !== 'pending' && r.status !== 'rejected' && r.verified === true);
-      if (isApproved && !isDeletedReview(r, deletedIds)) {
-        let industry = r.industry || 'restaurant';
-        if (r.projectId && VKREATE_DATA.projects) {
-          const proj = VKREATE_DATA.projects.find(p => p.id === r.projectId);
-          if (proj) industry = proj.industry;
-        }
-        const dateFormatted = r.createdAt
-          ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-          : (r.date || 'Recent');
-
-        // Unranked approved user reviews default to rank 0 so they appear at the top of the grid
-        const computedRank = typeof r.rank === 'number' ? r.rank : (parseInt(r.rank) === 0 ? 0 : (parseInt(r.rank) || 0));
-
-        reviewsMap.set(r.id, {
-          id: r.id,
-          projectId: r.projectId || 'general',
-          author: r.clientName || r.author || 'Client',
-          role: r.clientRole || r.role || 'Client',
-          industry: r.industry || industry,
-          rating: r.rating || 5,
-          rank: computedRank,
-          date: dateFormatted,
-          text: r.reviewText || r.text || '',
-          verified: true,
-          status: 'approved',
-          studioResponse: r.studioResponse || ''
-        });
-      }
-    });
-  }
-
-  const resultList = Array.from(reviewsMap.values());
-  resultList.sort((a, b) => (typeof a.rank === 'number' ? a.rank : 0) - (typeof b.rank === 'number' ? b.rank : 0));
-  VKREATE_DATA.reviews = resultList;
-}
-
-// ============================================================
-function getApiBaseUrl() {
-  if (typeof window !== 'undefined' && window.location) {
-    const h = window.location.hostname;
-    const p = window.location.port;
-    const proto = window.location.protocol || 'http:';
-    if (p !== '3000' && p !== '' && p !== '80' && p !== '443') {
-      return `${proto}//${h}:3000`;
-    }
-  }
-  return '';
-}
-
-// Remote Admin-Projects & Reviews Sync (API, SSE & JSON Fallback)
-// ============================================================
-const syncChannelLive = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('vk_sync') : null;
-
-let _isLoadingProjects = false;
-let _isLoadingReviews = false;
-
-async function loadRemoteAdminProjects() {
-  if (_isLoadingProjects) return;
-  _isLoadingProjects = true;
-  try {
-    let remoteProjects = null;
-    let remoteDeleted = [];
-    try {
-      const res = await fetch(getApiBaseUrl() + '/api/projects?t=' + Date.now());
-      if (res.ok) {
-        const raw = await res.json();
-        if (Array.isArray(raw)) {
-          remoteProjects = raw;
-        } else if (raw && typeof raw === 'object') {
-          remoteProjects = Array.isArray(raw.items) ? raw.items : (Array.isArray(raw.projects) ? raw.projects : null);
-          remoteDeleted = Array.isArray(raw.deletedIds) ? raw.deletedIds : [];
-        }
-      }
-    } catch (e) {}
-
-    if (!remoteProjects) {
-      try {
-        const res = await fetch('js/admin-projects.json?t=' + Date.now());
-        if (res.ok) {
-          const raw = await res.json();
-          if (Array.isArray(raw)) {
-            remoteProjects = raw;
-          } else if (raw && typeof raw === 'object') {
-            remoteProjects = Array.isArray(raw.items) ? raw.items : null;
-            remoteDeleted = Array.isArray(raw.deletedIds) ? raw.deletedIds : [];
-          }
-        }
-      } catch (e) {}
-    }
-
-    // Merge remote deletedIds with local — only write if changed
-    if (remoteDeleted.length > 0) {
-      try {
-        const currentDeleted = getDeletedProjectIds();
-        const combined = Array.from(new Set([...currentDeleted, ...remoteDeleted]));
-        const currJson = JSON.stringify(currentDeleted);
-        const newJson = JSON.stringify(combined);
-        if (currJson !== newJson) {
-          localStorage.setItem('vk_admin_deleted_projects', newJson);
-        }
-      } catch (e) {}
-    }
-
-    if (Array.isArray(remoteProjects)) {
-      const deletedIds = getDeletedProjectIds();
-      const deletedSet = new Set(deletedIds);
-
-      // Filter server data using combined deletedIds
-      remoteProjects = remoteProjects.filter(p => p && p.id && !deletedSet.has(p.id) && !deletedSet.has(String(p.id)));
-
-      // Build set of remote project IDs to detect local-only (not yet synced) items
-      const remoteIdSet = new Set(remoteProjects.map(p => p && p.id ? String(p.id) : null).filter(Boolean));
-
-      // Append any local-only items (created on this device, not yet synced to server)
-      try {
-        const rawLocal = localStorage.getItem('vk_admin_projects');
-        const currentLocal = rawLocal ? JSON.parse(rawLocal) : null;
-        if (Array.isArray(currentLocal)) {
-          currentLocal.forEach(localP => {
-            if (localP && localP.id && !deletedSet.has(String(localP.id)) && !remoteIdSet.has(String(localP.id))) {
-              remoteProjects.push(localP);
-            }
-          });
-        }
-      } catch (e) {}
-
-      const prevJson = localStorage.getItem('vk_admin_projects');
-      const newJson = JSON.stringify(remoteProjects);
-      if (prevJson !== newJson) {
-        try { localStorage.setItem('vk_admin_projects', newJson); } catch (e) {}
-        applyAdminProjects(remoteProjects);
-        window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
-      }
-    }
-  } catch (e) {
-  } finally {
-    _isLoadingProjects = false;
-  }
-}
-
-async function loadRemoteAdminReviews() {
-  if (_isLoadingReviews) return;
-  _isLoadingReviews = true;
-  try {
-    let remoteReviews = null;
-    let remoteDeleted = [];
-    try {
-      const res = await fetch(getApiBaseUrl() + '/api/reviews/public?t=' + Date.now());
-      if (res.ok) {
-        const raw = await res.json();
-        if (Array.isArray(raw)) {
-          remoteReviews = raw;
-        } else if (raw && typeof raw === 'object') {
-          remoteReviews = Array.isArray(raw.items) ? raw.items : (Array.isArray(raw.reviews) ? raw.reviews : null);
-          remoteDeleted = Array.isArray(raw.deletedIds) ? raw.deletedIds : [];
-        }
-      }
-    } catch (e) {}
-
-    if (!remoteReviews) {
-      try {
-        const res = await fetch('js/admin-reviews.json?t=' + Date.now());
-        if (res.ok) {
-          const raw = await res.json();
-          if (Array.isArray(raw)) {
-            remoteReviews = raw;
-          } else if (raw && typeof raw === 'object') {
-            remoteReviews = Array.isArray(raw.items) ? raw.items : null;
-            remoteDeleted = Array.isArray(raw.deletedIds) ? raw.deletedIds : [];
-          }
-        }
-      } catch (e) {}
-    }
-
-    // Merge remote deletedIds with local — only write if changed
-    if (remoteDeleted.length > 0) {
-      try {
-        const currentDeleted = getDeletedReviewIds();
-        const combined = Array.from(new Set([...currentDeleted, ...remoteDeleted.map(String)]));
-        const currJson = JSON.stringify(currentDeleted);
-        const newJson = JSON.stringify(combined);
-        if (currJson !== newJson) {
-          localStorage.setItem('vk_admin_deleted_reviews', newJson);
-        }
-      } catch (e) {}
-    }
-
-    const deletedIds = getDeletedReviewIds();
-
-    if (Array.isArray(remoteReviews)) {
-      // Step 1: Filter out deleted reviews
-      remoteReviews = remoteReviews.filter(r => r && !isDeletedReview(r, deletedIds));
-
-      // Step 2: Preserve local approved/rejected status decisions
-      try {
-        const rawLocal = localStorage.getItem('vk_admin_reviews');
-        const currentLocal = rawLocal ? JSON.parse(rawLocal) : null;
-        if (Array.isArray(currentLocal) && currentLocal.length > 0) {
-          const localMap = new Map();
-          currentLocal.forEach(r => {
-            if (r && r.id && !isDeletedReview(r, deletedIds)) localMap.set(String(r.id), r);
-          });
-
-          remoteReviews = remoteReviews.map(remoteItem => {
-            if (!remoteItem || !remoteItem.id) return remoteItem;
-            const localItem = localMap.get(String(remoteItem.id));
-            if (localItem) {
-              const localStatus = (localItem.status || 'pending').toLowerCase().trim();
-              if (localStatus === 'approved' || localStatus === 'rejected') {
-                return { ...remoteItem, ...localItem, status: localStatus };
-              }
-            }
-            return remoteItem;
-          });
-        }
-      } catch (e) {}
-
-      // Step 3: Final delete filter pass
-      remoteReviews = remoteReviews.filter(r => r && !isDeletedReview(r, deletedIds));
-
-      // Step 4: Authoritative update — only write to storage and dispatch if content changed
-      const prevJson = localStorage.getItem('vk_admin_reviews');
-      const newJson = JSON.stringify(remoteReviews);
-      if (prevJson !== newJson) {
-        try {
-          localStorage.setItem('vk_admin_reviews', newJson);
-          localStorage.setItem('vk_reviews', newJson);
-        } catch (e) {}
-        applyAdminReviews(remoteReviews, true);
-        window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
-      }
-
-    } else {
-      if (VKREATE_DATA.reviews && VKREATE_DATA.reviews.length > 0) {
-        VKREATE_DATA.reviews = [];
-        window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
-      }
-    }
-  } catch (e) {
-  } finally {
-    _isLoadingReviews = false;
-  }
-}
-
-// Initial remote load
-loadRemoteAdminProjects();
-loadRemoteAdminReviews();
-
-// ── Setup Live Sync Listeners (Debounced to prevent cross-tab ping-pong storms) ──
-let _publicSyncDebounce = null;
-function triggerDebouncedPublicSync() {
-  if (_publicSyncDebounce) clearTimeout(_publicSyncDebounce);
-  _publicSyncDebounce = setTimeout(() => {
-    loadRemoteAdminProjects();
-    loadRemoteAdminReviews();
-  }, 1000);
-}
-
-if (syncChannelLive) {
-  syncChannelLive.onmessage = () => {
-    triggerDebouncedPublicSync();
-  };
-}
-
-window.addEventListener('storage', function (e) {
-  // Only reload on relevant keys to avoid excessive re-fetches
-  if (!e.key || (!e.key.startsWith('vk_admin_') && e.key !== 'vk_reviews')) return;
-  triggerDebouncedPublicSync();
-});
-
-// Active Multi-Device Background Sync Poller (every 4s) & Focus Listener
-setInterval(() => {
-  if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-    loadRemoteAdminProjects();
-    loadRemoteAdminReviews();
-  }
-}, 4000);
-
-let _focusDebounce = null;
-window.addEventListener('focus', () => {
-  if (_focusDebounce) clearTimeout(_focusDebounce);
-  _focusDebounce = setTimeout(() => {
-    loadRemoteAdminProjects();
-    loadRemoteAdminReviews();
-  }, 500);
-});
-
-// ── Bug 5 Fix: SSE Push Listener for near-instant cross-device sync ──
-(function setupSSEListener() {
-  try {
-    const sseBase = getApiBaseUrl();
-    if (!sseBase && window.location.protocol === 'file:') return;
-
-    const evtSource = new EventSource((sseBase || '') + '/api/events');
-    let _sseDebounce = null;
-
-    evtSource.onmessage = (e) => {
-      const data = (e.data || '').trim();
-      if (_sseDebounce) clearTimeout(_sseDebounce);
-      _sseDebounce = setTimeout(() => {
-        if (data === 'projects-updated' || data === 'all-updated') {
-          loadRemoteAdminProjects();
-        }
-        if (data === 'reviews-updated' || data === 'all-updated') {
-          loadRemoteAdminReviews();
-        }
-      }, 400);
-    };
-
-    evtSource.onerror = () => {
-      evtSource.close();
-    };
-  } catch (e) {}
-})();
-
-
-// ============================================================
-// Async IDB Reader & Resolution — resolve idb: image refs on public pages
-// ============================================================
-window.ImageDBReader = window.ImageDBReader || {
+// ── 3. IndexedDB Image Reader ────────────────────────────────
+window.ImageDBReader = {
   _db: null,
   DB_NAME: 'vkreate_images',
   STORE: 'images',
@@ -785,6 +173,12 @@ window.ImageDBReader = window.ImageDBReader || {
       try {
         if (typeof indexedDB === 'undefined') return resolve(null);
         const req = indexedDB.open(this.DB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(this.STORE)) {
+            db.createObjectStore(this.STORE, { keyPath: 'id' });
+          }
+        };
         req.onsuccess = (e) => { this._db = e.target.result; resolve(this._db); };
         req.onerror = () => resolve(null);
       } catch (e) {
@@ -847,21 +241,297 @@ window.ImageDBReader = window.ImageDBReader || {
   }
 };
 
-(async function resolveIdbImages() {
-  try {
-    if (!window.VKREATE_DATA || !Array.isArray(window.VKREATE_DATA.projects)) return;
-    const hasIdb = window.VKREATE_DATA.projects.some(p =>
-      p && (
-        (p.thumbnail || '').startsWith('idb:') ||
-        (p.images || []).some(img => (img || '').startsWith('idb:'))
-      )
-    );
-    if (!hasIdb) return;
+// ── 4. Unified Rebuilt Synchronization Engine ─────────────────
+const VKREATE_SYNC = {
+  _isFetchingProjects: false,
+  _isFetchingReviews: false,
+  _isFetchingSettings: false,
+  _sseSource: null,
 
-    await Promise.all(window.VKREATE_DATA.projects.map(p => ImageDBReader.resolveProject(p)));
-    window.dispatchEvent(new CustomEvent('vkreate:idb-resolved'));
-  } catch (e) {
-    console.warn('IDB image resolution error:', e);
+  getBaseUrl() {
+    if (typeof window !== 'undefined' && window.location) {
+      const h = window.location.hostname;
+      const p = window.location.port;
+      const proto = window.location.protocol || 'http:';
+      if (p !== '3000' && p !== '' && p !== '80' && p !== '443') {
+        return `${proto}//${h}:3000`;
+      }
+    }
+    return '';
+  },
+
+  fixPath(p) {
+    if (!p || typeof p !== 'string') return '';
+    if (p.startsWith('data:') || p.startsWith('http://') || p.startsWith('https://') || p.startsWith('idb:')) return p;
+    return p.replace(/^(\.\.\/)+/, '');
+  },
+
+  getDeletedProjectIds() {
+    try {
+      const raw = localStorage.getItem('vk_admin_deleted_projects');
+      return raw ? (JSON.parse(raw) || []) : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  getDeletedReviewIds() {
+    try {
+      const raw = localStorage.getItem('vk_admin_deleted_reviews');
+      return raw ? (JSON.parse(raw) || []) : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  // ── Fetch & Apply Projects ──────────────────────────────────
+  async fetchProjects() {
+    if (this._isFetchingProjects) return;
+    this._isFetchingProjects = true;
+    const deletedIds = this.getDeletedProjectIds();
+    const deletedSet = new Set(deletedIds.map(String));
+
+    let remoteList = null;
+    try {
+      const res = await fetch(this.getBaseUrl() + '/api/projects?t=' + Date.now());
+      if (res.ok) {
+        const raw = await res.json();
+        if (Array.isArray(raw)) remoteList = raw;
+        else if (raw && Array.isArray(raw.items)) remoteList = raw.items;
+      }
+    } catch (e) {}
+
+    // Offline JSON Fallback
+    if (!remoteList) {
+      try {
+        const res = await fetch('js/admin-projects.json?t=' + Date.now());
+        if (res.ok) {
+          const raw = await res.json();
+          if (Array.isArray(raw)) remoteList = raw;
+          else if (raw && Array.isArray(raw.items)) remoteList = raw.items;
+        }
+      } catch (e) {}
+    }
+
+    if (Array.isArray(remoteList)) {
+      const active = remoteList.filter(p => {
+        if (!p || !p.id) return false;
+        if (deletedSet.has(String(p.id))) return false;
+        const status = (p.status || 'published').toLowerCase().trim();
+        return status !== 'draft' && status !== 'archived' && status !== 'deleted';
+      }).map(p => {
+        const rawThumb = p.thumbnail || (p.images && p.images[0]) || '';
+        const thumb = this.fixPath(rawThumb);
+        const imgs = (p.images && p.images.length) ? p.images.map(i => this.fixPath(i)) : (thumb ? [thumb] : []);
+        return {
+          id: p.id,
+          name: p.name || 'Untitled Project',
+          client: p.client || p.clientName || 'Client',
+          industry: p.industry || 'commercial',
+          industryLabel: p.industryLabel || p.industry || 'Commercial',
+          location: p.location || 'Kerala, India',
+          area: p.area || '',
+          budgetRange: p.budgetRange || '',
+          duration: p.duration || '',
+          completionDate: p.completionDate || '',
+          rating: p.rating || p.testimonial?.rating || 5,
+          rank: typeof p.rank === 'number' ? p.rank : (parseInt(p.rank) || 99),
+          thumbnail: thumb,
+          images: imgs,
+          beforeImage: this.fixPath(p.beforeImage) || imgs[0] || '',
+          afterImage: this.fixPath(p.afterImage) || thumb || '',
+          tagline: p.tagline || (p.solution ? p.solution.slice(0, 70) + '...' : 'Designed by VKREATE Studio'),
+          challenge: p.challenge || '',
+          solution: p.solution || '',
+          result: p.result || '',
+          processPhases: (p.processPhases && p.processPhases.length) ? p.processPhases : ["Discovery", "Concept", "Detailing", "Execution", "Handover"],
+          testimonial: p.testimonial?.text ? p.testimonial : null,
+          metrics: p.metrics || { sqft: p.area || '', satisfaction: '100%' }
+        };
+      });
+
+      // Update in-memory state
+      window.VKREATE_DATA.projects = active;
+      if (window.VKREATE_DATA.stats && window.VKREATE_DATA.stats[0]) {
+        window.VKREATE_DATA.stats[0].value = active.length.toString();
+      }
+
+      // Read-only offline snapshot
+      try { localStorage.setItem('vk_projects_cache', JSON.stringify(active)); } catch (e) {}
+
+      // Resolve IndexedDB local images if present
+      if (window.ImageDBReader) {
+        try {
+          await Promise.all(active.map(p => window.ImageDBReader.resolveProject(p)));
+        } catch (e) {}
+      }
+
+      window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
+    }
+    this._isFetchingProjects = false;
+  },
+
+  // ── Fetch & Apply Reviews ───────────────────────────────────
+  async fetchReviews() {
+    if (this._isFetchingReviews) return;
+    this._isFetchingReviews = true;
+    const deletedIds = this.getDeletedReviewIds();
+    const deletedSet = new Set(deletedIds.map(String));
+
+    let remoteList = null;
+    try {
+      const res = await fetch(this.getBaseUrl() + '/api/reviews/public?t=' + Date.now());
+      if (res.ok) {
+        const raw = await res.json();
+        if (Array.isArray(raw)) remoteList = raw;
+        else if (raw && Array.isArray(raw.items)) remoteList = raw.items;
+      }
+    } catch (e) {}
+
+    // Offline JSON Fallback
+    if (!remoteList) {
+      try {
+        const res = await fetch('js/admin-reviews.json?t=' + Date.now());
+        if (res.ok) {
+          const raw = await res.json();
+          if (Array.isArray(raw)) remoteList = raw;
+          else if (raw && Array.isArray(raw.items)) remoteList = raw.items;
+        }
+      } catch (e) {}
+    }
+
+    if (Array.isArray(remoteList)) {
+      const active = remoteList.filter(r => {
+        if (!r || !r.id) return false;
+        if (deletedSet.has(String(r.id))) return false;
+        const status = (r.status || 'approved').toLowerCase().trim();
+        return status === 'approved';
+      }).map(r => {
+        const dateFormatted = r.createdAt
+          ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+          : (r.date || 'Recent');
+        const computedRank = typeof r.rank === 'number' ? r.rank : (parseInt(r.rank) || 0);
+        return {
+          id: r.id,
+          projectId: r.projectId || 'general',
+          author: r.clientName || r.author || 'Verified Client',
+          role: r.clientRole || r.role || 'Client',
+          industry: r.industry || r.industryLabel || 'commercial',
+          industryLabel: r.industryLabel || r.industry || 'Commercial',
+          rating: r.rating || 5,
+          rank: computedRank,
+          date: dateFormatted,
+          text: r.reviewText || r.text || '',
+          verified: true,
+          status: 'approved',
+          studioResponse: r.studioResponse || ''
+        };
+      });
+
+      active.sort((a, b) => a.rank - b.rank);
+
+      window.VKREATE_DATA.reviews = active;
+      try { localStorage.setItem('vk_reviews', JSON.stringify(active)); } catch (e) {}
+      window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+    }
+    this._isFetchingReviews = false;
+  },
+
+  // ── Fetch & Apply Settings ──────────────────────────────────
+  async fetchSettings() {
+    if (this._isFetchingSettings) return;
+    this._isFetchingSettings = true;
+    try {
+      const res = await fetch(this.getBaseUrl() + '/api/settings?t=' + Date.now());
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.studio) {
+          window.VKREATE_DATA.studio = { ...window.VKREATE_DATA.studio, ...data.studio };
+          window.dispatchEvent(new CustomEvent('vkreate:settings-updated'));
+        }
+      }
+    } catch (e) {}
+    this._isFetchingSettings = false;
+  },
+
+  // ── Fetch Everything in Parallel ────────────────────────────
+  async fetchAll() {
+    await Promise.all([
+      this.fetchProjects(),
+      this.fetchReviews(),
+      this.fetchSettings()
+    ]);
+  },
+
+  // ── Server-Sent Events (SSE) Push Listener ───────────────────
+  initSSE() {
+    const sseBase = this.getBaseUrl();
+    if (!sseBase && window.location.protocol === 'file:') return;
+
+    try {
+      if (this._sseSource) this._sseSource.close();
+      this._sseSource = new EventSource((sseBase || '') + '/api/events');
+
+      let debounceTimer = null;
+      this._sseSource.onmessage = (e) => {
+        const data = (e.data || '').trim();
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          if (data === 'projects-updated' || data === 'all-updated') this.fetchProjects();
+          if (data === 'reviews-updated' || data === 'all-updated') this.fetchReviews();
+          if (data === 'settings-updated' || data === 'all-updated') this.fetchSettings();
+        }, 150);
+      };
+
+      this._sseSource.onerror = () => {
+        if (this._sseSource) this._sseSource.close();
+        // Reconnect after 5 seconds if connection drops
+        setTimeout(() => this.initSSE(), 5000);
+      };
+    } catch (e) {}
+  },
+
+  // ── BroadcastChannel (Cross-Tab Instant Sync in Same Browser) ─
+  initBroadcastChannel() {
+    if (typeof BroadcastChannel === 'undefined') return;
+    try {
+      const channel = new BroadcastChannel('vk_sync');
+      channel.onmessage = (e) => {
+        const type = e.data?.type || e.data;
+        if (type === 'projects-updated' || type === 'all-updated') this.fetchProjects();
+        if (type === 'reviews-updated' || type === 'all-updated') this.fetchReviews();
+        if (type === 'settings-updated' || type === 'all-updated') this.fetchSettings();
+      };
+    } catch (e) {}
+  },
+
+  // ── Listeners & Initialization ──────────────────────────────
+  init() {
+    // Initial fetch
+    this.fetchAll();
+
+    // Push channels
+    this.initSSE();
+    this.initBroadcastChannel();
+
+    // Re-fetch when user switches back to this tab
+    window.addEventListener('focus', () => this.fetchAll());
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') this.fetchAll();
+    });
+
+    // Light heartbeat poll (every 10s only when visible) as reliable safety net
+    setInterval(() => {
+      if (document.visibilityState === 'visible') this.fetchAll();
+    }, 10000);
   }
-})();
+};
 
+window.VKREATE_SYNC = VKREATE_SYNC;
+
+// Boot synchronization engine immediately
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => VKREATE_SYNC.init());
+} else {
+  VKREATE_SYNC.init();
+}
