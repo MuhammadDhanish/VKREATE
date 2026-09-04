@@ -192,18 +192,12 @@ function requireAuth(req, res, next) {
     sessionToken = req.headers['x-admin-session'];
   }
 
-  let session = verifySession(sessionToken);
-
-  if (!session && sessionToken && typeof sessionToken === 'string' && sessionToken.length > 0) {
-    session = { email: SERVER_ADMIN_EMAIL };
-  }
-
-  if (!session && (req.headers['x-admin-session'] || req.headers.authorization || req.headers.cookie)) {
-    session = { email: SERVER_ADMIN_EMAIL };
-  }
+  // Verify the token cryptographically. Only accept a valid signed session.
+  const session = verifySession(sessionToken);
 
   if (!session) {
-    session = { email: SERVER_ADMIN_EMAIL };
+    console.warn(`[Auth] Rejected request to ${req.method} ${req.path} — invalid or missing session token`);
+    return res.status(401).json({ success: false, error: 'Unauthorized: valid session token required' });
   }
 
   req.user = session;
@@ -309,6 +303,33 @@ app.get('/api/sync-status', async (req, res) => {
     githubTokenConfigured: hasGh,
     storageBackend: hasDb ? 'mongodb' : (hasGh ? 'github-store' : 'local-ephemeral-disk'),
     isProductionPersistent: hasDb || hasGh
+  });
+});
+
+// ── Health / Diagnostics Endpoint ──────────────────────────────────
+app.get('/api/health', async (req, res) => {
+  const db = await connectMongoDB();
+  let counts = { projects: 0, reviews: 0, inquiries: 0, settings: 0 };
+  if (db) {
+    try {
+      const [p, r, i, s] = await Promise.all([
+        ProjectModel.countDocuments(),
+        ReviewModel.countDocuments(),
+        InquiryModel.countDocuments(),
+        SettingModel.countDocuments()
+      ]);
+      counts = { projects: p, reviews: r, inquiries: i, settings: s };
+    } catch (e) {}
+  }
+  res.json({
+    ok: true,
+    mongoConnected: !!db,
+    mongoUriConfigured: !!(process.env.MONGODB_URI || process.env.MONGO_URI),
+    githubTokenConfigured: !!GITHUB_TOKEN,
+    storageBackend: db ? 'mongodb' : (GITHUB_TOKEN ? 'github-store' : 'local-ephemeral-disk'),
+    counts,
+    env: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -524,10 +545,10 @@ app.post('/api/projects', requireAuth, async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
+      console.log(`[MongoDB] Saving project id=${item.id} name="${item.name}"`);
       const doc = await ProjectModel.findOneAndUpdate({ id: item.id }, item, { upsert: true, new: true, lean: true });
-      // Bug Fix: Always update GitHub JSON even when MongoDB succeeds.
-      // Without this, GitHub JSON stays empty, causing the GET to return
-      // empty projects (and previously wipe MongoDB) on next request.
+      console.log(`[MongoDB] Project saved successfully id=${item.id}`);
+      // Always update GitHub JSON even when MongoDB succeeds — keeps fallback in sync.
       ghWrite('js/admin-projects.json', (diskDoc) => {
         const items = diskDoc.items || [];
         const idx = items.findIndex(p => p && p.id === item.id);
@@ -540,9 +561,10 @@ app.post('/api/projects', requireAuth, async (req, res) => {
       notifyClients('projects-updated');
       return res.json({ success: true, project: doc });
     } catch (e) {
-      console.warn('MongoDB project save warning:', e.message);
+      console.error(`[MongoDB] Project save FAILED id=${item.id}:`, e.message);
     }
   }
+  console.warn(`[GitHub Fallback] MongoDB unavailable — saving project id=${item.id} to GitHub JSON only`);
 
   const result = await ghWrite('js/admin-projects.json', (doc) => {
     const items = doc.items || [];
@@ -568,11 +590,10 @@ app.put('/api/projects/:id', requireAuth, async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
-      // Bug Fix: Do NOT override status with 'active' — preserve the real status.
-      // Without this, unpublishing a project (setting status: 'draft') is ignored
-      // by the server and other devices always see the project as published.
+      console.log(`[MongoDB] Updating project id=${id}`);
       const doc = await ProjectModel.findOneAndUpdate({ id }, { ...updates, id }, { upsert: true, new: true, lean: true });
-      // Bug Fix: Always update GitHub JSON, just like reviews do.
+      console.log(`[MongoDB] Project updated successfully id=${id}`);
+      // Always update GitHub JSON as well — keeps fallback in sync.
       ghWrite('js/admin-projects.json', (diskDoc) => {
         const items = diskDoc.items || [];
         const idx = items.findIndex(p => p && p.id === id);
@@ -588,9 +609,10 @@ app.put('/api/projects/:id', requireAuth, async (req, res) => {
       notifyClients('projects-updated');
       return res.json({ success: true, project: doc });
     } catch (e) {
-      console.warn('MongoDB project update warning:', e.message);
+      console.error(`[MongoDB] Project update FAILED id=${id}:`, e.message);
     }
   }
+  console.warn(`[GitHub Fallback] MongoDB unavailable — updating project id=${id} in GitHub JSON only`);
 
   let updatedItem = null;
   const result = await ghWrite('js/admin-projects.json', (doc) => {
@@ -820,10 +842,14 @@ const updateReviewHandler = async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
+      console.log(`[MongoDB] Updating review id=${id} status=${updates.status || '(unchanged)'}`);
       mongoDoc = await ReviewModel.findOneAndUpdate({ id }, { ...updates, id }, { upsert: true, new: true, lean: true });
+      console.log(`[MongoDB] Review updated successfully id=${id}`);
     } catch (e) {
-      console.warn('MongoDB review update warning:', e.message);
+      console.error(`[MongoDB] Review update FAILED id=${id}:`, e.message);
     }
+  } else {
+    console.warn(`[GitHub Fallback] MongoDB unavailable — updating review id=${id} in GitHub JSON only`);
   }
 
   let updatedItem = null;
@@ -1074,6 +1100,7 @@ app.put('/api/settings', requireAuth, async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
+      console.log(`[MongoDB] Saving settings (PUT)`);
       const currentDoc = await SettingModel.findOne({ key: 'global_settings' }).lean() || {};
       const newStudio = { ...DEFAULT_SETTINGS.studio, ...(currentDoc.studio || {}), ...(updates.studio || {}) };
       const newNotif = { ...DEFAULT_SETTINGS.notifications, ...(currentDoc.notifications || {}), ...(updates.notifications || {}) };
@@ -1082,9 +1109,12 @@ app.put('/api/settings', requireAuth, async (req, res) => {
         { studio: newStudio, notifications: newNotif },
         { upsert: true, new: true, lean: true }
       );
+      console.log(`[MongoDB] Settings saved successfully`);
     } catch (e) {
-      console.warn('MongoDB settings update warning:', e.message);
+      console.error(`[MongoDB] Settings save FAILED:`, e.message);
     }
+  } else {
+    console.warn(`[GitHub Fallback] MongoDB unavailable — saving settings to GitHub JSON only`);
   }
 
   const result = await ghWrite('js/admin-settings.json', (doc) => {
@@ -1104,7 +1134,7 @@ app.put('/api/settings', requireAuth, async (req, res) => {
     return res.status(500).json({ success: false, error: result.error });
   }
 
-  notifyClients('settings');
+  notifyClients('settings-updated');
   const finalSettings = mongoUpdatedDoc
     ? { studio: mongoUpdatedDoc.studio, notifications: mongoUpdatedDoc.notifications }
     : ((result.data && result.data.settings) || updates);
@@ -1120,6 +1150,7 @@ app.post('/api/settings', requireAuth, async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
+      console.log(`[MongoDB] Saving settings (POST)`);
       const currentDoc = await SettingModel.findOne({ key: 'global_settings' }).lean() || {};
       const newStudio = { ...DEFAULT_SETTINGS.studio, ...(currentDoc.studio || {}), ...(updates.studio || {}) };
       const newNotif = { ...DEFAULT_SETTINGS.notifications, ...(currentDoc.notifications || {}), ...(updates.notifications || {}) };
@@ -1128,9 +1159,12 @@ app.post('/api/settings', requireAuth, async (req, res) => {
         { studio: newStudio, notifications: newNotif },
         { upsert: true, new: true, lean: true }
       );
+      console.log(`[MongoDB] Settings saved successfully`);
     } catch (e) {
-      console.warn('MongoDB settings update warning:', e.message);
+      console.error(`[MongoDB] Settings save FAILED:`, e.message);
     }
+  } else {
+    console.warn(`[GitHub Fallback] MongoDB unavailable — saving settings to GitHub JSON only`);
   }
 
   const result = await ghWrite('js/admin-settings.json', (doc) => {
@@ -1150,7 +1184,7 @@ app.post('/api/settings', requireAuth, async (req, res) => {
     return res.status(500).json({ success: false, error: result.error });
   }
 
-  notifyClients('settings');
+  notifyClients('settings-updated');
   const finalSettings = mongoUpdatedDoc
     ? { studio: mongoUpdatedDoc.studio, notifications: mongoUpdatedDoc.notifications }
     : ((result.data && result.data.settings) || updates);

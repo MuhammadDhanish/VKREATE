@@ -959,6 +959,38 @@ DB.seed();
   // Initial load
   DB.loadRemoteData();
 
+  // Check MongoDB connectivity on startup and warn admin if not connected
+  setTimeout(async () => {
+    try {
+      const res = await fetch((getApiBaseUrl() || '') + '/api/health', { credentials: 'include' });
+      if (res.ok) {
+        const health = await res.json();
+        if (!health.mongoConnected) {
+          const msg = health.mongoUriConfigured
+            ? '⚠️ MongoDB is configured but not connected. Changes will save to GitHub JSON only and may not sync across devices. Check server logs and verify MONGODB_URI is correct.'
+            : '⚠️ MONGODB_URI is not set. Changes will save to GitHub JSON only. Set MONGODB_URI in Vercel environment variables and redeploy to enable real-time cross-device sync.';
+          console.warn('[Admin] MongoDB not connected:', health);
+          if (window.UI && UI.toast) {
+            UI.toast(msg, 'warning', 8000);
+          } else {
+            // Fallback: show a banner if UI toast isn't ready yet
+            const banner = document.createElement('div');
+            banner.id = 'vk-mongo-warn';
+            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#92400e;color:#fef3c7;padding:10px 20px;font-size:0.82rem;text-align:center;';
+            banner.textContent = msg;
+            document.body && document.body.prepend(banner);
+            setTimeout(() => { const b = document.getElementById('vk-mongo-warn'); if (b) b.remove(); }, 12000);
+          }
+        } else {
+          console.log(`[Admin] MongoDB connected ✅ — counts: projects=${health.counts.projects}, reviews=${health.counts.reviews}, inquiries=${health.counts.inquiries}`);
+        }
+      }
+    } catch (e) {
+      console.warn('[Admin] Could not reach /api/health:', e.message);
+    }
+  }, 2000);
+
+
   // Debounced focus / visibility refetch
   let focusDebounceTimer = null;
   const handleFocus = () => {
