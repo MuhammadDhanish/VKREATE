@@ -651,6 +651,7 @@ const Projects = {
     }
     const imageList = imageRefs.length ? imageRefs : [thumbRef];
 
+    const existing = this._editId ? DB.projects.get(this._editId) : null;
     const data = {
       id:           projectId,
       name:         nameVal,
@@ -676,7 +677,10 @@ const Projects = {
         rating: parseInt(f.querySelector('[name="testimonial_rating"]')?.value || '5'),
       },
       processPhases: ['Discovery','Concept','Detailing','Execution','Handover'],
-      views: 0, clicks: 0, leads: 0,
+      createdAt: existing?.createdAt || new Date().toISOString(),
+      views: existing?.views || 0,
+      clicks: existing?.clicks || 0,
+      leads: existing?.leads || 0,
     };
 
     let savedOk = false;
