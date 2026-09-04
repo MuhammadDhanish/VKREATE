@@ -1,4 +1,93 @@
 {
   "deletedIds": [],
-  "items": []
+  "items": [
+    {
+      "id": "rev-mt4w0c6j6dn54",
+      "clientName": "Public Reviewer",
+      "clientRole": "Test Client",
+      "clientEmail": "public_secret@test.com",
+      "projectId": "general",
+      "rating": 5,
+      "reviewText": "Public submission testing pending status enforcement.",
+      "status": "approved",
+      "createdAt": "2026-08-22T21:25:26.059Z",
+      "updatedAt": "2026-08-22T22:10:22.407Z",
+      "approvedAt": "2026-08-22T22:10:22.357Z"
+    },
+    {
+      "id": "rev-mt4vnci40knjh",
+      "clientName": "M.dhanish",
+      "clientRole": "cafe",
+      "clientEmail": "dhanishdhanishkk@gmail.com",
+      "projectId": "retail-jewellery",
+      "rating": 3,
+      "reviewText": "Excellent service and design execution.",
+      "status": "approved",
+      "createdAt": "2026-08-22T21:15:19.948Z",
+      "updatedAt": "2026-08-22T21:19:02.094Z",
+      "approvedAt": "2026-08-22T21:19:02.077Z"
+    },
+    {
+      "id": "rev-mt3gvg572wcm",
+      "clientName": "Continuous Test User 1",
+      "author": "Continuous Test User 1",
+      "clientRole": "Villa Owner",
+      "role": "Villa Owner",
+      "clientEmail": "user1@test.com",
+      "projectId": "general",
+      "rating": 5,
+      "reviewText": "Great experience working with VKREATE team on villa interior.",
+      "text": "Great experience working with VKREATE team on villa interior.",
+      "status": "approved",
+      "createdAt": "2026-08-21T21:33:57.499Z",
+      "updatedAt": "2026-08-21T21:39:39.495Z",
+      "studioResponse": "Thanks!",
+      "approvedAt": "2026-08-21T21:37:02.370Z"
+    },
+    {
+      "id": "rev-mt3fw3lrsuat",
+      "clientName": "Validation User",
+      "author": "Validation User",
+      "clientRole": "Hotel Director",
+      "role": "Hotel Director",
+      "clientEmail": "val@hotel.com",
+      "projectId": "general",
+      "rating": 5,
+      "reviewText": "Wonderful architectural interior work done by VKREATE for our resort.",
+      "text": "Wonderful architectural interior work done by VKREATE for our resort.",
+      "status": "approved",
+      "createdAt": "2026-08-21T21:06:28.287Z",
+      "updatedAt": "2026-08-21T21:07:45.384Z",
+      "studioResponse": "Thank you!",
+      "approvedAt": "2026-08-21T21:06:58.620Z"
+    },
+    {
+      "id": "rev-wings-02",
+      "status": "approved",
+      "clientName": "Dr. Priya Nair",
+      "clientRole": "Managing Director, Wings Salon & Spa",
+      "clientEmail": "priya@wingsbeauty.in",
+      "projectId": "luxury-salon",
+      "rating": 5,
+      "reviewText": "Flawless execution from concept to completion. The layout optimization in our Kochi salon created a serene, high-end sanctuary that our VIP clients absolutely love. Highly recommend VKREATE for luxury wellness spaces.",
+      "createdAt": "2026-08-21T20:24:14.502Z",
+      "approvedAt": "2026-08-21T20:57:45.148Z",
+      "studioResponse": "We are thrilled Dr. Priya! The curved glass arches and acoustic detailing in Wings remain one of our proudest accomplishments.",
+      "updatedAt": "2026-08-21T20:57:45.156Z"
+    },
+    {
+      "id": "rev-pending-03",
+      "status": "approved",
+      "clientName": "Suresh Menon",
+      "clientRole": "Commercial Property Owner",
+      "clientEmail": "suresh.menon@menongroup.com",
+      "projectId": "corporate-lounge",
+      "rating": 5,
+      "reviewText": "Outstanding craftsmanship on our executive workspace lounge in Calicut. The lighting accents and wood ribbing created an extraordinary corporate environment for our executive guests.",
+      "createdAt": "2026-08-21T20:21:19.591Z",
+      "studioResponse": "",
+      "approvedAt": "2026-08-21T20:57:51.244Z",
+      "updatedAt": "2026-08-21T20:57:51.251Z"
+    }
+  ]
 }
