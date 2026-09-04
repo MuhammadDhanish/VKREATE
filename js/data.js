@@ -399,17 +399,23 @@ const VKREATE_SYNC = {
           ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
           : (r.date || 'Recent');
         const computedRank = typeof r.rank === 'number' ? r.rank : (parseInt(r.rank) || 0);
+        const name = r.clientName || r.author || 'Verified Client';
+        const roleStr = r.clientRole || r.role || 'Client';
+        const textStr = r.reviewText || r.text || '';
         return {
           id: r.id,
           projectId: r.projectId || 'general',
-          author: r.clientName || r.author || 'Verified Client',
-          role: r.clientRole || r.role || 'Client',
+          clientName: name,
+          author: name,
+          clientRole: roleStr,
+          role: roleStr,
           industry: r.industry || r.industryLabel || 'commercial',
           industryLabel: r.industryLabel || r.industry || 'Commercial',
           rating: r.rating || 5,
           rank: computedRank,
           date: dateFormatted,
-          text: r.reviewText || r.text || '',
+          reviewText: textStr,
+          text: textStr,
           verified: true,
           status: 'approved',
           studioResponse: r.studioResponse || ''

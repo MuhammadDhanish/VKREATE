@@ -29,8 +29,6 @@
     return '';
   }
 
-  let cachedApiReviews = null;
-
   function escapeHTML(str) {
     if (typeof str !== 'string') return '';
     return str.replace(/[&<>"']/g, function (m) {
@@ -100,22 +98,23 @@
 
     const reviews = getApprovedReviews();
 
-    // Update aggregate stats
+    // Update aggregate stats & Hero rating
     const aggScoreEl = document.getElementById('agg-score');
     const aggStarsEl = document.getElementById('agg-stars');
     const aggCountEl = document.getElementById('agg-count');
+    const heroRatingEl = document.getElementById('hero-rating-score');
 
-    if (aggScoreEl) {
-      if (reviews.length > 0) {
-        const avg = (reviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0) / reviews.length).toFixed(1);
-        aggScoreEl.textContent = avg;
-        if (aggStarsEl) aggStarsEl.innerHTML = renderStarsHTML(Math.round(avg));
-        if (aggCountEl) aggCountEl.textContent = `Based on ${reviews.length} verified client review${reviews.length !== 1 ? 's' : ''}`;
-      } else {
-        aggScoreEl.textContent = '5.0';
-        if (aggStarsEl) aggStarsEl.innerHTML = renderStarsHTML(5);
-        if (aggCountEl) aggCountEl.textContent = 'Ready for your client review';
-      }
+    if (reviews.length > 0) {
+      const avg = (reviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0) / reviews.length).toFixed(1);
+      if (aggScoreEl) aggScoreEl.textContent = avg;
+      if (aggStarsEl) aggStarsEl.innerHTML = renderStarsHTML(Math.round(avg));
+      if (aggCountEl) aggCountEl.textContent = `Based on ${reviews.length} verified client review${reviews.length !== 1 ? 's' : ''}`;
+      if (heroRatingEl) heroRatingEl.textContent = `${avg}★`;
+    } else {
+      if (aggScoreEl) aggScoreEl.textContent = '5.0';
+      if (aggStarsEl) aggStarsEl.innerHTML = renderStarsHTML(5);
+      if (aggCountEl) aggCountEl.textContent = 'Ready for your client review';
+      if (heroRatingEl) heroRatingEl.textContent = '5.0★';
     }
 
     // Filter by industry
@@ -132,7 +131,7 @@
       });
     }
 
-    const isReviewsPage = window.location.pathname.endsWith('reviews.html');
+    const isReviewsPage = !!window.IS_FULL_REVIEWS_PAGE || window.location.pathname.endsWith('/reviews') || window.location.pathname.endsWith('reviews.html');
     let showAllHomeReviews = window.VKREATE_SHOW_ALL_HOME_REVIEWS || false;
     let showAllMobileReviews = window.VKREATE_SHOW_ALL_REVIEWS || false;
     const isMobile = window.innerWidth <= 768;
@@ -147,6 +146,14 @@
     grid.innerHTML = '';
 
     if (filtered.length === 0) {
+      if (window.VKREATE_SYNC && window.VKREATE_SYNC._isFetchingReviews) {
+        grid.innerHTML = `
+          <div style="grid-column:1/-1;text-align:center;padding:48px 24px;color:var(--text-muted);">
+            <div style="font-size:1.5rem;margin-bottom:12px;">⏳</div>
+            <p style="margin:0;font-size:0.9375rem;">Loading verified client reviews...</p>
+          </div>`;
+        return;
+      }
       grid.innerHTML = `
         <div style="grid-column:1/-1;text-align:center;padding:56px 24px;background:rgba(255,255,255,0.03);border:1px dashed var(--border-color);border-radius:var(--radius-lg);margin-top:20px;">
           <div style="font-size:2.5rem;margin-bottom:16px">✍️</div>
@@ -170,6 +177,7 @@
       const clientRole = escapeHTML(r.clientRole || r.role || 'Client');
       const reviewText = escapeHTML(r.reviewText || r.text || '');
       const projName = escapeHTML(r.projectName || (window.VKREATE_DATA?.projects?.find(p => p.id === r.projectId)?.name) || '');
+      const initials = clientName.split(' ').map(n => n[0]).filter(Boolean).join('').slice(0, 2).toUpperCase() || 'VC';
       const responseHtml = r.studioResponse ? `
         <div class="review-card__response" style="margin-top:16px;padding:12px 16px;background:rgba(61,92,80,0.06);border-left:3px solid var(--green-mid);border-radius:6px;">
           <div style="font-weight:600;font-size:0.8125rem;color:var(--green-mid);margin-bottom:4px;display:flex;align-items:center;gap:6px;">
@@ -183,12 +191,15 @@
           <div class="review-card__stars">${renderStarsHTML(r.rating || 5)}</div>
           <span class="review-card__tag">${escapeHTML(r.industryLabel || r.industry || 'Verified')}</span>
         </div>
-        <blockquote class="review-card__text">"${reviewText}"</blockquote>
+        <blockquote class="review-card__quote review-card__text">"${reviewText}"</blockquote>
         ${responseHtml}
         <div class="review-card__footer" style="margin-top:16px;">
-          <div>
-            <div class="review-card__author-name">${clientName}</div>
-            <div class="review-card__author-role">${clientRole}${projName ? ' &middot; ' + projName : ''}</div>
+          <div class="review-card__author">
+            <div class="review-card__avatar">${initials}</div>
+            <div>
+              <div class="review-card__name review-card__author-name">${clientName}</div>
+              <div class="review-card__role review-card__author-role">${clientRole}${projName ? ' &middot; ' + projName : ''}</div>
+            </div>
           </div>
           <div class="review-card__verified" title="Verified VKREATE Client">✓ Verified</div>
         </div>

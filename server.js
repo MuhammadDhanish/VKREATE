@@ -753,7 +753,11 @@ app.get('/api/reviews/public', async (req, res) => {
 
   const deleted = new Set(data.deletedIds || []);
   const approvedMinimal = diskItems
-    .filter(r => r && r.id && !deleted.has(r.id) && r.status === 'approved')
+    .filter(r => {
+      if (!r || !r.id || deleted.has(r.id)) return false;
+      const status = (r.status || 'approved').toLowerCase().trim();
+      return status === 'approved';
+    })
     .map(r => ({
       id: r.id,
       clientName: r.clientName || r.author || 'Verified Client',
