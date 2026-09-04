@@ -59,15 +59,23 @@
 
   // Get all approved reviews from VKREATE_DATA or local offline snapshot
   function getApprovedReviews() {
+    let list = null;
     if (window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.reviews)) {
-      return window.VKREATE_DATA.reviews;
+      list = window.VKREATE_DATA.reviews;
     }
-    try {
-      const raw = localStorage.getItem('vk_reviews');
-      return raw ? (JSON.parse(raw) || []) : [];
-    } catch (e) {
-      return [];
+    if (!Array.isArray(list)) {
+      try {
+        const raw = localStorage.getItem('vk_reviews');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) list = parsed;
+          else if (parsed && Array.isArray(parsed.reviews)) list = parsed.reviews;
+        }
+      } catch (e) {}
     }
+    if (!Array.isArray(list)) list = [];
+    const deletedIds = getDeletedReviewIds();
+    return list.filter(r => r && r.id && !isDeletedReview(r, deletedIds));
   }
 
   // Populate projects dropdown in client submission modal

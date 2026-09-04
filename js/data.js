@@ -10,7 +10,7 @@ if (typeof window !== 'undefined' && window.location && window.location.hostname
 // ── 1. Storage Purge & Clean Initialization ──────────────────
 (function initCleanStorage() {
   try {
-    const PURGE_KEY = 'vk_purge_v2026_zero_state_v3';
+    const PURGE_KEY = 'vk_purge_v2026_zero_state_v4';
     if (localStorage.getItem('vk_purge_key') !== PURGE_KEY) {
       localStorage.removeItem('vk_reviews');
       localStorage.removeItem('vk_reviews_list');
