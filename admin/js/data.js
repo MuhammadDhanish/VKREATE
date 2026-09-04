@@ -10,11 +10,13 @@ if (typeof window !== 'undefined' && window.location && window.location.hostname
 // Force-purge stale mobile public cache & initialize clean zero-state
 (function purgeStaleMobileStorage() {
   try {
-    const PURGE_KEY = 'vk_purge_v2026_dynamic_fetch_v2';
+    const PURGE_KEY = 'vk_purge_v2026_zero_state_v3';
     if (localStorage.getItem('vk_purge_key') !== PURGE_KEY) {
       localStorage.removeItem('vk_reviews');
       localStorage.removeItem('vk_reviews_list');
       localStorage.removeItem('vk_projects_cache');
+      localStorage.removeItem('vk_admin_projects');
+      localStorage.removeItem('vk_admin_reviews');
       localStorage.setItem('vk_purge_key', PURGE_KEY);
     }
   } catch (e) {}
