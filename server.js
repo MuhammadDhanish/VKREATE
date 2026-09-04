@@ -13,6 +13,15 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
 const GH_REPO = process.env.GH_REPO || 'MuhammadDhanish/VKREATE';
 const GH_DATA_BRANCH = process.env.GH_DATA_BRANCH || 'data';
 
+// ── SSE Client Registry for real-time cross-device push ────────────
+const _sseClients = new Set();
+function notifyClients(type) {
+  const message = `data: ${type}\n\n`;
+  _sseClients.forEach((client) => {
+    try { client.write(message); } catch (e) { _sseClients.delete(client); }
+  });
+}
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -377,6 +386,30 @@ app.get('/api/inquiries/wipe-all', async (req, res) => {
   res.json({ success: true, message: 'All inquiries wiped clean from MongoDB Atlas Cloud & GitHub store.' });
 });
 
+// ── SSE Push Endpoint — real-time cross-device notifications ───────
+app.get('/api/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // Disable Nginx buffering
+  res.flushHeaders();
+
+  // Send initial heartbeat to confirm connection
+  res.write('data: connected\n\n');
+
+  _sseClients.add(res);
+
+  // Send heartbeat every 25s to keep connection alive through proxies
+  const heartbeat = setInterval(() => {
+    try { res.write(':heartbeat\n\n'); } catch (e) {}
+  }, 25000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    _sseClients.delete(res);
+  });
+});
+
 app.get('/api/projects', async (req, res) => {
   const data = await ghRead('js/admin-projects.json');
   const diskItems = data.items || [];
@@ -420,6 +453,7 @@ app.post('/api/projects', requireAuth, async (req, res) => {
   if (db) {
     try {
       const doc = await ProjectModel.findOneAndUpdate({ id: item.id }, item, { upsert: true, new: true, lean: true });
+      notifyClients('projects-updated');
       return res.json({ success: true, project: doc });
     } catch (e) {
       console.warn('MongoDB project save warning:', e.message);
@@ -439,6 +473,7 @@ app.post('/api/projects', requireAuth, async (req, res) => {
   if (!result.success) {
     return res.status(500).json({ success: false, error: result.error });
   }
+  notifyClients('projects-updated');
   res.json({ success: true, project: item });
 });
 
@@ -450,6 +485,7 @@ app.put('/api/projects/:id', requireAuth, async (req, res) => {
   if (db) {
     try {
       const doc = await ProjectModel.findOneAndUpdate({ id }, { ...updates, id, status: 'active' }, { upsert: true, new: true, lean: true });
+      notifyClients('projects-updated');
       return res.json({ success: true, project: doc });
     } catch (e) {
       console.warn('MongoDB project update warning:', e.message);
@@ -475,6 +511,7 @@ app.put('/api/projects/:id', requireAuth, async (req, res) => {
   if (!result.success) {
     return res.status(500).json({ success: false, error: result.error });
   }
+  notifyClients('projects-updated');
   res.json({ success: true, project: updatedItem });
 });
 
@@ -504,6 +541,7 @@ app.delete('/api/projects/:id', requireAuth, async (req, res) => {
   if (!result.success && !db) {
     return res.status(500).json({ success: false, error: result.error });
   }
+  notifyClients('projects-updated');
   res.json({ success: true, id });
 });
 
@@ -674,6 +712,7 @@ app.post('/api/reviews', async (req, res) => {
   if (!result.success && !db) {
     return res.status(500).json({ success: false, error: result.error });
   }
+  notifyClients('reviews-updated');
   res.status(200).json({ success: true, review: newReview });
 });
 
@@ -689,6 +728,7 @@ const updateReviewHandler = async (req, res) => {
   if (db) {
     try {
       const doc = await ReviewModel.findOneAndUpdate({ id }, { ...updates, id }, { upsert: true, new: true, lean: true });
+      notifyClients('reviews-updated');
       return res.json({ success: true, review: doc });
     } catch (e) {
       console.warn('MongoDB review update warning:', e.message);
@@ -725,6 +765,7 @@ const updateReviewHandler = async (req, res) => {
   if (!result.success) {
     return res.status(500).json({ success: false, error: result.error });
   }
+  notifyClients('reviews-updated');
   res.json({ success: true, review: updatedItem });
 };
 
@@ -757,6 +798,7 @@ app.delete('/api/reviews/:id', requireAuth, async (req, res) => {
   if (!result.success && !db) {
     return res.status(500).json({ success: false, error: result.error });
   }
+  notifyClients('reviews-updated');
   res.json({ success: true, id });
 });
 

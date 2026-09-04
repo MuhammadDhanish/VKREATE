@@ -86,12 +86,6 @@ const DB = {
     if (!this._get(this.KEYS.inquiries)) {
       this._set(this.KEYS.inquiries, []);
     }
-  },
-          respondedAt: '2025-07-05T09:00:00Z',
-        },
-      ].filter(i => i && i.id && !deletedInquiries.has(i.id));
-      this._set(this.KEYS.inquiries, defaultInquiries);
-    }
     if (!this._get(this.KEYS.settings)) {
       this._set(this.KEYS.settings, {
         studio: {
@@ -845,6 +839,14 @@ const DB = {
       if (projectsUpdated) window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
       if (inquiriesUpdated) window.dispatchEvent(new CustomEvent('vkreate:inquiries-updated'));
       if (settingsUpdated) window.dispatchEvent(new CustomEvent('vkreate:settings-updated'));
+    } else {
+      // Bug 4 Fix: Even in silent mode (background poll), still dispatch events when
+      // data has actually changed — this triggers _scheduleSyncRefresh in the admin UI
+      // so changes from other devices are reflected in the current admin view.
+      if (reviewsUpdated) window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+      if (projectsUpdated) window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
+      if (inquiriesUpdated) window.dispatchEvent(new CustomEvent('vkreate:inquiries-updated'));
+      if (settingsUpdated) window.dispatchEvent(new CustomEvent('vkreate:settings-updated'));
     }
   },
 };
@@ -903,4 +905,36 @@ DB.seed();
       }
     }
   }, 4000);
+
+  // Bug 5 Fix: SSE Push Listener for near-instant cross-device sync in admin panel
+  // When another admin device makes changes, the server pushes an event here
+  // so we immediately fetch fresh data instead of waiting for next poll cycle.
+  try {
+    const sseBase = (function() {
+      if (typeof window !== 'undefined' && window.location) {
+        const h = window.location.hostname;
+        const p = window.location.port;
+        const proto = window.location.protocol || 'http:';
+        if (p !== '3000' && p !== '' && p !== '80' && p !== '443') {
+          return `${proto}//${h}:3000`;
+        }
+      }
+      return '';
+    })();
+
+    const adminEvtSource = new EventSource((sseBase || '') + '/api/events');
+    adminEvtSource.onmessage = async (e) => {
+      const data = (e.data || '').trim();
+      if (data === 'projects-updated' || data === 'reviews-updated' || data === 'all-updated') {
+        await DB.loadRemoteData(true);
+        if (typeof App !== 'undefined' && App.updateSidebar) App.updateSidebar();
+      }
+    };
+    adminEvtSource.onerror = () => {
+      adminEvtSource.close();
+      // polling fallback is already active
+    };
+  } catch (e) {
+    // SSE not supported — polling fallback handles sync
+  }
 })();
