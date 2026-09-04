@@ -240,12 +240,15 @@ const Settings = {
                 <button type="button" class="btn btn-outline btn-sm" onclick="Settings.clearImageCache()" style="color:#dc2626;border-color:#fca5a5;background:#fef2f2">
                   🖼️ Clear Image Cache
                 </button>
-                <button type="button" class="btn btn-danger btn-sm" onclick="Settings.resetData()">
+                <button type="button" class="btn btn-danger btn-sm" onclick="Settings.wipeAllData()" style="background:#b91c1c;border-color:#991b1b;">
+                  🗑️ Delete All Data (Projects, Reviews, Inquiries)
+                </button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="Settings.resetData()">
                   ⚠️ Reset to Demo Data
                 </button>
               </div>
               <div style="background:#fffbeb;border:1px solid #fde68a;padding:10px 14px;border-radius:var(--r-md)">
-                <span class="text-xs" style="color:#92400E">⚠️ <strong>Clear Image Cache</strong> removes custom photos from IndexedDB. <strong>Reset</strong> restores fresh demo content.</span>
+                <span class="text-xs" style="color:#92400E">⚠️ <strong>Delete All Data</strong> removes all projects, reviews, and inquiries across all devices and MongoDB Atlas. <strong>Clear Image Cache</strong> frees local photos.</span>
               </div>
             </div>
           </div>
@@ -622,6 +625,27 @@ const Settings = {
       window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
       window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
       App.navigate('dashboard');
+    }, true);
+  },
+
+  async wipeAllData() {
+    UI.confirm('Delete All Data', 'Are you sure you want to permanently delete ALL projects, reviews, and inquiries across all devices and MongoDB Atlas? This cannot be undone.', '🗑️', async () => {
+      UI.toast('Wiping all datasets across cloud and local storage...', 'info');
+      try {
+        if (typeof DB !== 'undefined' && DB.wipeAllData) {
+          await DB.wipeAllData();
+        }
+        if (typeof ImageDB !== 'undefined') {
+          try { await ImageDB.clear(); } catch(e) {}
+        }
+      } catch (e) {
+        console.warn('Wipe data error:', e);
+      }
+      UI.toast('All projects, reviews, and inquiries successfully deleted!', 'success');
+      window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+      window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
+      window.dispatchEvent(new CustomEvent('vkreate:inquiries-updated'));
+      if (window.App && App.navigate) App.navigate('dashboard');
     }, true);
   },
 

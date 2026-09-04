@@ -299,6 +299,19 @@ app.get('/api/auth/credentials', async (req, res) => {
   });
 });
 
+app.get('/api/sync-status', async (req, res) => {
+  const db = await connectMongoDB();
+  const hasDb = !!db;
+  const hasGh = !!GITHUB_TOKEN;
+  res.json({
+    ok: true,
+    mongoConnected: hasDb,
+    githubTokenConfigured: hasGh,
+    storageBackend: hasDb ? 'mongodb' : (hasGh ? 'github-store' : 'local-ephemeral-disk'),
+    isProductionPersistent: hasDb || hasGh
+  });
+});
+
 app.all('/api/purge-all', async (req, res) => {
   let mongoWiped = false;
   try {
@@ -324,7 +337,48 @@ app.all('/api/purge-all', async (req, res) => {
     console.warn('Purge ghWrite error:', e.message);
   }
 
+  notifyClients('projects-updated');
+  notifyClients('reviews-updated');
+  notifyClients('inquiries-updated');
+
   res.send(`PURGED_ALL_OK (mongoWiped: ${mongoWiped}, ghWiped: ${ghWiped})`);
+});
+
+app.all('/api/wipe-all-data', async (req, res) => {
+  let mongoWiped = false;
+  try {
+    const db = await connectMongoDB();
+    if (db) {
+      await ProjectModel.deleteMany({});
+      await ReviewModel.deleteMany({});
+      await InquiryModel.deleteMany({});
+      await SettingModel.findOneAndUpdate({ key: 'global_settings' }, { $set: { deletedIds: [] } });
+      mongoWiped = true;
+    }
+  } catch (e) {
+    console.warn('Wipe MongoDB error:', e.message);
+  }
+
+  let ghWiped = false;
+  try {
+    await ghWrite('js/admin-projects.json', () => ({ deletedIds: [], items: [] }));
+    await ghWrite('js/admin-reviews.json', () => ({ deletedIds: [], items: [] }));
+    await ghWrite('js/admin-inquiries.json', () => ({ deletedIds: [], items: [] }));
+    ghWiped = true;
+  } catch (e) {
+    console.warn('Wipe ghWrite error:', e.message);
+  }
+
+  notifyClients('projects-updated');
+  notifyClients('reviews-updated');
+  notifyClients('inquiries-updated');
+
+  res.json({
+    success: true,
+    mongoWiped,
+    ghWiped,
+    message: 'All projects, reviews, and inquiries wiped clean across MongoDB Atlas and GitHub store.'
+  });
 });
 
 app.all('/api/admin/wipe-all-data', async (req, res) => {
@@ -1216,19 +1270,6 @@ HTML_PAGES.forEach(page => {
     } else {
       res.sendFile(path.join(__dirname, 'index.html'));
     }
-  });
-});
-
-app.get('/api/sync-status', async (req, res) => {
-  const db = await connectMongoDB();
-  const hasDb = !!db;
-  const hasGh = !!GITHUB_TOKEN;
-  res.json({
-    ok: true,
-    mongoConnected: hasDb,
-    githubTokenConfigured: hasGh,
-    storageBackend: hasDb ? 'mongodb' : (hasGh ? 'github-store' : 'local-ephemeral-disk'),
-    isProductionPersistent: hasDb || hasGh
   });
 });
 

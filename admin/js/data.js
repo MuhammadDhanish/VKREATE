@@ -560,6 +560,38 @@ const DB = {
     },
   },
 
+  // ── Wipe All Data ─────────────────────────────────────────
+  async wipeAllData() {
+    const baseUrl = getApiBaseUrl() || '';
+    try {
+      await fetch(baseUrl + '/api/wipe-all-data', { method: 'POST', headers: getAuthHeaders(), credentials: 'include' }).catch(() => {});
+      await fetch(baseUrl + '/api/purge-all', { method: 'POST', headers: getAuthHeaders(), credentials: 'include' }).catch(() => {});
+      await fetch(baseUrl + '/api/projects/wipe-all').catch(() => {});
+      await fetch(baseUrl + '/api/reviews/wipe-all').catch(() => {});
+      await fetch(baseUrl + '/api/inquiries/wipe-all').catch(() => {});
+    } catch (e) {
+      console.warn('Backend wipe error:', e.message);
+    }
+
+    DB._set(DB.KEYS.projects, []);
+    DB._set(DB.KEYS.reviews, []);
+    DB._set(DB.KEYS.inquiries, []);
+    DB._set('vk_admin_deleted_projects', []);
+    DB._set('vk_admin_deleted_reviews', []);
+    DB._set('vk_admin_deleted_inquiries', []);
+    localStorage.removeItem('vk_reviews_list');
+    localStorage.removeItem('vk_projects_cache');
+
+    DB._broadcast('projects-updated', []);
+    DB._broadcast('reviews-updated', []);
+    DB._broadcast('inquiries-updated', []);
+
+    window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
+    window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
+    window.dispatchEvent(new CustomEvent('vkreate:inquiries-updated'));
+    return true;
+  },
+
   // ── Settings ─────────────────────────────────────────────
   settings: {
     get() { return DB._get(DB.KEYS.settings) || {}; },
