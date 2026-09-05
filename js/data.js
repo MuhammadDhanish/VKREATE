@@ -23,9 +23,26 @@ if (typeof window !== 'undefined' && window.location && window.location.hostname
 })();
 
 // ── 2. Primary VKREATE Data Store ────────────────────────────
+// Pre-load cached data synchronously so the portfolio renders instantly
+// without waiting for the async API fetch (which may take 200-800ms).
+(function preloadCache() {
+  try {
+    const cachedProjects = JSON.parse(localStorage.getItem('vk_projects_cache') || '[]');
+    if (Array.isArray(cachedProjects) && cachedProjects.length > 0) {
+      window._VK_CACHE_PROJECTS = cachedProjects;
+    }
+  } catch (e) {}
+  try {
+    const cachedReviews = JSON.parse(localStorage.getItem('vk_reviews') || '[]');
+    if (Array.isArray(cachedReviews) && cachedReviews.length > 0) {
+      window._VK_CACHE_REVIEWS = cachedReviews;
+    }
+  } catch (e) {}
+})();
+
 window.VKREATE_DATA = {
-  projects: [],
-  reviews: [],
+  projects: window._VK_CACHE_PROJECTS || [],
+  reviews:  window._VK_CACHE_REVIEWS  || [],
 
   services: [
     {

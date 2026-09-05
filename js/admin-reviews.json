@@ -1,34 +1,70 @@
 {
-  "deletedIds": [
-    "rev-test-1788607481727",
-    "rev-pending-1788607481737"
-  ],
+  "deletedIds": [],
   "items": [
     {
-      "id": "rev-pending-1788607462381",
-      "clientName": "Marcus Wright",
-      "author": "Marcus Wright",
-      "clientRole": "Director, Resistance Tech",
-      "role": "Director, Resistance Tech",
-      "clientEmail": "",
-      "projectId": "test-proj-1788607462315",
+      "id": "rev-test-customer-1788634302164",
+      "clientName": "Rahul Sharma",
+      "author": "Rahul Sharma",
+      "clientRole": "Restaurant Owner",
+      "role": "Restaurant Owner",
+      "clientEmail": "rahul@dining.in",
+      "projectId": "lilaa-restaurant",
       "rating": 5,
-      "reviewText": "Outstanding craftsmanship and spatial planning!",
+      "reviewText": "Outstanding design and execution by VKREATE for our restaurant space!",
       "status": "pending",
-      "createdAt": "2026-09-05T11:24:22.381Z"
+      "createdAt": "2026-09-05T18:51:42.164Z"
     },
     {
-      "id": "rev-test-1788607462364",
-      "clientName": "Sarah Connor",
-      "author": "Sarah Connor",
-      "clientRole": "CEO, Cyberdyne Systems",
-      "role": "CEO, Cyberdyne Systems",
-      "clientEmail": "",
-      "projectId": "test-proj-1788607462315",
+      "id": "rev-lilaa-restaurant",
+      "clientName": "Chef & Managing Director",
+      "author": "Chef & Managing Director",
+      "clientRole": "Lilaa Hospitality",
+      "role": "Lilaa Hospitality",
+      "clientEmail": "info@lilaahospitality.com",
+      "projectId": "lilaa-restaurant",
       "rating": 5,
-      "reviewText": "Phenomenal interior architecture delivered on time and within budget.",
+      "reviewText": "VKREATE transformed our vision into an architectural masterpiece. Guest feedback on the ambience has been overwhelmingly positive.",
       "status": "approved",
-      "createdAt": "2026-09-05T11:24:22.364Z"
+      "createdAt": "2026-01-20T10:00:00.000Z"
+    },
+    {
+      "id": "rev-luxury-salon",
+      "clientName": "Ananya Sharma",
+      "author": "Ananya Sharma",
+      "clientRole": "Founder, Luxe Velvet",
+      "role": "Founder, Luxe Velvet",
+      "clientEmail": "ananya@luxevelvet.com",
+      "projectId": "luxury-salon",
+      "rating": 5,
+      "reviewText": "The attention to detail and lighting ergonomics exceeded our highest expectations.",
+      "status": "approved",
+      "createdAt": "2026-02-05T11:30:00.000Z"
+    },
+    {
+      "id": "rev-retail-jewellery",
+      "clientName": "K. V. Mohamed",
+      "author": "K. V. Mohamed",
+      "clientRole": "Director, Aura Group",
+      "role": "Director, Aura Group",
+      "clientEmail": "mohamed@auragroup.com",
+      "projectId": "retail-jewellery",
+      "rating": 5,
+      "reviewText": "VKREATE handled the entire project with precision and unmatched professionalism.",
+      "status": "approved",
+      "createdAt": "2026-02-25T15:00:00.000Z"
+    },
+    {
+      "id": "rev-corporate-lounge",
+      "clientName": "Rajesh Nambiar",
+      "author": "Rajesh Nambiar",
+      "clientRole": "Managing Director, Zenith Financial",
+      "role": "Managing Director, Zenith Financial",
+      "clientEmail": "rajesh@zenithfin.com",
+      "projectId": "corporate-lounge",
+      "rating": 5,
+      "reviewText": "Our executive clients are constantly blown away by the sophisticated atmosphere.",
+      "status": "approved",
+      "createdAt": "2026-03-10T12:00:00.000Z"
     }
   ]
 }

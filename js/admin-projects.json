@@ -1,8 +1,121 @@
 {
   "deletedIds": [
-    "proj_test_1788554269960",
-    "verify-proj-1788607450495",
-    "test-proj-1788607481703"
+    "verify-proj-1788634299915"
   ],
-  "items": []
+  "items": [
+    {
+      "id": "lilaa-restaurant",
+      "name": "Lilaa Restaurant & Fine Dining",
+      "industry": "hospitality",
+      "industryLabel": "Restaurants & Hospitality",
+      "location": "Thondayad, Kozhikode",
+      "area": "3,200 sq ft",
+      "budgetRange": "₹45L – ₹55L",
+      "duration": "4.5 months",
+      "status": "published",
+      "rank": 1,
+      "thumbnail": "../assets/images/project_lilaa_1.jpg",
+      "images": [
+        "../assets/images/project_lilaa_1.jpg",
+        "../assets/images/project_lilaa_2.jpg",
+        "../assets/images/project_lilaa_3.jpg"
+      ],
+      "beforeImage": "../assets/images/project_lilaa_2.jpg",
+      "afterImage": "../assets/images/project_lilaa_1.jpg",
+      "challenge": "Transforming a traditional multi-tier dining space into an ambient luxury dining environment with dynamic acoustic dampening.",
+      "solution": "Integrated warm architectural lighting, bespoke walnut timber louvers, micro-cement flooring, and custom acoustic ceiling panels.",
+      "result": "35% increase in evening guest dwell-time and elevated brand status as Kozhikode's premier interior dining destination.",
+      "testimonial": {
+        "author": "Chef & Managing Director",
+        "role": "Lilaa Hospitality",
+        "text": "VKREATE transformed our vision into an architectural masterpiece. Guest feedback on the ambience has been overwhelmingly positive.",
+        "rating": 5
+      },
+      "createdAt": "2026-01-15T08:00:00.000Z"
+    },
+    {
+      "id": "luxury-salon",
+      "name": "Luxe Velvet Salon & Spa",
+      "industry": "commercial",
+      "industryLabel": "Luxury Retail & Wellness",
+      "location": "Kochi, Kerala",
+      "area": "2,400 sq ft",
+      "budgetRange": "₹35L – ₹42L",
+      "duration": "3 months",
+      "status": "published",
+      "rank": 2,
+      "thumbnail": "assets/images/project_luxury.png",
+      "images": [
+        "assets/images/project_luxury.png"
+      ],
+      "beforeImage": "assets/images/project_luxury.png",
+      "afterImage": "assets/images/project_luxury.png",
+      "challenge": "Designing a seamless flow between high-energy hair styling stations and tranquil VIP spa treatment suites.",
+      "solution": "Curved ambient gold partitions, concealed dimmable LED coves, and acoustic plush velvet drapes.",
+      "result": "Nominated for regional commercial interior design excellence in 2026.",
+      "testimonial": {
+        "author": "Ananya Sharma",
+        "role": "Founder, Luxe Velvet",
+        "text": "The attention to detail and lighting ergonomics exceeded our highest expectations.",
+        "rating": 5
+      },
+      "createdAt": "2026-02-01T10:30:00.000Z"
+    },
+    {
+      "id": "retail-jewellery",
+      "name": "Aura Diamond & Gold Studio",
+      "industry": "retail",
+      "industryLabel": "High-End Retail Store",
+      "location": "Calicut, Kerala",
+      "area": "4,100 sq ft",
+      "budgetRange": "₹65L – ₹75L",
+      "duration": "5 months",
+      "status": "published",
+      "rank": 3,
+      "thumbnail": "assets/images/project_luxury.png",
+      "images": [
+        "assets/images/project_luxury.png"
+      ],
+      "beforeImage": "assets/images/project_luxury.png",
+      "afterImage": "assets/images/project_luxury.png",
+      "challenge": "Ensuring high-security vault integration while delivering ultra-luxurious customer presentation suites.",
+      "solution": "Smart glass privacy screens, high-CRI bullet spotlights (98+ CRI), and anti-reflective display cases.",
+      "result": "28% growth in premium diamond sales within the first quarter post-opening.",
+      "testimonial": {
+        "author": "K. V. Mohamed",
+        "role": "Director, Aura Group",
+        "text": "VKREATE handled the entire project with precision and unmatched professionalism.",
+        "rating": 5
+      },
+      "createdAt": "2026-02-20T14:00:00.000Z"
+    },
+    {
+      "id": "corporate-lounge",
+      "name": "Zenith Financial Corporate Lounge",
+      "industry": "corporate",
+      "industryLabel": "Corporate Office & Executive Lounge",
+      "location": "Trivandrum, Kerala",
+      "area": "5,800 sq ft",
+      "budgetRange": "₹80L – ₹95L",
+      "duration": "6 months",
+      "status": "published",
+      "rank": 4,
+      "thumbnail": "assets/images/project_luxury.png",
+      "images": [
+        "assets/images/project_luxury.png"
+      ],
+      "beforeImage": "assets/images/project_luxury.png",
+      "afterImage": "assets/images/project_luxury.png",
+      "challenge": "Balancing executive board conference requirements with flexible, biophilic breakout spaces.",
+      "solution": "Living green moss walls, integrated smart AV tech, and Italian leather executive seating.",
+      "result": "Achieved platinum workplace wellness design standards.",
+      "testimonial": {
+        "author": "Rajesh Nambiar",
+        "role": "Managing Director, Zenith Financial",
+        "text": "Our executive clients are constantly blown away by the sophisticated atmosphere.",
+        "rating": 5
+      },
+      "createdAt": "2026-03-05T09:15:00.000Z"
+    }
+  ]
 }

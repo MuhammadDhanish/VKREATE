@@ -122,7 +122,7 @@ async function runTests() {
 
     // 5. Verify GET /api/projects returns updated document
     console.log('\n5. Testing GET /api/projects (Admin API persistence)...');
-    const getRes = await request('GET', '/api/projects');
+    const getRes = await request('GET', '/api/projects', null, authHeaders);
     const items = Array.isArray(getRes.body) ? getRes.body : (getRes.body?.items || []);
     const foundProj = items.find(p => p.id === testProjectId);
     assert(!!foundProj, 'Project found in GET /api/projects list');

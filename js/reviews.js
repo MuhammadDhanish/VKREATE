@@ -72,6 +72,39 @@
       } catch (e) {}
     }
     if (!Array.isArray(list)) list = [];
+    // Copy array so we don't mutate underlying array
+    list = [...list];
+
+    // Synthesize project testimonials into approved reviews if not already present
+    if (window.VKREATE_DATA && Array.isArray(window.VKREATE_DATA.projects)) {
+      const existingRevIds = new Set(list.map(r => String(r.id)));
+      const existingProjRevIds = new Set(list.filter(r => r && r.projectId).map(r => String(r.projectId)));
+
+      window.VKREATE_DATA.projects.forEach(p => {
+        if (p && p.testimonial && p.testimonial.text && (p.testimonial.author || p.testimonial.name || p.client)) {
+          const synId = 'rev-' + p.id;
+          const authorName = p.testimonial.author || p.testimonial.name || p.client || 'Verified Client';
+          if (!existingRevIds.has(synId) && !existingProjRevIds.has(String(p.id))) {
+            list.push({
+              id: synId,
+              clientName: authorName,
+              author: authorName,
+              clientRole: p.testimonial.role || 'Client',
+              role: p.testimonial.role || 'Client',
+              projectId: p.id,
+              industry: p.industry || '',
+              industryLabel: p.industryLabel || '',
+              rating: parseInt(p.testimonial.rating || 5, 10),
+              reviewText: p.testimonial.text,
+              status: 'approved',
+              createdAt: p.createdAt || new Date().toISOString()
+            });
+            existingRevIds.add(synId);
+          }
+        }
+      });
+    }
+
     const deletedIds = getDeletedReviewIds();
     return list.filter(r => r && r.id && !isDeletedReview(r, deletedIds));
   }

@@ -608,6 +608,21 @@ const Projects = {
   /* ── Save with automatic retry without images ───────────── */
   async _saveProject(data) {
     const isEdit = !!this._editId;
+    if (data.testimonial && data.testimonial.text && data.testimonial.author && typeof DB !== 'undefined' && DB.reviews) {
+      const revId = 'rev-' + (data.id || Date.now());
+      DB.reviews.add({
+        id: revId,
+        clientName: data.testimonial.author,
+        author: data.testimonial.author,
+        clientRole: data.testimonial.role || 'Client',
+        role: data.testimonial.role || 'Client',
+        projectId: data.id,
+        rating: parseInt(data.testimonial.rating || 5, 10),
+        reviewText: data.testimonial.text,
+        status: 'approved',
+        createdAt: data.createdAt || new Date().toISOString()
+      }).catch(() => {});
+    }
     if (isEdit) {
       const result = await DB.projects.update(this._editId, data);
       if (result) { UI.toast('Project updated successfully!', 'success'); return true; }
