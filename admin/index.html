@@ -36,8 +36,9 @@ const UI = {
   },
 
   // ── Toast notifications ───────────────────────────────────
-  toast(message, type = 'info') {
+  toast(message, type = 'info', duration = 3500) {
     const tc = document.getElementById('toast-container');
+    if (!tc) return;
     const el = document.createElement('div');
     el.className = `toast ${type}`;
     const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
@@ -46,7 +47,7 @@ const UI = {
     setTimeout(() => {
       el.classList.add('out');
       setTimeout(() => el.remove(), 300);
-    }, 3500);
+    }, duration);
   },
 
   // ── Confirmation modal ────────────────────────────────────
@@ -215,6 +216,7 @@ function settingsIcon()   { return `<svg class="nav-item__icon" viewBox="0 0 24 
 
 const App = {
   _current: 'dashboard',
+  _initialized: false,
 
   async init() {
     DB.seed();
@@ -249,7 +251,10 @@ const App = {
           </div>`;
       }
     }
-    window.addEventListener('hashchange', () => this.navigate(location.hash.slice(1)));
+    if (!this._initialized) {
+      this._initialized = true;
+      window.addEventListener('hashchange', () => this.navigate(location.hash.slice(1)));
+    }
   },
 
   _renderShell() {

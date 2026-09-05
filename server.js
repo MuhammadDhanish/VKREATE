@@ -242,7 +242,7 @@ async function syncCredentials(email, password) {
     try {
       await SettingModel.findOneAndUpdate(
         { key: 'global_settings' },
-        { 'credentials.email': email, 'credentials.passwordHash': password },
+        { $set: { 'credentials.email': email, 'credentials.passwordHash': password } },
         { upsert: true }
       );
     } catch (e) {
@@ -293,7 +293,7 @@ app.post('/api/logout', (req, res) => {
   res.json({ success: true });
 });
 
-app.get('/api/auth/credentials', async (req, res) => {
+app.get('/api/auth/credentials', requireAuth, async (req, res) => {
   await loadCredentials();
   res.json({
     email: SERVER_ADMIN_EMAIL,
@@ -341,39 +341,7 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
-app.all('/api/purge-all', async (req, res) => {
-  let mongoWiped = false;
-  try {
-    const db = await connectMongoDB();
-    if (db) {
-      await ProjectModel.deleteMany({});
-      await ReviewModel.deleteMany({});
-      await InquiryModel.deleteMany({});
-      await SettingModel.findOneAndUpdate({ key: 'global_settings' }, { $set: { deletedIds: [] } });
-      mongoWiped = true;
-    }
-  } catch (e) {
-    console.warn('Purge MongoDB error:', e.message);
-  }
-
-  let ghWiped = false;
-  try {
-    await ghWrite('js/admin-projects.json', () => ({ deletedIds: [], items: [] }));
-    await ghWrite('js/admin-reviews.json', () => ({ deletedIds: [], items: [] }));
-    await ghWrite('js/admin-inquiries.json', () => ({ deletedIds: [], items: [] }));
-    ghWiped = true;
-  } catch (e) {
-    console.warn('Purge ghWrite error:', e.message);
-  }
-
-  notifyClients('projects-updated');
-  notifyClients('reviews-updated');
-  notifyClients('inquiries-updated');
-
-  res.send(`PURGED_ALL_OK (mongoWiped: ${mongoWiped}, ghWiped: ${ghWiped})`);
-});
-
-app.all('/api/wipe-all-data', async (req, res) => {
+const executeWipeAll = async (req, res) => {
   let mongoWiped = false;
   try {
     const db = await connectMongoDB();
@@ -408,46 +376,22 @@ app.all('/api/wipe-all-data', async (req, res) => {
     ghWiped,
     message: 'All projects, reviews, and inquiries wiped clean across MongoDB Atlas and GitHub store.'
   });
-});
+};
 
-app.all('/api/admin/wipe-all-data', async (req, res) => {
+app.post('/api/purge-all', requireAuth, executeWipeAll);
+app.delete('/api/purge-all', requireAuth, executeWipeAll);
+app.post('/api/wipe-all-data', requireAuth, executeWipeAll);
+app.delete('/api/wipe-all-data', requireAuth, executeWipeAll);
+
+app.post('/api/admin/wipe-all-data', requireAuth, async (req, res) => {
   const secret = req.query.secret || (req.body && req.body.secret);
   if (secret !== 'wipe_vkreate_2026') {
     return res.status(403).json({ success: false, error: 'Unauthorized wipe request' });
   }
-
-  let mongoWiped = false;
-  try {
-    const db = await connectMongoDB();
-    if (db) {
-      await ProjectModel.deleteMany({});
-      await ReviewModel.deleteMany({});
-      await InquiryModel.deleteMany({});
-      mongoWiped = true;
-    }
-  } catch (e) {
-    console.warn('Wipe MongoDB warning:', e.message);
-  }
-
-  let ghWiped = false;
-  try {
-    await ghWrite('js/admin-projects.json', () => ({ deletedIds: [], items: [] }));
-    await ghWrite('js/admin-reviews.json', () => ({ deletedIds: [], items: [] }));
-    await ghWrite('js/admin-inquiries.json', () => ({ deletedIds: [], items: [] }));
-    ghWiped = true;
-  } catch (e) {
-    console.warn('Wipe ghWrite warning:', e.message);
-  }
-
-  res.json({
-    success: true,
-    mongoWiped,
-    ghWiped,
-    message: 'All project, review, and inquiry datasets wiped clean across MongoDB Atlas and GitHub store.'
-  });
+  return executeWipeAll(req, res);
 });
 
-app.get('/api/projects/wipe-all', async (req, res) => {
+app.post('/api/projects/wipe-all', requireAuth, async (req, res) => {
   try {
     const db = await connectMongoDB();
     if (db) {
@@ -460,7 +404,7 @@ app.get('/api/projects/wipe-all', async (req, res) => {
   res.json({ success: true, message: 'All projects wiped clean from MongoDB Atlas Cloud & GitHub store.' });
 });
 
-app.get('/api/reviews/wipe-all', async (req, res) => {
+app.post('/api/reviews/wipe-all', requireAuth, async (req, res) => {
   try {
     const db = await connectMongoDB();
     if (db) {
@@ -473,7 +417,7 @@ app.get('/api/reviews/wipe-all', async (req, res) => {
   res.json({ success: true, message: 'All reviews wiped clean from MongoDB Atlas Cloud & GitHub store.' });
 });
 
-app.get('/api/inquiries/wipe-all', async (req, res) => {
+app.post('/api/inquiries/wipe-all', requireAuth, async (req, res) => {
   try {
     const db = await connectMongoDB();
     if (db) {
@@ -862,7 +806,7 @@ app.post('/api/reviews', async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
-      const doc = await ReviewModel.findOneAndUpdate({ id: newReview.id }, newReview, { upsert: true, new: true, lean: true });
+      const doc = await ReviewModel.findOneAndUpdate({ id: newReview.id }, { $set: newReview }, { upsert: true, new: true, lean: true });
       ghWrite('js/admin-reviews.json', (diskDoc) => {
         const items = diskDoc.items || [];
         const idx = items.findIndex(r => r && r.id === newReview.id);
@@ -872,6 +816,7 @@ app.post('/api/reviews', async (req, res) => {
         diskDoc.deletedIds = (diskDoc.deletedIds || []).filter(dId => dId !== newReview.id);
         return diskDoc;
       }).catch(() => {});
+      notifyClients('reviews-updated');
       return res.status(200).json({ success: true, review: doc });
     } catch (e) {
       console.warn('MongoDB review submit warning:', e.message);
@@ -908,7 +853,7 @@ const updateReviewHandler = async (req, res) => {
   if (db) {
     try {
       console.log(`[MongoDB] Updating review id=${id} status=${updates.status || '(unchanged)'}`);
-      mongoDoc = await ReviewModel.findOneAndUpdate({ id }, { ...updates, id }, { upsert: true, new: true, lean: true });
+      mongoDoc = await ReviewModel.findOneAndUpdate({ id }, { $set: { ...updates, id } }, { upsert: true, new: true, lean: true });
       console.log(`[MongoDB] Review updated successfully id=${id}`);
     } catch (e) {
       console.error(`[MongoDB] Review update FAILED id=${id}:`, e.message);
@@ -1020,8 +965,18 @@ app.post('/api/inquiries', async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
-      const doc = await InquiryModel.create(inquiry);
-      return res.json({ success: true, inquiry: doc.toObject() });
+      const doc = await InquiryModel.findOneAndUpdate({ id: inquiry.id }, { $set: inquiry }, { upsert: true, new: true, lean: true });
+      ghWrite('js/admin-inquiries.json', (diskDoc) => {
+        const items = diskDoc.items || [];
+        const idx = items.findIndex(i => i && i.id === inquiry.id);
+        if (idx >= 0) items[idx] = { ...items[idx], ...inquiry };
+        else items.unshift(inquiry);
+        diskDoc.items = items;
+        diskDoc.deletedIds = (diskDoc.deletedIds || []).filter(id => id !== inquiry.id);
+        return diskDoc;
+      }).catch(() => {});
+      notifyClients('inquiries-updated');
+      return res.json({ success: true, inquiry: sanitizeMongoDoc(doc) });
     } catch (e) {
       console.warn('MongoDB inquiry create warning:', e.message);
     }
@@ -1040,6 +995,7 @@ app.post('/api/inquiries', async (req, res) => {
   if (!result.success) {
     return res.status(500).json({ success: false, error: result.error });
   }
+  notifyClients('inquiries-updated');
   res.json({ success: true, inquiry });
 });
 
@@ -1050,7 +1006,8 @@ app.put('/api/inquiries/:id', requireAuth, async (req, res) => {
   const db = await connectMongoDB();
   if (db) {
     try {
-      const doc = await InquiryModel.findOneAndUpdate({ id }, { ...updates, id }, { upsert: true, new: true, lean: true });
+      const doc = await InquiryModel.findOneAndUpdate({ id }, { $set: { ...updates, id } }, { upsert: true, new: true, lean: true });
+      notifyClients('inquiries-updated');
       return res.json({ success: true, inquiry: doc });
     } catch (e) {
       console.warn('MongoDB inquiry update warning:', e.message);
@@ -1076,6 +1033,7 @@ app.put('/api/inquiries/:id', requireAuth, async (req, res) => {
   if (!result.success) {
     return res.status(500).json({ success: false, error: result.error });
   }
+  notifyClients('inquiries-updated');
   res.json({ success: true, inquiry: updatedInq });
 });
 
@@ -1171,7 +1129,7 @@ app.put('/api/settings', requireAuth, async (req, res) => {
       const newNotif = { ...DEFAULT_SETTINGS.notifications, ...(currentDoc.notifications || {}), ...(updates.notifications || {}) };
       mongoUpdatedDoc = await SettingModel.findOneAndUpdate(
         { key: 'global_settings' },
-        { studio: newStudio, notifications: newNotif },
+        { $set: { studio: newStudio, notifications: newNotif } },
         { upsert: true, new: true, lean: true }
       );
       console.log(`[MongoDB] Settings saved successfully`);
@@ -1221,7 +1179,7 @@ app.post('/api/settings', requireAuth, async (req, res) => {
       const newNotif = { ...DEFAULT_SETTINGS.notifications, ...(currentDoc.notifications || {}), ...(updates.notifications || {}) };
       mongoUpdatedDoc = await SettingModel.findOneAndUpdate(
         { key: 'global_settings' },
-        { studio: newStudio, notifications: newNotif },
+        { $set: { studio: newStudio, notifications: newNotif } },
         { upsert: true, new: true, lean: true }
       );
       console.log(`[MongoDB] Settings saved successfully`);
@@ -1331,6 +1289,18 @@ app.post('/api/upload', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'Failed to upload image' });
   }
+});
+
+// Protect sensitive backend source files and configs from static download (C-6)
+app.use((req, res, next) => {
+  const reqPath = req.path.toLowerCase();
+  const blockedExact = ['/server.js', '/package.json', '/package-lock.json', '/vercel.json', '/.env', '/.env.example'];
+  const isBlockedDir = reqPath.startsWith('/lib/') || reqPath.startsWith('/scratch/') || reqPath.startsWith('/.git/') || reqPath.startsWith('/.agents/');
+  
+  if (blockedExact.includes(reqPath) || isBlockedDir || reqPath.endsWith('.env')) {
+    return res.status(403).send('Forbidden: Access to server file is restricted');
+  }
+  next();
 });
 
 // Static Files middleware

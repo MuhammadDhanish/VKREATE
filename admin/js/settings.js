@@ -397,11 +397,12 @@ const Settings = {
   async saveStudio(e) {
     e.preventDefault();
     const f = e.target;
+    const getVal = (name) => f.querySelector(`[name="${name}"]`)?.value.trim() || '';
     const ok = await DB.settings.update('studio', {
-      name: f.name.value.trim(), tagline: f.tagline.value.trim(),
-      email: f.email.value.trim(), phone: f.phone.value.trim(),
-      address: f.address.value.trim(),
-      instagram: f.instagram.value.trim(), website: f.website.value.trim(),
+      name: getVal('name'), tagline: getVal('tagline'),
+      email: getVal('email'), phone: getVal('phone'),
+      address: getVal('address'),
+      instagram: getVal('instagram'), website: getVal('website'),
     });
     if (ok) {
       DB.afterMutation();
@@ -555,13 +556,27 @@ const Settings = {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = ev => {
+      reader.onload = async ev => {
         try {
           const data = JSON.parse(ev.target.result);
-          if (data.projects)  DB._set(DB.KEYS.projects,  data.projects);
-          if (data.reviews)   DB._set(DB.KEYS.reviews,   data.reviews);
-          if (data.inquiries) DB._set(DB.KEYS.inquiries,  data.inquiries);
-          if (data.settings)  DB._set(DB.KEYS.settings,  data.settings);
+          if (data.projects) {
+            DB._set(DB.KEYS.projects, data.projects);
+            DB.projects._syncPublicMirror(data.projects);
+            DB._broadcast('projects-updated', data.projects);
+          }
+          if (data.reviews) {
+            DB._set(DB.KEYS.reviews, data.reviews);
+            DB.reviews._syncPublicMirror(data.reviews);
+            DB._broadcast('reviews-updated', data.reviews);
+          }
+          if (data.inquiries) {
+            DB._set(DB.KEYS.inquiries, data.inquiries);
+            DB._broadcast('inquiries-updated', data.inquiries);
+          }
+          if (data.settings) {
+            DB._set(DB.KEYS.settings, data.settings);
+            DB._broadcast('settings-updated', data.settings);
+          }
           UI.toast('Data imported successfully!', 'success');
           App.navigate('dashboard');
         } catch {
@@ -597,6 +612,8 @@ const Settings = {
           }
         });
         DB._set(DB.KEYS.projects, projects);
+        DB.projects._syncPublicMirror(projects);
+        DB._broadcast('projects-updated', projects);
         UI.toast('Image cache cleared! Storage freed up.', 'success');
         Settings.render();
       } catch(e) {
@@ -609,7 +626,7 @@ const Settings = {
     UI.confirm('Reset Dashboard & Data', 'This will erase all custom modifications, clear test reviews/activity, and restore default demo content. Are you sure?', '⚠️', async () => {
       [
         DB.KEYS.projects, DB.KEYS.reviews, DB.KEYS.inquiries,
-        DB.KEYS.deletedProjects, DB.KEYS.deletedReviews, DB.KEYS.deletedInquiries
+        'vk_admin_deleted_projects', 'vk_admin_deleted_reviews', 'vk_admin_deleted_inquiries'
       ].forEach(k => localStorage.removeItem(k));
       if (typeof ImageDB !== 'undefined') {
         try { await ImageDB.clear(); } catch(e) {}

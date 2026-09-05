@@ -490,7 +490,7 @@ const Reviews = {
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-    overlay.id = 'admin-add-review-modal';
+    overlay.id = 'active-modal';
     overlay.innerHTML = `
       <div class="modal max-w-500" style="padding:28px;">
         <div class="modal__header" style="margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)">
@@ -600,11 +600,10 @@ const Reviews = {
         approvedAt:  status === 'approved' ? new Date().toISOString() : null,
       };
 
-      const modal = document.getElementById('admin-add-review-modal');
-      if (modal) modal.remove();
-
       const added = await DB.reviews.add(newRev);
       if (added) {
+        const modal = document.getElementById('active-modal');
+        if (modal) modal.remove();
         UI.toast(`✓ Review from ${UI.escapeHTML(name)} added!`, 'success');
         if (typeof App !== 'undefined') App.updateSidebar();
 

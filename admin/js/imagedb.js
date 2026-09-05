@@ -143,18 +143,39 @@ const ImageDB = {
       const tx = db.transaction(this.STORE, 'readwrite');
       const store = tx.objectStore(this.STORE);
       const req = store.openCursor();
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = (e) => reject(e.target.error || tx.error);
       req.onsuccess = (e) => {
         const cursor = e.target.result;
         if (cursor) {
-          if (cursor.key.startsWith(`proj_${projectId}_`)) {
+          if (cursor.key.startsWith(`proj_${projectId}_`) || cursor.key.startsWith(`proj_${projectId}`)) {
             cursor.delete();
           }
           cursor.continue();
-        } else {
-          resolve(true);
         }
       };
       req.onerror = (e) => reject(e.target.error);
     });
+  },
+
+  // ── Clean up stale temp keys older than 24h ──────────────
+  async cleanOrphanedTemps() {
+    try {
+      const db = await this.open();
+      const tx = db.transaction(this.STORE, 'readwrite');
+      const store = tx.objectStore(this.STORE);
+      const req = store.openCursor();
+      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          const entry = cursor.value;
+          if (cursor.key.startsWith('temp_') && (entry.savedAt || 0) < oneDayAgo) {
+            cursor.delete();
+          }
+          cursor.continue();
+        }
+      };
+    } catch (e) {}
   },
 };

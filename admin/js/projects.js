@@ -614,11 +614,13 @@ const Projects = {
       if (!nameVal) {
         UI.toast('Please enter a Project Name', 'error');
         if (nameInput) nameInput.focus();
+        restore();
         return;
       }
       if (!indVal) {
         UI.toast('Please select an Industry', 'error');
         if (indSelect) indSelect.focus();
+        restore();
         return;
       }
 
@@ -628,6 +630,7 @@ const Projects = {
         if (!customText) {
           UI.toast('Please type your custom industry name', 'error');
           if (customInput) customInput.focus();
+          restore();
           return;
         }
         indVal = 'other-' + customText.toLowerCase().replace(/[^a-z0-9]+/g, '-');

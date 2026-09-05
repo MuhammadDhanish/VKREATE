@@ -91,9 +91,9 @@ const Inquiries = {
     if (this._filter.search) {
       const q = this._filter.search.toLowerCase();
       list = list.filter(i =>
-        i.name.toLowerCase().includes(q) ||
-        i.email.toLowerCase().includes(q) ||
-        (i.industry||'').toLowerCase().includes(q)
+        (i.name || '').toLowerCase().includes(q) ||
+        (i.email || '').toLowerCase().includes(q) ||
+        (i.industry || '').toLowerCase().includes(q)
       );
     }
     return list;
@@ -131,11 +131,11 @@ const Inquiries = {
             ${list.map(i => `
               <tr>
                 <td>
-                  <div class="td-name">${i.name}</div>
-                  <div class="text-xs text-muted">${i.email} · ${i.phone||''}</div>
+                  <div class="td-name">${UI.escapeHTML(i.name || 'Anonymous')}</div>
+                  <div class="text-xs text-muted">${UI.escapeHTML(i.email || '')} · ${UI.escapeHTML(i.phone || '')}</div>
                 </td>
-                <td class="text-sm text-muted">${i.industry||'—'}</td>
-                <td class="text-sm">${i.projectBudget||'—'}</td>
+                <td class="text-sm text-muted">${UI.escapeHTML(i.industry || '—')}</td>
+                <td class="text-sm">${UI.escapeHTML(i.projectBudget || i.budget || '—')}</td>
                 <td>
                   <select class="form-control" style="padding:4px 10px;font-size:.75rem;width:auto"
                     onchange="Inquiries.updateStatus('${i.id}',this.value)">
@@ -156,9 +156,12 @@ const Inquiries = {
   },
 
   async updateStatus(id, status) {
+    const existing = DB.inquiries.get(id);
     const updated = await DB.inquiries.update(id, {
       status,
-      respondedAt: ['contacted','quoted','won'].includes(status) ? new Date().toISOString() : null
+      respondedAt: ['contacted','quoted','won'].includes(status)
+        ? (existing?.respondedAt || new Date().toISOString())
+        : (existing?.respondedAt || null)
     });
     if (updated) {
       UI.toast(`Status updated to "${status}"`, 'success');
@@ -186,9 +189,9 @@ const Inquiries = {
     const email = UI.escapeHTML(i.email || '');
     const phone = UI.escapeHTML(i.phone || '');
     const industry = UI.escapeHTML(i.industry || '—');
-    const budget = UI.escapeHTML(i.projectBudget || '—');
+    const budget = UI.escapeHTML(i.projectBudget || i.budget || '—');
     const timeline = UI.escapeHTML(i.timeline || '—');
-    const brief = UI.escapeHTML(i.brief || 'No brief provided.');
+    const brief = UI.escapeHTML(i.brief || i.message || 'No brief provided.');
     const notes = UI.escapeHTML(i.notes || '');
 
     UI.modal(`Inquiry — ${name}`, `
@@ -214,18 +217,18 @@ const Inquiries = {
           </div>
           <div>
             <div class="text-xs text-muted mb-4">Budget</div>
-            <div class="fw-600">${i.projectBudget||'—'}</div>
+            <div class="fw-600">${budget}</div>
           </div>
           <div>
             <div class="text-xs text-muted mb-4">Timeline</div>
-            <div>${i.timeline||'—'}</div>
+            <div>${timeline}</div>
           </div>
         </div>
 
         <!-- Project Brief -->
         <div>
           <div class="text-xs text-muted mb-6">Project Brief</div>
-          <p class="text-sm" style="color:var(--text-2);line-height:1.7;background:var(--bg);padding:14px;border-radius:var(--r-md)">${i.brief||'No brief provided.'}</p>
+          <p class="text-sm" style="color:var(--text-2);line-height:1.7;background:var(--bg);padding:14px;border-radius:var(--r-md)">${brief}</p>
         </div>
 
         <!-- Status -->
@@ -239,7 +242,7 @@ const Inquiries = {
         <!-- Notes -->
         <div class="form-group">
           <label class="form-label">Internal Notes</label>
-          <textarea class="form-control" id="detail-notes" rows="4" placeholder="Follow-up notes, meeting summaries, next steps...">${i.notes||''}</textarea>
+          <textarea class="form-control" id="detail-notes" rows="4" placeholder="Follow-up notes, meeting summaries, next steps...">${notes}</textarea>
           <div class="form-hint">Only visible to admins.</div>
         </div>
 
@@ -254,15 +257,17 @@ const Inquiries = {
     `);
   },
 
-  _saveDetail(id) {
+  async _saveDetail(id) {
     const status = document.getElementById('detail-status').value;
     const notes  = document.getElementById('detail-notes').value.trim();
-    DB.inquiries.update(id, { status, notes });
-    UI.toast('Inquiry updated!', 'success');
-    UI.closeModal();
-    this._refresh();
-    App.updateSidebar();
-    if (window.GithubSync) GithubSync.push();
+    const updated = await DB.inquiries.update(id, { status, notes });
+    if (updated) {
+      UI.toast('Inquiry updated!', 'success');
+      UI.closeModal();
+      this._refresh();
+      App.updateSidebar();
+      if (window.GithubSync) GithubSync.push();
+    }
   },
 
   exportCSV() {

@@ -15,8 +15,6 @@ if (typeof window !== 'undefined' && window.location && window.location.hostname
       localStorage.removeItem('vk_reviews');
       localStorage.removeItem('vk_reviews_list');
       localStorage.removeItem('vk_projects_cache');
-      localStorage.removeItem('vk_admin_projects');
-      localStorage.removeItem('vk_admin_reviews');
       localStorage.setItem('vk_purge_key', PURGE_KEY);
     }
   } catch (e) {}
@@ -625,7 +623,10 @@ const DB = {
   // ── Inquiries CRUD ────────────────────────────────────────
   inquiries: {
     all() {
-      return DB._get(DB.KEYS.inquiries) || [];
+      const items = DB._get(DB.KEYS.inquiries) || [];
+      const deletedIds = DB._get('vk_admin_deleted_inquiries') || [];
+      const deletedSet = new Set(deletedIds.map(String));
+      return items.filter(i => i && i.id && !deletedSet.has(String(i.id)));
     },
     get(id) { return this.all().find(i => i && i.id && (i.id === id || String(i.id) === String(id))) || null; },
     async add(item) {
@@ -751,10 +752,6 @@ const DB = {
     DB._broadcast('projects-updated', []);
     DB._broadcast('reviews-updated', []);
     DB._broadcast('inquiries-updated', []);
-
-    window.dispatchEvent(new CustomEvent('vkreate:projects-updated'));
-    window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
-    window.dispatchEvent(new CustomEvent('vkreate:inquiries-updated'));
     return true;
   },
 
@@ -762,6 +759,7 @@ const DB = {
   settings: {
     get() { return DB._get(DB.KEYS.settings) || {}; },
     async save(data) {
+      DB._setLastLocalWrite('settings');
       DB._set(DB.KEYS.settings, data);
       DB._broadcast('settings-updated', data);
 
@@ -882,10 +880,9 @@ const DB = {
               }
               const now = Date.now();
               const isRecentLocalWrite = (now - DB._getLastLocalWrite('projects')) < 10000;
-              const localStatus = (localItem.status || 'published').toLowerCase().trim();
               const localTs = new Date(localItem.updatedAt || localItem.createdAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.createdAt || 0).getTime();
-              if (isRecentLocalWrite || localStatus === 'published' || localStatus === 'draft' || localStatus === 'archived' || localTs >= remoteTs) {
+              if (isRecentLocalWrite || localTs >= remoteTs) {
                 mergedMap.set(String(remoteItem.id), _stripMongoInternals({ ...remoteItem, ...localItem }));
               } else {
                 mergedMap.set(String(remoteItem.id), _stripMongoInternals({ ...localItem, ...remoteItem }));
@@ -1211,7 +1208,9 @@ DB.seed();
       }
     };
     adminEvtSource.onerror = () => {
-      adminEvtSource.close();
+      if (adminEvtSource.readyState === EventSource.CLOSED) {
+        console.warn('[SSE] Connection closed; background poller will maintain state sync');
+      }
     };
   } catch (e) {
     // SSE not supported — polling fallback handles sync
