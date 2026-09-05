@@ -396,68 +396,81 @@ const VKREATE_SYNC = {
     if (this._isFetchingReviews) return;
     this._isFetchingReviews = true;
 
-    let remoteList = null;
     try {
-      const res = await fetch(this.getBaseUrl() + '/api/reviews/public?t=' + Date.now());
-      if (res.ok) {
-        const raw = await res.json();
-        if (Array.isArray(raw)) remoteList = raw;
-        else if (raw && Array.isArray(raw.items)) remoteList = raw.items;
-      }
-    } catch (e) {}
-
-    // Offline JSON Fallback
-    if (!remoteList) {
+      let remoteList = null;
       try {
-        const res = await fetch('js/admin-reviews.json?t=' + Date.now());
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timeoutId = controller ? setTimeout(() => controller.abort(), 3500) : null;
+        const res = await fetch(this.getBaseUrl() + '/api/reviews/public?t=' + Date.now(), {
+          signal: controller ? controller.signal : undefined
+        });
+        if (timeoutId) clearTimeout(timeoutId);
         if (res.ok) {
           const raw = await res.json();
           if (Array.isArray(raw)) remoteList = raw;
           else if (raw && Array.isArray(raw.items)) remoteList = raw.items;
         }
       } catch (e) {}
-    }
 
-    if (Array.isArray(remoteList)) {
-      const active = remoteList.filter(r => {
-        if (!r || !r.id) return false;
-        const status = (r.status || 'approved').toLowerCase().trim();
-        return status === 'approved';
-      }).map(r => {
-        const dateFormatted = r.createdAt
-          ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-          : (r.date || 'Recent');
-        const computedRank = typeof r.rank === 'number' ? r.rank : (parseInt(r.rank) || 0);
-        const name = r.clientName || r.author || 'Verified Client';
-        const roleStr = r.clientRole || r.role || 'Client';
-        const textStr = r.reviewText || r.text || '';
-        return {
-          id: r.id,
-          projectId: r.projectId || 'general',
-          clientName: name,
-          author: name,
-          clientRole: roleStr,
-          role: roleStr,
-          industry: r.industry || r.industryLabel || 'commercial',
-          industryLabel: r.industryLabel || r.industry || 'Commercial',
-          rating: r.rating || 5,
-          rank: computedRank,
-          date: dateFormatted,
-          reviewText: textStr,
-          text: textStr,
-          verified: true,
-          status: 'approved',
-          studioResponse: r.studioResponse || ''
-        };
-      });
+      // Offline JSON Fallback
+      if (!remoteList) {
+        try {
+          const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+          const timeoutId = controller ? setTimeout(() => controller.abort(), 3000) : null;
+          const res = await fetch('js/admin-reviews.json?t=' + Date.now(), {
+            signal: controller ? controller.signal : undefined
+          });
+          if (timeoutId) clearTimeout(timeoutId);
+          if (res.ok) {
+            const raw = await res.json();
+            if (Array.isArray(raw)) remoteList = raw;
+            else if (raw && Array.isArray(raw.items)) remoteList = raw.items;
+          }
+        } catch (e) {}
+      }
 
-      active.sort((a, b) => a.rank - b.rank);
+      if (Array.isArray(remoteList)) {
+        const active = remoteList.filter(r => {
+          if (!r || !r.id) return false;
+          const status = (r.status || 'approved').toLowerCase().trim();
+          return status === 'approved';
+        }).map(r => {
+          const dateFormatted = r.createdAt
+            ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+            : (r.date || 'Recent');
+          const computedRank = typeof r.rank === 'number' ? r.rank : (parseInt(r.rank) || 0);
+          const name = r.clientName || r.author || 'Verified Client';
+          const roleStr = r.clientRole || r.role || 'Client';
+          const textStr = r.reviewText || r.text || '';
+          return {
+            id: r.id,
+            projectId: r.projectId || 'general',
+            clientName: name,
+            author: name,
+            clientRole: roleStr,
+            role: roleStr,
+            industry: r.industry || r.industryLabel || 'commercial',
+            industryLabel: r.industryLabel || r.industry || 'Commercial',
+            rating: r.rating || 5,
+            rank: computedRank,
+            date: dateFormatted,
+            reviewText: textStr,
+            text: textStr,
+            verified: true,
+            status: 'approved',
+            studioResponse: r.studioResponse || ''
+          };
+        });
 
-      window.VKREATE_DATA.reviews = active;
-      try { localStorage.setItem('vk_reviews', JSON.stringify(active)); } catch (e) {}
+        active.sort((a, b) => a.rank - b.rank);
+
+        window.VKREATE_DATA.reviews = active;
+        try { localStorage.setItem('vk_reviews', JSON.stringify(active)); } catch (e) {}
+      }
+    } finally {
+      this._isFetchingReviews = false;
       window.dispatchEvent(new CustomEvent('vkreate:reviews-updated'));
     }
-    this._isFetchingReviews = false;
   },
 
   // ── Fetch & Apply Settings ──────────────────────────────────
@@ -490,6 +503,7 @@ const VKREATE_SYNC = {
   initSSE() {
     const sseBase = this.getBaseUrl();
     if (!sseBase && window.location.protocol === 'file:') return;
+    if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('vercel.app')) return;
 
     try {
       if (this._sseSource) this._sseSource.close();

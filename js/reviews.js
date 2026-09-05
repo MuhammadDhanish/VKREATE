@@ -179,7 +179,11 @@
     grid.innerHTML = '';
 
     if (filtered.length === 0) {
-      if (window.VKREATE_SYNC && window.VKREATE_SYNC._isFetchingReviews) {
+      if (!window._VK_PAGE_INIT_TIME) window._VK_PAGE_INIT_TIME = Date.now();
+      const isInitialLoading = (reviews.length === 0) &&
+                               (window.VKREATE_SYNC && window.VKREATE_SYNC._isFetchingReviews) &&
+                               ((Date.now() - window._VK_PAGE_INIT_TIME) < 2000);
+      if (isInitialLoading) {
         grid.innerHTML = `
           <div style="grid-column:1/-1;text-align:center;padding:48px 24px;color:var(--text-muted);">
             <div style="font-size:1.5rem;margin-bottom:12px;">⏳</div>
@@ -190,9 +194,9 @@
       grid.innerHTML = `
         <div style="grid-column:1/-1;text-align:center;padding:56px 24px;background:rgba(255,255,255,0.03);border:1px dashed var(--border-color);border-radius:var(--radius-lg);margin-top:20px;">
           <div style="font-size:2.5rem;margin-bottom:16px">✍️</div>
-          <h3 class="t-h3" style="color:var(--charcoal);margin-bottom:8px;">No Verified Reviews Yet</h3>
+          <h3 class="t-h3" style="color:var(--charcoal);margin-bottom:8px;">${currentFilter !== 'all' ? 'No Reviews in this Category Yet' : 'No Verified Reviews Yet'}</h3>
           <p class="t-body" style="color:var(--text-muted);margin:0 auto 24px auto;max-width:440px;line-height:1.6;">
-            Be the first client to share your experience working with VKREATE Design Studio on an interior architecture project!
+            ${currentFilter !== 'all' ? 'No client reviews have been submitted for this category yet. Be the first!' : 'Be the first client to share your experience working with VKREATE Design Studio on an interior architecture project!'}
           </p>
           <button type="button" class="btn btn-green" onclick="window.openReviewModal()" style="padding:12px 24px;font-size:0.9375rem;">
             ✍️ Write a Client Review
