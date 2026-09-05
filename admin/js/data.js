@@ -863,6 +863,22 @@ const DB = {
 
         if (Array.isArray(projects)) {
           const currentLocal = (DB._get(DB.KEYS.projects) || []).filter(p => p && p.id && !deletedSet.has(String(p.id)));
+
+          // ── SAFETY GUARD ────────────────────────────────────────────────
+          // If server returns 0 projects but we have local data, the server's
+          // storage backend is not configured (no MONGODB_URI / GITHUB_TOKEN).
+          // In that case local data is the only truth — push every local item
+          // to the server so it gets saved, then skip the merge entirely to
+          // prevent local data being overwritten with an empty list.
+          if (projects.length === 0 && currentLocal.length > 0) {
+            console.warn('[DB] Server returned 0 projects but local has', currentLocal.length, '— treating local as authoritative, pushing to server...');
+            // Push each local project to server in background
+            currentLocal.forEach(localItem => {
+              DB.projects.update(localItem.id, localItem).catch(() => {});
+            });
+            // Keep local data unchanged — do NOT proceed with merge
+          } else {
+          // ── NORMAL MERGE PATH ────────────────────────────────────────────
           const localMap = new Map();
           currentLocal.forEach(p => { if (p && p.id) localMap.set(String(p.id), p); });
 
@@ -900,7 +916,7 @@ const DB = {
               if (!mergedMap.has(String(localItem.id))) {
                 mergedMap.set(String(localItem.id), localItem);
                 // Background push to persist missing item to server
-                DB.projects.add(localItem).catch(() => {});
+                DB.projects.update(localItem.id, localItem).catch(() => {});
               }
             }
           });
@@ -914,6 +930,7 @@ const DB = {
             DB.projects._syncPublicMirror(merged);
             projectsUpdated = true;
           }
+          } // end normal merge
         }
       }
 

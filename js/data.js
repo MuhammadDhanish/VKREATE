@@ -305,6 +305,18 @@ const VKREATE_SYNC = {
       } catch (e) {}
     }
 
+    // Safety guard: if server returned an empty list but we have a cached list,
+    // the server's storage backend is likely not configured — keep showing the cache.
+    if (Array.isArray(remoteList) && remoteList.length === 0) {
+      try {
+        const cached = JSON.parse(localStorage.getItem('vk_projects_cache') || '[]');
+        if (Array.isArray(cached) && cached.length > 0) {
+          console.warn('[VKREATE] Server returned 0 projects — keeping cached list of', cached.length, 'projects');
+          remoteList = null; // fall through to skip the update entirely
+        }
+      } catch (e) {}
+    }
+
     if (Array.isArray(remoteList)) {
       const active = remoteList.filter(p => {
         if (!p || !p.id) return false;
