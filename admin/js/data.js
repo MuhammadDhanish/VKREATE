@@ -371,9 +371,15 @@ const DB = {
           }
         } else {
           const err = await res.json().catch(() => ({}));
-          console.warn(`Server project update warning (HTTP ${res.status}): ${err.error || 'Server sync pending'}`);
-          if (res.status === 401 && window.UI && UI.toast) {
-            UI.toast('⚠️ Session expired / unauthorized. Please log out & in to save to cloud.', 'warning', 6000);
+          if (res.status === 401) {
+            console.error('API authentication failed - server token required');
+            UI.toast('❌ Session expired. Please refresh and log in again.', 'error');
+            setTimeout(() => {
+              window.location.hash = '#login';
+            }, 2000);
+          } else {
+            console.warn(`Server project update warning (HTTP ${res.status}): ${err.error || 'Server sync pending'}`);
+            UI.toast(`⚠️ Server error (${res.status}): ${err.error || 'Changes saved locally only'}`, 'warning');
           }
         }
       } catch (e) {

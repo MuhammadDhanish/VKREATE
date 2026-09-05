@@ -84,9 +84,15 @@ const Auth = {
 
       if (authenticated) {
         const settings = DB.settings.get();
-        const activeToken = (token && typeof token === 'string' && token.trim())
+        // Only use server-provided tokens for API authentication
+        const activeToken = (token && typeof token === 'string' && token.trim() && token.includes('.'))
           ? token.trim()
-          : ('sess_' + Date.now().toString(36) + '.' + Math.random().toString(36).slice(2, 8));
+          : '';
+        
+        if (!activeToken) {
+          console.warn('No server token available - API calls will fail until server login succeeds');
+        }
+        
         DB.auth.session.set({
           token: activeToken,
           email: email,
