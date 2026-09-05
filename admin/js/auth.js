@@ -84,7 +84,9 @@ const Auth = {
 
       if (authenticated) {
         const settings = DB.settings.get();
-        const activeToken = (token && typeof token === 'string' && token.includes('.')) ? token.trim() : '';
+        const activeToken = (token && typeof token === 'string' && token.trim())
+          ? token.trim()
+          : ('sess_' + Date.now().toString(36) + '.' + Math.random().toString(36).slice(2, 8));
         DB.auth.session.set({
           token: activeToken,
           email: email,

@@ -40,10 +40,7 @@ function getAuthHeaders(extraHeaders = {}) {
     if (raw) {
       const session = JSON.parse(raw);
       if (session && session.token && typeof session.token === 'string' && session.token.trim()) {
-        const t = session.token.trim();
-        if (t.includes('.')) {
-          token = t;
-        }
+        token = session.token.trim();
       }
     }
   } catch (e) {}
