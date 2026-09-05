@@ -235,13 +235,15 @@ const Projects = {
     </table>`;
   },
 
-  setRank(id, rankVal) {
+  async setRank(id, rankVal) {
     const r = parseInt(rankVal) || 99;
-    DB.projects.update(id, { rank: r });
-    UI.toast(`Project preference set to Top #${r}!`, 'success');
-    this._refreshTable();
-    if (window.App && App.updateSidebar) App.updateSidebar();
-    DB.afterMutation();
+    const updated = await DB.projects.update(id, { rank: r });
+    if (updated) {
+      UI.toast(`Project preference set to Top #${r}!`, 'success');
+      this._refreshTable();
+      if (window.App && App.updateSidebar) App.updateSidebar();
+      DB.afterMutation();
+    }
   },
 
   _updatePrefButtons(rankVal) {
@@ -695,7 +697,7 @@ const Projects = {
       const thumbRef = rawThumbRef;
       const imageList = imageRefs.length ? imageRefs : [thumbRef];
 
-      const existing = this._editId ? DB.projects.get(this._editId) : null;
+      const existing = this._editId ? (DB.projects.get(this._editId) || DB.projects.all().find(p => p && String(p.id) === String(this._editId))) : null;
       const data = {
         id:           projectId,
         name:         nameVal,

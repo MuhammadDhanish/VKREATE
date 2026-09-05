@@ -327,14 +327,10 @@ const DB = {
           }
         } else {
           const err = await res.json().catch(() => ({}));
-          console.warn(`Server project add warning (HTTP ${res.status}): ${err.error || 'Failed'}`);
-          if (res.status === 401 || res.status >= 400) {
-            if (window.UI && UI.toast) UI.toast(`Server error (${res.status}): ${err.error || 'Unauthorized / Save failed'}`, 'error');
-            return null;
-          }
+          console.warn(`Server project add warning (HTTP ${res.status}): ${err.error || 'Server sync pending'}`);
         }
       } catch (e) {
-        console.warn(`Server project add fetch exception: ${e.message}`);
+        console.warn(`Server project add fetch exception: ${e.message} - keeping local save`);
       }
       return p;
     },
@@ -378,14 +374,10 @@ const DB = {
           }
         } else {
           const err = await res.json().catch(() => ({}));
-          console.warn(`Server project update warning (HTTP ${res.status}): ${err.error || 'Failed'}`);
-          if (res.status === 401 || res.status >= 400) {
-            if (window.UI && UI.toast) UI.toast(`Server update error (${res.status}): ${err.error || 'Unauthorized / Save failed'}`, 'error');
-            return null;
-          }
+          console.warn(`Server project update warning (HTTP ${res.status}): ${err.error || 'Server sync pending'}`);
         }
       } catch (e) {
-        console.warn(`Server project update fetch exception: ${e.message}`);
+        console.warn(`Server project update fetch exception: ${e.message} - keeping local change`);
       }
       return l[i];
     },
@@ -882,7 +874,8 @@ const DB = {
               const isRecentLocalWrite = (now - DB._getLastLocalWrite('projects')) < 10000;
               const localTs = new Date(localItem.updatedAt || localItem.createdAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.createdAt || 0).getTime();
-              if (isRecentLocalWrite || localTs >= remoteTs) {
+              const isClose = Math.abs(localTs - remoteTs) <= 3000;
+              if (isRecentLocalWrite || isClose || localTs >= remoteTs) {
                 mergedMap.set(String(remoteItem.id), _stripMongoInternals({ ...remoteItem, ...localItem }));
               } else {
                 mergedMap.set(String(remoteItem.id), _stripMongoInternals({ ...localItem, ...remoteItem }));

@@ -454,7 +454,7 @@ app.get('/api/events', (req, res) => {
   });
 });
 
-app.get('/api/projects', async (req, res) => {
+app.get('/api/projects', requireAuth, async (req, res) => {
   const data = await ghRead('js/admin-projects.json');
   const diskItems = data.items || [];
   const deletedIds = Array.from(new Set([...(data.deletedIds || [])]));
