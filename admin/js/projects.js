@@ -293,22 +293,19 @@ const Projects = {
     UI.downloadCSV(rows, 'vkreate-projects.csv');
   },
 
-  async openForm(id) {
+  openForm(id) {
     this._editId = id || null;
     const p = id ? DB.projects.get(id) : null;
     if (id && !p) return UI.toast('Project not found.', 'error');
 
-    // Load existing image references and resolve previews
+    // Load existing image references synchronously for fast modal render
     this._images = [];
-    if (p && p.images && p.images.length) {
-      const resolved = await Promise.all(p.images.map(async ref => {
-        let preview = ref;
-        if (ref && ref.startsWith('idb:')) {
-          preview = await ImageDB.get(ref.slice(4)) || '../assets/images/project_lilaa_1.jpg';
-        }
-        return { ref, preview };
-      }));
-      this._images = resolved.filter(r => r.ref);
+    if (p && p.images && Array.isArray(p.images)) {
+      this._images = p.images.map(ref => {
+        const rStr = (typeof ref === 'object' && ref !== null) ? (ref.ref || ref.preview || '') : String(ref || '');
+        const pStr = (typeof ref === 'object' && ref !== null) ? (ref.preview || ref.ref || '') : String(ref || '');
+        return { ref: rStr, preview: pStr };
+      }).filter(r => r.ref);
     }
 
     const stdIndustries = ['restaurant','beauty','office','retail','hospitality','residential','healthcare'];
@@ -462,6 +459,23 @@ const Projects = {
         ${UI.icon('check')} ${id ? 'Save Changes' : 'Create Project'}
       </button>
     `, 'modal-lg');
+
+    // Resolve IndexedDB image previews asynchronously after modal is displayed
+    if (this._images.length && typeof ImageDB !== 'undefined') {
+      (async () => {
+        let changed = false;
+        for (let i = 0; i < this._images.length; i++) {
+          const item = this._images[i];
+          if (item && item.ref && item.ref.startsWith('idb:')) {
+            try {
+              const url = await ImageDB.get(item.ref.slice(4));
+              if (url) { item.preview = url; changed = true; }
+            } catch (e) {}
+          }
+        }
+        if (changed) this._renderImgPreviews();
+      })();
+    }
   },
 
   _toggleOtherIndustry(select) {
