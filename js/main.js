@@ -112,6 +112,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (mobileNav) {
+    mobileNav.addEventListener('click', (e) => {
+      if (e.target === mobileNav) {
+        window.toggleMobileNav(e);
+      }
+    });
     mobileNav.querySelectorAll('a').forEach(a => {
       a.addEventListener('click', () => {
         if (hamburger) {
