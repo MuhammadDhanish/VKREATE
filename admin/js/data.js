@@ -36,19 +36,33 @@ function getApiBaseUrl() {
 
 function getAuthHeaders(extraHeaders = {}) {
   const headers = { 'Content-Type': 'application/json', ...extraHeaders };
-  let token = 'vk_admin_active_session';
+  let token = '';
   try {
     const raw = localStorage.getItem('vk_admin_session');
     if (raw) {
       const session = JSON.parse(raw);
       if (session && session.token && typeof session.token === 'string' && session.token.trim()) {
-        token = session.token.trim();
+        const t = session.token.trim();
+        if (t.includes('.')) {
+          token = t;
+        }
       }
     }
   } catch (e) {}
-  headers['Authorization'] = `Bearer ${token}`;
-  headers['X-Admin-Session'] = token;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    headers['X-Admin-Session'] = token;
+  }
   return headers;
+}
+
+function _stripMongoInternals(item) {
+  if (!item || typeof item !== 'object') return item;
+  if (Array.isArray(item)) return item.map(i => _stripMongoInternals(i));
+  const copy = { ...item };
+  delete copy._id;
+  delete copy.__v;
+  return copy;
 }
 
 // BroadcastChannel for instant cross-tab sync in same browser
@@ -228,7 +242,7 @@ const DB = {
       return list.filter(p => p && p.id && !deletedSet.has(p.id));
     },
     get(id) {
-      return this.all().find(p => p && p.id && (p.id === id || String(p.id) === String(id))) || null;
+      return this.all().find(p => p && p.id && String(p.id) === String(id)) || null;
     },
     _syncPublicMirror(list) {
       try {
@@ -275,6 +289,7 @@ const DB = {
       } catch (e) {}
     },
     async add(p) {
+      p = _stripMongoInternals(p);
       p.id = p.id || DB._id();
       p.createdAt = p.createdAt || new Date().toISOString();
       p.updatedAt = new Date().toISOString();
@@ -283,10 +298,14 @@ const DB = {
       if (!p.leads) p.leads = 0;
 
       const l = this.all();
-      const existingIdx = l.findIndex(x => x && x.id === p.id);
+      const existingIdx = l.findIndex(x => x && String(x.id) === String(p.id));
       if (existingIdx >= 0) { l[existingIdx] = p; } else { l.unshift(p); }
       DB._setLastLocalWrite('projects');
-      DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
+      const setOk = DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
+      if (!setOk) {
+        console.error('LocalStorage write failed in DB.projects.add');
+        return null;
+      }
       this._syncPublicMirror(l);
       DB._broadcast('projects-updated', l);
 
@@ -300,33 +319,43 @@ const DB = {
         if (res.ok) {
           const json = await res.json().catch(() => ({}));
           if (json && json.project && json.project.id) {
+            const cleanServerProj = _stripMongoInternals(json.project);
             const list = this.all();
-            const idx = list.findIndex(x => x && x.id === json.project.id);
-            if (idx >= 0) list[idx] = { ...list[idx], ...json.project };
-            else list.unshift(json.project);
+            const idx = list.findIndex(x => x && String(x.id) === String(cleanServerProj.id));
+            if (idx >= 0) list[idx] = { ...list[idx], ...cleanServerProj };
+            else list.unshift(cleanServerProj);
             DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(list)));
             this._syncPublicMirror(list);
           }
         } else {
           const err = await res.json().catch(() => ({}));
-          console.warn(`Server project add warning (HTTP ${res.status}): ${err.error || 'Saved locally'}`);
+          console.warn(`Server project add warning (HTTP ${res.status}): ${err.error || 'Failed'}`);
+          if (res.status === 401 || res.status >= 400) {
+            if (window.UI && UI.toast) UI.toast(`Server error (${res.status}): ${err.error || 'Unauthorized / Save failed'}`, 'error');
+            return null;
+          }
         }
       } catch (e) {
-        console.warn(`Server project add fetch exception: ${e.message} — keeping local addition`);
+        console.warn(`Server project add fetch exception: ${e.message}`);
       }
       return p;
     },
     async update(id, data) {
+      const cleanData = _stripMongoInternals(data);
       const l = this.all();
-      let i = l.findIndex(p => p && p.id === id);
+      let i = l.findIndex(p => p && String(p.id) === String(id));
       if (i < 0) {
-        l.unshift({ id, ...data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+        l.unshift({ id, ...cleanData, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
         i = 0;
       } else {
-        l[i] = { ...l[i], ...data, updatedAt: new Date().toISOString() };
+        l[i] = _stripMongoInternals({ ...l[i], ...cleanData, updatedAt: new Date().toISOString() });
       }
       DB._setLastLocalWrite('projects');
-      DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
+      const setOk = DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(l)));
+      if (!setOk) {
+        console.error('LocalStorage write failed in DB.projects.update');
+        return null;
+      }
       this._syncPublicMirror(l);
       DB._broadcast('projects-updated', l);
 
@@ -340,32 +369,38 @@ const DB = {
         if (res.ok) {
           const json = await res.json().catch(() => ({}));
           if (json && json.project && json.project.id) {
+            const cleanServerProj = _stripMongoInternals(json.project);
             const list = this.all();
-            const idx = list.findIndex(x => x && x.id === id);
+            const idx = list.findIndex(x => x && String(x.id) === String(id));
             if (idx >= 0) {
-              list[idx] = { ...list[idx], ...json.project };
+              list[idx] = { ...list[idx], ...cleanServerProj };
               DB._set(DB.KEYS.projects, JSON.parse(JSON.stringify(list)));
               this._syncPublicMirror(list);
             }
           }
         } else {
           const err = await res.json().catch(() => ({}));
-          console.warn(`Server project update warning (HTTP ${res.status}): ${err.error || 'Saved locally'}`);
+          console.warn(`Server project update warning (HTTP ${res.status}): ${err.error || 'Failed'}`);
+          if (res.status === 401 || res.status >= 400) {
+            if (window.UI && UI.toast) UI.toast(`Server update error (${res.status}): ${err.error || 'Unauthorized / Save failed'}`, 'error');
+            return null;
+          }
         }
       } catch (e) {
-        console.warn(`Server project update fetch exception: ${e.message} — keeping local change`);
+        console.warn(`Server project update fetch exception: ${e.message}`);
       }
       return l[i];
     },
     async delete(id) {
       if (!id) return false;
+      const idStr = String(id);
       let deletedList = DB._get('vk_admin_deleted_projects') || [];
-      if (!deletedList.includes(id)) {
-        deletedList.push(id);
+      if (!deletedList.includes(idStr)) {
+        deletedList.push(idStr);
         DB._set('vk_admin_deleted_projects', deletedList);
       }
 
-      const remaining = this.all().filter(p => p && p.id !== id);
+      const remaining = this.all().filter(p => p && String(p.id) !== idStr);
       DB._setLastLocalWrite('projects');
       DB._set(DB.KEYS.projects, remaining);
       this._syncPublicMirror(remaining);
@@ -373,12 +408,12 @@ const DB = {
 
       if (typeof ImageDB !== 'undefined' && ImageDB.delete) {
         for (let i = 0; i < 20; i++) {
-          ImageDB.delete(`proj_${id}_${i}`).catch(() => {});
+          ImageDB.delete(`proj_${idStr}_${i}`).catch(() => {});
         }
       }
 
       try {
-        const res = await fetch((getApiBaseUrl() || '') + `/api/projects/${id}`, {
+        const res = await fetch((getApiBaseUrl() || '') + `/api/projects/${idStr}`, {
           method: 'DELETE',
           headers: getAuthHeaders(),
           credentials: 'include'
@@ -835,8 +870,9 @@ const DB = {
           const activeRemote = projects.filter(p => p && p.id && !deletedSet.has(String(p.id)));
           const mergedMap = new Map();
 
-          activeRemote.forEach(remoteItem => {
-            const localItem = localMap.get(String(remoteItem.id));
+          activeRemote.forEach(rawRemoteItem => {
+            const remoteItem = _stripMongoInternals(rawRemoteItem);
+            const localItem = _stripMongoInternals(localMap.get(String(remoteItem.id)));
             if (remoteItem && (!remoteItem.status || remoteItem.status === 'active')) {
               remoteItem.status = 'published';
             }
@@ -850,9 +886,9 @@ const DB = {
               const localTs = new Date(localItem.updatedAt || localItem.createdAt || 0).getTime();
               const remoteTs = new Date(remoteItem.updatedAt || remoteItem.createdAt || 0).getTime();
               if (isRecentLocalWrite || localStatus === 'published' || localStatus === 'draft' || localStatus === 'archived' || localTs >= remoteTs) {
-                mergedMap.set(String(remoteItem.id), { ...remoteItem, ...localItem });
+                mergedMap.set(String(remoteItem.id), _stripMongoInternals({ ...remoteItem, ...localItem }));
               } else {
-                mergedMap.set(String(remoteItem.id), { ...localItem, ...remoteItem });
+                mergedMap.set(String(remoteItem.id), _stripMongoInternals({ ...localItem, ...remoteItem }));
               }
             } else {
               mergedMap.set(String(remoteItem.id), remoteItem);

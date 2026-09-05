@@ -5,15 +5,21 @@ const path = require('path');
 const PORT = 3000;
 const BASE_URL = `http://localhost:${PORT}`;
 
-function request(method, pathUrl, body = null) {
+let authToken = '';
+
+function request(method, pathUrl, body = null, headers = {}) {
   return new Promise((resolve, reject) => {
     const url = new URL(pathUrl, BASE_URL);
+    const reqHeaders = { 'Content-Type': 'application/json', ...headers };
+    if (authToken && !reqHeaders.Authorization) {
+      reqHeaders.Authorization = `Bearer ${authToken}`;
+    }
     const options = {
       method,
       hostname: url.hostname,
       port: url.port,
       path: url.pathname + url.search,
-      headers: { 'Content-Type': 'application/json' },
+      headers: reqHeaders,
     };
 
     const req = http.request(options, (res) => {
@@ -58,6 +64,14 @@ async function runSyncTests() {
   }
 
   try {
+    const loginRes = await request('POST', '/api/login', {
+      email: 'vkreatearchitecture@gmail.com',
+      password: 'vkreate@234'
+    });
+    if (loginRes.body && loginRes.body.token) {
+      authToken = loginRes.body.token;
+    }
+
     // ----------------------------------------------------
     // TEST A: Admin → Admin (Admin A ↔ Admin B ↔ Backend)
     // ----------------------------------------------------

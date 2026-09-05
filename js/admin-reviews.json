@@ -1,4 +1,34 @@
 {
-  "deletedIds": [],
-  "items": []
+  "deletedIds": [
+    "rev-test-1788607481727",
+    "rev-pending-1788607481737"
+  ],
+  "items": [
+    {
+      "id": "rev-pending-1788607462381",
+      "clientName": "Marcus Wright",
+      "author": "Marcus Wright",
+      "clientRole": "Director, Resistance Tech",
+      "role": "Director, Resistance Tech",
+      "clientEmail": "",
+      "projectId": "test-proj-1788607462315",
+      "rating": 5,
+      "reviewText": "Outstanding craftsmanship and spatial planning!",
+      "status": "pending",
+      "createdAt": "2026-09-05T11:24:22.381Z"
+    },
+    {
+      "id": "rev-test-1788607462364",
+      "clientName": "Sarah Connor",
+      "author": "Sarah Connor",
+      "clientRole": "CEO, Cyberdyne Systems",
+      "role": "CEO, Cyberdyne Systems",
+      "clientEmail": "",
+      "projectId": "test-proj-1788607462315",
+      "rating": 5,
+      "reviewText": "Phenomenal interior architecture delivered on time and within budget.",
+      "status": "approved",
+      "createdAt": "2026-09-05T11:24:22.364Z"
+    }
+  ]
 }

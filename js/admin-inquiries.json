@@ -2,7 +2,22 @@
   "deletedIds": [
     "mszo5l77sz1og",
     "mszo5l777f6f5",
-    "inq-test-1788533194100"
+    "inq-test-1788533194100",
+    "inq-test-1788607481732"
   ],
-  "items": []
+  "items": [
+    {
+      "id": "inq-test-1788607462375",
+      "name": "Alexander Pierce",
+      "email": "alex@triskelion.com",
+      "phone": "+91 99887 76655",
+      "industry": "Offices & Workspaces",
+      "projectBudget": "₹50L – ₹75L",
+      "timeline": "3 months",
+      "brief": "Need a complete 10,000 sq ft headquarters fitout in Kochi.",
+      "status": "new",
+      "notes": "",
+      "createdAt": "2026-09-05T11:24:22.375Z"
+    }
+  ]
 }

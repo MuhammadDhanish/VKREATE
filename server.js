@@ -26,6 +26,14 @@ function notifyClients(type) {
   });
 }
 
+function sanitizeMongoDoc(doc) {
+  if (!doc || typeof doc !== 'object') return doc;
+  const clean = Array.isArray(doc) ? [...doc] : { ...doc };
+  delete clean._id;
+  delete clean.__v;
+  return clean;
+}
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -574,11 +582,12 @@ app.get('/api/projects/public', async (req, res) => {
 });
 
 app.post('/api/projects', requireAuth, async (req, res) => {
-  const item = req.body;
-  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+  const rawItem = req.body;
+  if (!rawItem || typeof rawItem !== 'object' || Array.isArray(rawItem)) {
     return res.status(400).json({ success: false, error: 'Array payloads are not allowed' });
   }
 
+  const item = sanitizeMongoDoc(rawItem);
   if (!item.id) item.id = 'proj-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   if (!item.status || item.status === 'active') item.status = 'published';
 
@@ -599,7 +608,7 @@ app.post('/api/projects', requireAuth, async (req, res) => {
         return diskDoc;
       }).catch(() => {});
       notifyClients('projects-updated');
-      return res.json({ success: true, project: doc });
+      return res.json({ success: true, project: sanitizeMongoDoc(doc) });
     } catch (e) {
       console.error(`[MongoDB] Project save FAILED id=${item.id}:`, e.message);
     }
@@ -617,7 +626,7 @@ app.post('/api/projects', requireAuth, async (req, res) => {
   });
 
   if (!result.success) {
-    return res.status(500).json({ success: false, error: result.error });
+    return res.status(500).json({ success: false, error: result.error || 'Failed to save project' });
   }
   notifyClients('projects-updated');
   res.json({ success: true, project: item });
@@ -625,7 +634,11 @@ app.post('/api/projects', requireAuth, async (req, res) => {
 
 app.put('/api/projects/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const updates = req.body || {};
+  const rawUpdates = req.body || {};
+  const updates = sanitizeMongoDoc(rawUpdates);
+  delete updates._id;
+  delete updates.__v;
+
   if (!updates.status || updates.status === 'active') {
     updates.status = 'published';
   }
@@ -650,7 +663,7 @@ app.put('/api/projects/:id', requireAuth, async (req, res) => {
         return diskDoc;
       }).catch(() => {});
       notifyClients('projects-updated');
-      return res.json({ success: true, project: doc });
+      return res.json({ success: true, project: sanitizeMongoDoc(doc) });
     } catch (e) {
       console.error(`[MongoDB] Project update FAILED id=${id}:`, e.message);
     }
@@ -674,7 +687,7 @@ app.put('/api/projects/:id', requireAuth, async (req, res) => {
   });
 
   if (!result.success) {
-    return res.status(500).json({ success: false, error: result.error });
+    return res.status(500).json({ success: false, error: result.error || 'Failed to update project' });
   }
   notifyClients('projects-updated');
   res.json({ success: true, project: updatedItem });

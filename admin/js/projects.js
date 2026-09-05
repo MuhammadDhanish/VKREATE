@@ -82,6 +82,7 @@ const Projects = {
           </div>
         </div>
       `;
+      this._resolveTableThumbnails();
     } catch (err) {
       console.error('Projects render error:', err);
       const mainEl = document.getElementById('main-content');
@@ -135,7 +136,22 @@ const Projects = {
 
   _refreshTable() {
     const el = document.getElementById('projects-table');
-    if (el) el.innerHTML = this._tableHTML(this._filtered());
+    if (el) {
+      el.innerHTML = this._tableHTML(this._filtered());
+      this._resolveTableThumbnails();
+    }
+  },
+
+  _resolveTableThumbnails() {
+    setTimeout(() => {
+      document.querySelectorAll('.td-thumb[data-idb-key]').forEach(async img => {
+        const key = img.dataset.idbKey;
+        if (key && typeof ImageDB !== 'undefined') {
+          const url = await ImageDB.get(key);
+          if (url) img.src = url;
+        }
+      });
+    }, 30);
   },
 
   _tableHTML(projects) {
@@ -217,17 +233,6 @@ const Projects = {
         }).join('')}
       </tbody>
     </table>`;
-
-    // Resolve idb: thumbnails in table asynchronously
-    setTimeout(() => {
-      document.querySelectorAll('.td-thumb[data-idb-key]').forEach(async img => {
-        const key = img.dataset.idbKey;
-        if (key && typeof ImageDB !== 'undefined') {
-          const url = await ImageDB.get(key);
-          if (url) img.src = url;
-        }
-      });
-    }, 30);
   },
 
   setRank(id, rankVal) {
@@ -331,7 +336,7 @@ const Projects = {
         <div class="form-grid form-grid-2">
           <div class="form-group">
             <label class="form-label">Project Name <span>*</span></label>
-            <input class="form-control" name="name" placeholder="e.g. Modern Commercial Interior" required value="${p?.name||''}">
+            <input class="form-control" name="name" placeholder="e.g. Modern Commercial Interior" required value="${UI.escapeHTML(p?.name||'')}">
           </div>
           <div class="form-group">
             <label class="form-label">Industry <span>*</span></label>
@@ -347,7 +352,7 @@ const Projects = {
               <option value="other"      ${isOther?'selected':''}>Other (Specify below)...</option>
             </select>
             <div id="other-industry-wrap" style="margin-top:10px; display:${isOther?'block':'none'}">
-              <input class="form-control" name="custom_industry" placeholder="Type custom industry (e.g. Educational, Exhibition, Nightclub)" value="${isOther ? (p?.industryLabel || '') : ''}">
+              <input class="form-control" name="custom_industry" placeholder="Type custom industry (e.g. Educational, Exhibition, Nightclub)" value="${UI.escapeHTML(isOther ? (p?.industryLabel || '') : '')}">
             </div>
           </div>
         </div>
@@ -355,36 +360,36 @@ const Projects = {
         <div class="form-grid form-grid-2">
           <div class="form-group">
             <label class="form-label">Location</label>
-            <input class="form-control" name="location" placeholder="City, State" value="${p?.location||''}">
+            <input class="form-control" name="location" placeholder="City, State" value="${UI.escapeHTML(p?.location||'')}">
           </div>
           <div class="form-group">
             <label class="form-label">Area</label>
-            <input class="form-control" name="area" placeholder="e.g. 2,500 sq ft" value="${p?.area||''}">
+            <input class="form-control" name="area" placeholder="e.g. 2,500 sq ft" value="${UI.escapeHTML(p?.area||'')}">
           </div>
         </div>
 
         <div class="form-grid form-grid-2">
           <div class="form-group">
             <label class="form-label">Duration</label>
-            <input class="form-control" name="duration" placeholder="e.g. 4 months" value="${p?.duration||''}">
+            <input class="form-control" name="duration" placeholder="e.g. 4 months" value="${UI.escapeHTML(p?.duration||'')}">
           </div>
           <div class="form-group">
             <label class="form-label">Budget Range</label>
-            <input class="form-control" name="budgetRange" placeholder="e.g. ₹25L – ₹35L" value="${p?.budgetRange||''}">
+            <input class="form-control" name="budgetRange" placeholder="e.g. ₹25L – ₹35L" value="${UI.escapeHTML(p?.budgetRange||'')}">
           </div>
         </div>
 
         <div class="form-group">
           <label class="form-label">Challenge</label>
-          <textarea class="form-control" name="challenge" placeholder="Describe the project challenge..." rows="3">${p?.challenge||''}</textarea>
+          <textarea class="form-control" name="challenge" placeholder="Describe the project challenge..." rows="3">${UI.escapeHTML(p?.challenge||'')}</textarea>
         </div>
         <div class="form-group">
           <label class="form-label">Solution</label>
-          <textarea class="form-control" name="solution" placeholder="How VKREATE solved it..." rows="3">${p?.solution||''}</textarea>
+          <textarea class="form-control" name="solution" placeholder="How VKREATE solved it..." rows="3">${UI.escapeHTML(p?.solution||'')}</textarea>
         </div>
         <div class="form-group">
           <label class="form-label">Result</label>
-          <textarea class="form-control" name="result" placeholder="Measurable outcomes..." rows="2">${p?.result||''}</textarea>
+          <textarea class="form-control" name="result" placeholder="Measurable outcomes..." rows="2">${UI.escapeHTML(p?.result||'')}</textarea>
         </div>
 
         <!-- Testimonial -->
@@ -394,16 +399,16 @@ const Projects = {
             <div class="form-grid form-grid-2">
               <div class="form-group">
                 <label class="form-label">Client Name</label>
-                <input class="form-control" name="testimonial_author" value="${p?.testimonial?.author||''}" placeholder="Full name">
+                <input class="form-control" name="testimonial_author" value="${UI.escapeHTML(p?.testimonial?.author||'')}" placeholder="Full name">
               </div>
               <div class="form-group">
                 <label class="form-label">Client Role</label>
-                <input class="form-control" name="testimonial_role" value="${p?.testimonial?.role||''}" placeholder="Title, Company">
+                <input class="form-control" name="testimonial_role" value="${UI.escapeHTML(p?.testimonial?.role||'')}" placeholder="Title, Company">
               </div>
             </div>
             <div class="form-group">
               <label class="form-label">Testimonial Text</label>
-              <textarea class="form-control" name="testimonial_text" rows="3" placeholder="Client's quote...">${p?.testimonial?.text||''}</textarea>
+              <textarea class="form-control" name="testimonial_text" rows="3" placeholder="Client's quote...">${UI.escapeHTML(p?.testimonial?.text||'')}</textarea>
             </div>
             <div class="form-group">
               <label class="form-label">Rating</label>
@@ -596,153 +601,184 @@ const Projects = {
       }
     };
 
-    const f = document.getElementById('proj-form');
-    if (!f) { restore(); return; }
+    try {
+      const f = document.getElementById('proj-form');
+      if (!f) return;
 
-    const nameInput = f.querySelector('[name="name"]');
-    const indSelect = f.querySelector('[name="industry"]');
-    const nameVal = nameInput ? nameInput.value.trim() : '';
-    let indVal = indSelect ? indSelect.value : '';
-    let indLabel = '';
+      const nameInput = f.querySelector('[name="name"]');
+      const indSelect = f.querySelector('[name="industry"]');
+      const nameVal = nameInput ? nameInput.value.trim() : '';
+      let indVal = indSelect ? indSelect.value : '';
+      let indLabel = '';
 
-    if (!nameVal) {
-      UI.toast('Please enter a Project Name', 'error');
-      if (nameInput) nameInput.focus();
-      restore();
-      return;
-    }
-    if (!indVal) {
-      UI.toast('Please select an Industry', 'error');
-      if (indSelect) indSelect.focus();
-      restore();
-      return;
-    }
-
-    if (indVal === 'other') {
-      const customInput = f.querySelector('[name="custom_industry"]');
-      const customText = customInput ? customInput.value.trim() : '';
-      if (!customText) {
-        UI.toast('Please type your custom industry name', 'error');
-        if (customInput) customInput.focus();
-        restore();
+      if (!nameVal) {
+        UI.toast('Please enter a Project Name', 'error');
+        if (nameInput) nameInput.focus();
         return;
       }
-      indVal = 'other-' + customText.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      indLabel = customText;
-    } else {
-      const indOpt = indSelect ? indSelect.selectedOptions[0] : null;
-      indLabel = indOpt ? (indOpt.dataset.label || indOpt.textContent) : indVal;
-    }
+      if (!indVal) {
+        UI.toast('Please select an Industry', 'error');
+        if (indSelect) indSelect.focus();
+        return;
+      }
 
-    // ── Finalize image references ───────────────────────────
-    const projectId = this._editId || DB._id();
-    const imageRefs = [];
-    for (let i = 0; i < this._images.length; i++) {
-      const item = this._images[i];
-      const ref = typeof item === 'object' ? item.ref : item;
-      if (ref && ref.startsWith('idb:temp_')) {
-        const finalKey = 'proj_' + projectId + '_' + i;
-        const dataUrl = await ImageDB.get(ref.slice(4));
-        if (dataUrl) {
-          await ImageDB.save(finalKey, dataUrl);
-          await ImageDB.delete(ref.slice(4));
-          imageRefs.push('idb:' + finalKey);
+      if (indVal === 'other') {
+        const customInput = f.querySelector('[name="custom_industry"]');
+        const customText = customInput ? customInput.value.trim() : '';
+        if (!customText) {
+          UI.toast('Please type your custom industry name', 'error');
+          if (customInput) customInput.focus();
+          return;
+        }
+        indVal = 'other-' + customText.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        indLabel = customText;
+      } else {
+        const indOpt = indSelect ? indSelect.selectedOptions[0] : null;
+        indLabel = indOpt ? (indOpt.dataset.label || indOpt.textContent) : indVal;
+      }
+
+      // ── Finalize image references & Upload ───────────────────────────
+      const projectId = this._editId || DB._id();
+      const imageRefs = [];
+      let hasIdbOnly = false;
+
+      for (let i = 0; i < this._images.length; i++) {
+        const item = this._images[i];
+        const ref = typeof item === 'object' ? item.ref : item;
+        let dataUrl = typeof item === 'object' ? item.preview : null;
+
+        if (ref && ref.startsWith('idb:')) {
+          const key = ref.slice(4);
+          dataUrl = (await ImageDB.get(key)) || dataUrl;
+        } else if (ref && ref.startsWith('data:')) {
+          dataUrl = ref;
+        }
+
+        let uploadedUrl = null;
+        if (dataUrl && typeof DB.uploadImage === 'function') {
+          try {
+            uploadedUrl = await DB.uploadImage(dataUrl, `proj_${projectId}_${i}`);
+          } catch (errUpload) {
+            console.warn('Image upload attempt failed:', errUpload);
+          }
+        }
+
+        if (uploadedUrl && (uploadedUrl.startsWith('http') || uploadedUrl.startsWith('/assets/'))) {
+          imageRefs.push(uploadedUrl);
+          if (ref && ref.startsWith('idb:temp_')) {
+            await ImageDB.delete(ref.slice(4)).catch(() => {});
+          }
+        } else if (ref && ref.startsWith('idb:temp_')) {
+          const finalKey = 'proj_' + projectId + '_' + i;
+          if (dataUrl) {
+            await ImageDB.save(finalKey, dataUrl).catch(() => {});
+            await ImageDB.delete(ref.slice(4)).catch(() => {});
+            imageRefs.push('idb:' + finalKey);
+          } else {
+            imageRefs.push(ref);
+          }
+          hasIdbOnly = true;
         } else {
+          if (ref && ref.startsWith('idb:')) hasIdbOnly = true;
           imageRefs.push(ref);
         }
-      } else {
-        imageRefs.push(ref);
       }
-    }
 
-    const rawThumbRef = imageRefs.length ? imageRefs[0] : '../assets/images/project_lilaa_1.jpg';
-    const thumbRef = rawThumbRef;
-    const imageList = imageRefs.length ? imageRefs : [thumbRef];
-
-    const existing = this._editId ? DB.projects.get(this._editId) : null;
-    const data = {
-      id:           projectId,
-      name:         nameVal,
-      industry:     indVal,
-      industryLabel: indLabel,
-      location:     f.querySelector('[name="location"]')?.value.trim() || '',
-      area:         f.querySelector('[name="area"]')?.value.trim() || '',
-      duration:     f.querySelector('[name="duration"]')?.value.trim() || '',
-      budgetRange:  f.querySelector('[name="budgetRange"]')?.value.trim() || '',
-      challenge:    f.querySelector('[name="challenge"]')?.value.trim() || '',
-      solution:     f.querySelector('[name="solution"]')?.value.trim() || '',
-      result:       f.querySelector('[name="result"]')?.value.trim() || '',
-      rank:         parseInt(f.querySelector('[name="rank"]')?.value || '99'),
-      status:       f.querySelector('[name="status"]')?.checked ? 'published' : 'draft',
-      images:       imageList,
-      thumbnail:    thumbRef,
-      afterImage:   thumbRef,
-      beforeImage:  imageList[1] || thumbRef,
-      testimonial: {
-        author: f.querySelector('[name="testimonial_author"]')?.value.trim() || '',
-        role:   f.querySelector('[name="testimonial_role"]')?.value.trim() || '',
-        text:   f.querySelector('[name="testimonial_text"]')?.value.trim() || '',
-        rating: parseInt(f.querySelector('[name="testimonial_rating"]')?.value || '5'),
-      },
-      processPhases: ['Discovery','Concept','Detailing','Execution','Handover'],
-      createdAt: existing?.createdAt || new Date().toISOString(),
-      views: existing?.views || 0,
-      clicks: existing?.clicks || 0,
-      leads: existing?.leads || 0,
-    };
-
-    let savedOk = false;
-    if (this._editId) {
-      const result = await DB.projects.update(this._editId, data);
-      savedOk = !!result;
-      if (savedOk) {
-        UI.toast('Project updated successfully!', 'success');
-      } else {
-        const dataNoImages = { ...data, images: ['../assets/images/project_lilaa_1.jpg'], thumbnail: '../assets/images/project_lilaa_1.jpg', afterImage: '../assets/images/project_lilaa_1.jpg', beforeImage: '../assets/images/project_lilaa_1.jpg' };
-        const retry = await DB.projects.update(this._editId, dataNoImages);
-        if (retry) {
-          UI.toast('Project updated (images skipped — storage full). Try clearing image cache.', 'info');
-          savedOk = true;
-        } else {
-          UI.toast('Save failed. Go to Settings → Clear Image Cache.', 'error');
-          restore();
-          return;
-        }
+      if (hasIdbOnly && window.UI && UI.toast) {
+        UI.toast('Note: Some images stored locally only (IndexedDB). They may not display on remote devices.', 'info');
       }
-    } else {
-      const added = await DB.projects.add(data);
-      savedOk = !!added;
-      if (!savedOk) {
-        const dataNoImages = { ...data, images: ['../assets/images/project_lilaa_1.jpg'], thumbnail: '../assets/images/project_lilaa_1.jpg', afterImage: '../assets/images/project_lilaa_1.jpg', beforeImage: '../assets/images/project_lilaa_1.jpg' };
-        const retry = await DB.projects.add(dataNoImages);
-        if (retry) {
-          UI.toast('Project created (images skipped — storage full). Try smaller images.', 'info');
-          savedOk = true;
+
+      const rawThumbRef = imageRefs.length ? imageRefs[0] : '../assets/images/project_lilaa_1.jpg';
+      const thumbRef = rawThumbRef;
+      const imageList = imageRefs.length ? imageRefs : [thumbRef];
+
+      const existing = this._editId ? DB.projects.get(this._editId) : null;
+      const data = {
+        id:           projectId,
+        name:         nameVal,
+        industry:     indVal,
+        industryLabel: indLabel,
+        location:     f.querySelector('[name="location"]')?.value.trim() || '',
+        area:         f.querySelector('[name="area"]')?.value.trim() || '',
+        duration:     f.querySelector('[name="duration"]')?.value.trim() || '',
+        budgetRange:  f.querySelector('[name="budgetRange"]')?.value.trim() || '',
+        challenge:    f.querySelector('[name="challenge"]')?.value.trim() || '',
+        solution:     f.querySelector('[name="solution"]')?.value.trim() || '',
+        result:       f.querySelector('[name="result"]')?.value.trim() || '',
+        rank:         parseInt(f.querySelector('[name="rank"]')?.value || '99'),
+        status:       f.querySelector('[name="status"]')?.checked ? 'published' : 'draft',
+        images:       imageList,
+        thumbnail:    thumbRef,
+        afterImage:   thumbRef,
+        beforeImage:  imageList[1] || thumbRef,
+        testimonial: {
+          author: f.querySelector('[name="testimonial_author"]')?.value.trim() || '',
+          role:   f.querySelector('[name="testimonial_role"]')?.value.trim() || '',
+          text:   f.querySelector('[name="testimonial_text"]')?.value.trim() || '',
+          rating: parseInt(f.querySelector('[name="testimonial_rating"]')?.value || '5'),
+        },
+        processPhases: ['Discovery','Concept','Detailing','Execution','Handover'],
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        views: existing?.views || 0,
+        clicks: existing?.clicks || 0,
+        leads: existing?.leads || 0,
+      };
+
+      let savedOk = false;
+      if (this._editId) {
+        const result = await DB.projects.update(this._editId, data);
+        savedOk = !!result;
+        if (savedOk) {
+          UI.toast('Project updated successfully!', 'success');
         } else {
-          UI.toast('Save failed. Please clear browser storage or use smaller images.', 'error');
-          restore();
-          return;
+          const dataNoImages = { ...data, images: ['../assets/images/project_lilaa_1.jpg'], thumbnail: '../assets/images/project_lilaa_1.jpg', afterImage: '../assets/images/project_lilaa_1.jpg', beforeImage: '../assets/images/project_lilaa_1.jpg' };
+          const retry = await DB.projects.update(this._editId, dataNoImages);
+          if (retry) {
+            UI.toast('Project updated (images skipped — storage full).', 'info');
+            savedOk = true;
+          } else {
+            UI.toast('Save failed. Server or storage write rejected.', 'error');
+            return;
+          }
         }
       } else {
-        UI.toast('Project created successfully!', 'success');
+        const added = await DB.projects.add(data);
+        savedOk = !!added;
+        if (!savedOk) {
+          const dataNoImages = { ...data, images: ['../assets/images/project_lilaa_1.jpg'], thumbnail: '../assets/images/project_lilaa_1.jpg', afterImage: '../assets/images/project_lilaa_1.jpg', beforeImage: '../assets/images/project_lilaa_1.jpg' };
+          const retry = await DB.projects.add(dataNoImages);
+          if (retry) {
+            UI.toast('Project created (images skipped — storage full).', 'info');
+            savedOk = true;
+          } else {
+            UI.toast('Save failed. Please clear browser storage or use smaller images.', 'error');
+            return;
+          }
+        } else {
+          UI.toast('Project created successfully!', 'success');
+        }
       }
+
+      if (!savedOk) return;
+
+      // Reset table filters so newly created/updated project is guaranteed visible
+      this._filter = { search: '', industry: 'all', status: 'all' };
+
+      UI.closeModal();
+      this.render();
+      if (window.App && App.updateSidebar) App.updateSidebar();
+
+      if (typeof GithubSync !== 'undefined' && GithubSync.afterMutation) {
+        GithubSync.afterMutation();
+      } else {
+        DB.afterMutation();
+      }
+    } catch (errSave) {
+      console.error('Projects submitDirect error:', errSave);
+      if (window.UI && UI.toast) UI.toast(`Save error: ${errSave.message}`, 'error');
+    } finally {
+      restore();
     }
-
-    if (!savedOk) { restore(); return; }
-
-    // Reset table filters so newly created/updated project is guaranteed visible
-    this._filter = { search: '', industry: 'all', status: 'all' };
-
-    UI.closeModal();
-    this.render();
-    if (window.App && App.updateSidebar) App.updateSidebar();
-
-    if (typeof GithubSync !== 'undefined' && GithubSync.afterMutation) {
-      GithubSync.afterMutation();
-    } else {
-      DB.afterMutation();
-    }
-    restore();
   },
 
   save(e) {
