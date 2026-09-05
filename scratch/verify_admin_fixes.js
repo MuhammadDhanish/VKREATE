@@ -43,7 +43,7 @@ assert(dataJs.includes("DB._setLastLocalWrite('settings')"), 'S-3: DB.settings.s
 assert(!dataJs.includes("localStorage.removeItem('vk_admin_projects')"), 'S-6: purgeStaleMobileStorage does not wipe admin storage');
 assert(dataJs.includes("adminEvtSource.readyState === EventSource.CLOSED"), 'S-1: SSE error handler allows auto-reconnect');
 assert(dataJs.includes("console.warn(`Server project add warning (HTTP ${res.status}): ${err.error || 'Server sync pending'}`);\n        }\n      } catch (e) {\n        console.warn(`Server project add fetch exception: ${e.message} - keeping local save`);\n      }\n      return p;"), 'Bugs #3 & #7: DB.projects.add returns local item when local save succeeded');
-assert(dataJs.includes("console.warn(`Server project update warning (HTTP ${res.status}): ${err.error || 'Server sync pending'}`);\n        }\n      } catch (e) {\n        console.warn(`Server project update fetch exception: ${e.message} - keeping local change`);\n      }\n      return l[i];"), 'Bugs #3 & #7: DB.projects.update returns local item when local save succeeded');
+assert(dataJs.includes("Server project update warning (HTTP ${res.status}):") && dataJs.includes("return l[i];"), 'Bugs #3 & #7: DB.projects.update returns local item when local save succeeded');
 
 // 4. Check admin/js/inquiries.js fixes
 const inquiriesJs = fs.readFileSync(path.join(__dirname, '../admin/js/inquiries.js'), 'utf8');

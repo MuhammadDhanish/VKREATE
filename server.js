@@ -583,7 +583,8 @@ app.put('/api/projects/:id', requireAuth, async (req, res) => {
   delete updates._id;
   delete updates.__v;
 
-  if (!updates.status || updates.status === 'active') {
+  // Bug Fix: Only transform 'active' to 'published'. Do NOT force 'published' if status is omitted in partial updates!
+  if (updates.status === 'active') {
     updates.status = 'published';
   }
 
@@ -640,6 +641,7 @@ app.put('/api/projects/:id', requireAuth, async (req, res) => {
 app.delete('/api/projects/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
 
+  let dbSuccess = false;
   const db = await connectMongoDB();
   if (db) {
     try {
@@ -648,9 +650,10 @@ app.delete('/api/projects/:id', requireAuth, async (req, res) => {
         { key: 'global_settings' },
         { $addToSet: { deletedIds: id } },
         { upsert: true }
-      ).catch(() => {});
+      );
+      dbSuccess = true;
     } catch (e) {
-      console.warn('MongoDB project delete warning:', e.message);
+      console.error('MongoDB project delete error:', e.message);
     }
   }
 
@@ -660,8 +663,8 @@ app.delete('/api/projects/:id', requireAuth, async (req, res) => {
     return doc;
   });
 
-  if (!result.success && !db) {
-    return res.status(500).json({ success: false, error: result.error });
+  if (!result.success && !dbSuccess) {
+    return res.status(500).json({ success: false, error: result.error || 'Failed to delete project' });
   }
   notifyClients('projects-updated');
   res.json({ success: true, id });

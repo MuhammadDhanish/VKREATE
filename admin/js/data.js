@@ -375,6 +375,9 @@ const DB = {
         } else {
           const err = await res.json().catch(() => ({}));
           console.warn(`Server project update warning (HTTP ${res.status}): ${err.error || 'Server sync pending'}`);
+          if (res.status === 401 && window.UI && UI.toast) {
+            UI.toast('⚠️ Session expired / unauthorized. Please log out & in to save to cloud.', 'warning', 6000);
+          }
         }
       } catch (e) {
         console.warn(`Server project update fetch exception: ${e.message} - keeping local change`);
@@ -411,6 +414,9 @@ const DB = {
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           console.warn(`Server project delete warning (HTTP ${res.status}): ${err.error || 'Saved locally'}`);
+          if (res.status === 401 && window.UI && UI.toast) {
+            UI.toast('⚠️ Session expired / unauthorized. Delete saved locally only.', 'warning', 6000);
+          }
         }
       } catch (e) {
         console.warn(`Server project delete fetch exception: ${e.message} — keeping local deletion`);
